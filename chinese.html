@@ -3,419 +3,332 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>國文九式・降魔修煉路 V4</title>
+    <title>會考國文：五招宗師之路</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Zen+Maru+Gothic:wght@500;700&display=swap');
-        
-        body {
-            font-family: 'Zen Maru Gothic', sans-serif;
-            background-color: #111;
-            color: #eee;
-            overscroll-behavior: none;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            /* 背景紋理 */
-            background-image: radial-gradient(#333 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-
-        /* --- 視覺特效 --- */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px) rotate(-5deg); }
-            75% { transform: translateX(5px) rotate(5deg); }
-        }
-        .shake-effect { animation: shake 0.4s ease-in-out; border: 2px solid #ef4444 !important; }
-
-        @keyframes pop {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .pop-in { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-
-        @keyframes floatText {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-50px); opacity: 0; }
-        }
-        .damage-float {
-            position: absolute;
-            color: #ef4444;
-            font-size: 3rem;
-            font-weight: 900;
-            text-shadow: 2px 2px 0 #fff;
-            animation: floatText 1s ease-out forwards;
-            pointer-events: none;
-            z-index: 100;
-            left: 50%;
-            top: 30%;
-            transform: translateX(-50%);
-        }
-
-        /* 怪物呼吸 */
-        .monster-idle { animation: breath 3s infinite ease-in-out; }
-        @keyframes breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-
-        /* 重點標示 */
-        .highlight { background: linear-gradient(120deg, #84cc16 0%, #10b981 100%); color: black; padding: 2px 5px; border-radius: 4px; font-weight: bold; }
-        .dim { text-decoration: line-through; color: #666; }
-        .cut { border-right: 3px solid red; padding-right: 5px; margin-right: 5px; }
-        
-        /* 隱藏/顯示控制 */
-        .hidden { display: none !important; }
+        body { touch-action: manipulation; user-select: none; background-color: #1a202c; color: white; font-family: "Microsoft JhengHei", sans-serif; }
+        .btn-option { transition: all 0.1s; }
+        .btn-option:active { transform: scale(0.98); }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        #error-log { display: none; color: #fca5a5; background: #450a0a; padding: 20px; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col items-center justify-center">
-
-    <div id="game-container" class="w-full max-w-md h-full flex flex-col relative bg-gray-900 shadow-2xl overflow-hidden">
-        
-        <div id="menu-screen" class="absolute inset-0 z-50 bg-gray-900 flex flex-col items-center justify-center p-6 text-center">
-            <h1 class="text-5xl font-black text-yellow-500 mb-2 pop-in">國文九式</h1>
-            <h2 class="text-3xl font-bold text-red-500 mb-8 pop-in" style="animation-delay: 0.2s">降魔修煉路</h2>
-            <div class="space-y-4 w-full">
-                <button onclick="startGame()" class="w-full bg-red-600 hover:bg-red-500 text-white text-2xl font-bold py-4 rounded-xl shadow-lg transform active:scale-95 transition-all">
-                    ⚡ 開始修煉
-                </button>
-            </div>
-            <p class="mt-8 text-gray-500 text-sm">V4.0 Native Stable</p>
-        </div>
-
-        <div id="battle-screen" class="hidden flex-col h-full">
-            <div class="p-3 bg-gray-800 border-b border-gray-700 flex justify-between items-center z-10">
-                <div class="flex gap-1" id="hp-container">
-                    </div>
-                <div id="level-name" class="font-bold text-yellow-500">關卡名稱</div>
-            </div>
-
-            <div class="flex-1 bg-gray-900 relative flex flex-col items-center justify-center p-4">
-                <div id="damage-overlay"></div>
-                
-                <div id="monster-visual" class="mb-6 monster-idle transition-all duration-200">
-                    <div class="w-32 h-32 bg-gray-800 rounded-full border-4 border-gray-600 flex items-center justify-center text-6xl shadow-[0_0_30px_rgba(255,255,255,0.1)] relative overflow-hidden">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                        <span id="monster-icon">👹</span>
-                    </div>
-                </div>
-
-                <div class="w-64 h-4 bg-gray-800 rounded-full border border-gray-600 overflow-hidden relative">
-                    <div id="hp-bar" class="h-full bg-red-600 transition-all duration-500" style="width: 100%"></div>
-                </div>
-                <div id="enemy-name" class="mt-2 text-gray-400 font-bold">怪物名稱</div>
-            </div>
-
-            <div class="bg-[#1a1a1a] border-t-4 border-yellow-700 flex flex-col h-[55%] shadow-[0_-5px_20px_rgba(0,0,0,0.8)] z-20">
-                <div class="flex-1 overflow-y-auto p-4">
-                    <div class="bg-[#2a2a2a] p-4 rounded-lg border border-gray-600 shadow-inner">
-                        <div class="flex justify-between text-xs text-yellow-500 mb-2 border-b border-gray-600 pb-2">
-                            <span id="question-source">來源</span>
-                            <span id="question-title">篇名</span>
-                        </div>
-                        <div id="question-content" class="text-lg leading-loose text-gray-300 text-justify">
-                            文章內容...
-                        </div>
-                    </div>
-                </div>
-
-                <div class="p-3 bg-gray-800 border-t border-gray-700">
-                    <div id="feedback-area" class="hidden absolute top-[-60px] left-1/2 transform -translate-x-1/2 bg-black/90 text-white px-6 py-2 rounded-full border border-yellow-500 font-bold animate-bounce whitespace-nowrap z-50">
-                        反饋訊息
-                    </div>
-
-                    <div id="phase-intro" class="text-center py-4">
-                        <p id="skill-desc" class="text-gray-400 mb-4">技能說明</p>
-                        <button onclick="enterSkillPhase()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
-                            <span>👁️</span> <span id="skill-btn-text">發動技能</span>
-                        </button>
-                    </div>
-
-                    <div id="phase-skill" class="hidden space-y-2">
-                        <div class="text-blue-400 font-bold mb-2 text-sm" id="pre-question-text">技能問題</div>
-                        <div id="skill-options" class="grid gap-2"></div>
-                    </div>
-
-                    <div id="phase-attack" class="hidden space-y-2">
-                        <div class="text-red-400 font-bold mb-2 text-sm" id="final-question-text">終結問題</div>
-                        <div id="attack-options" class="grid gap-2"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="end-screen" class="hidden absolute inset-0 z-50 bg-gray-900 flex flex-col items-center justify-center p-6 text-center">
-            <div id="end-icon" class="text-8xl mb-4">🏆</div>
-            <h1 id="end-title" class="text-4xl font-bold text-yellow-400 mb-4">修煉完成</h1>
-            <button onclick="location.reload()" class="bg-gray-700 text-white px-8 py-3 rounded-full font-bold text-xl hover:bg-gray-600 border border-gray-500">
-                重新開始
-            </button>
-        </div>
-
-    </div>
+<body>
+    <div id="error-log"></div>
+    <div id="root"></div>
 
     <script>
-        // 資料庫
-        const LEVELS = [
+        // 錯誤攔截器：如果黑畫面，會顯示錯誤訊息
+        window.onerror = function(msg, url, line, col, error) {
+            const errorBox = document.getElementById('error-log');
+            errorBox.style.display = 'block';
+            errorBox.innerHTML = `<h3>⚠️ 程式發生錯誤</h3><p>${msg}</p><p>Line: ${line}</p>`;
+        };
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 題目資料 (移除 Source 欄位以避免系統標記錯誤)
+        const allQuestions = [
+            // --- 第一招：形音義 ---
             {
-                id: 1, name: "第一關：迷霧森林", skill: "慧眼識題", desc: "必勝第一式：先看篇名，預測主旨！", color: "text-emerald-400",
-                enemies: [
-                    {
-                        name: "茶香霧妖", type: "小怪", hp: 100, source: "109年會考 Q33", title: "〈喝茶加不加糖，原來和階級有關〉",
-                        content: "喝茶加檸檬是美式作法，英國人則不然...中上階級的喝茶習慣...而勞動階級的飲茶方式，則是以茶包沖泡於馬克杯中形成濃茶後再加入糖...",
-                        targets: ["勞動階級", "馬克杯", "濃茶", "加入糖"], style: "highlight",
-                        preQ: "這篇文章的主旨在講什麼？", preOpts: ["茶葉種植技術", "階級與喝茶習慣"], preAns: 1,
-                        finalQ: "昔日英國「勞動階級」的喝茶方式？", finalOpts: ["瓷器淡茶不加糖", "馬克杯濃茶加糖", "瓷器濃茶加糖", "馬克杯淡茶不加糖"], finalAns: 1
-                    },
-                    {
-                        name: "回憶樹精", type: "菁英", hp: 200, source: "105年會考 Q42", title: "向陽〈小河〉",
-                        content: "小河呢？那念念不忘的小河...乾癟、瘦削，而且看來痛苦...堆積著破銅爛鐵，紙張垃圾...",
-                        targets: ["乾癟、瘦削", "痛苦", "堆積著破銅爛鐵"], style: "highlight",
-                        preQ: "這首詩的主角是？", preOpts: ["某個人", "一條河"], preAns: 1,
-                        finalQ: "『乾癟、瘦削』隱含什麼心情？", finalOpts: ["驚愕與失落", "憤怒與仇恨", "平靜與接納", "興奮與期待"], finalAns: 0
-                    },
-                    {
-                        name: "禮教石像", type: "BOSS", hp: 300, source: "110年會考 Q40", title: "司馬光〈答薛號州謝石月屏書〉",
-                        content: "日前令郎訪逮，出手筆並石月屏為贈...比來，數於都下朋從處見此屏...",
-                        targets: ["答", "謝", "令郎"], style: "highlight",
-                        preQ: "這篇文章的目的是？", preOpts: ["討債", "答謝禮物"], preAns: 1,
-                        finalQ: "文中『令郎』是指誰？", finalOpts: ["薛號州的兒子", "司馬光的兒子", "石月屏的作者", "送禮的僕人"], finalAns: 0
-                    }
-                ]
+                id: 1, move: "形音義", color: "bg-red-600",
+                text: "【會考真題】下列詞語「」中的字，何者讀音正確？",
+                options: [
+                    { text: "春寒料「峭」：ㄑㄧㄠˋ", isCorrect: true },
+                    { text: "「湛」藍天空：ㄕㄣˋ", isCorrect: false },
+                    { text: "一掃陰「霾」：ㄌㄧˊ", isCorrect: false },
+                    { text: "胼手「胝」足：ㄉㄧˇ", isCorrect: false }
+                ],
+                desc: "解析：正確讀音為 湛(ㄓㄢˋ)藍、陰霾(ㄇㄞˊ)、胼手胝(ㄓ)足。"
             },
             {
-                id: 2, name: "第二關：斷句峽谷", skill: "斷句斬", desc: "必勝第二式：斬斷長句，找出語氣！", color: "text-red-400",
-                enemies: [
-                    {
-                        name: "長句巨蟒", type: "菁英", hp: 150, source: "111年會考 Q7", title: "記憶與敘述",
-                        content: "敘述記憶是件難事...就算拼湊起來了乙也只算是死的標本...要想將風片切下來，豈不完全是一場徒勞嗎丁",
-                        targets: ["丁"], style: "cut",
-                        preQ: "「豈不完全是一場徒勞嗎」語氣為何？", preOpts: ["肯定句", "反問句"], preAns: 1,
-                        finalQ: "甲乙丙丁何處最適合填入『句號』？", finalOpts: ["甲", "乙", "丙", "丁"], finalAns: 3
-                    },
-                    {
-                        name: "雙頭獵人", type: "BOSS", hp: 300, source: "106年會考 Q35", title: "獵人與農夫",
-                        content: "現在所謂注意力缺失者的特徵——容易分心、衝動、冒險性強，其實是遠古打獵採集時生存必要的特徵...",
-                        targets: ["——", "特徵"], style: "highlight",
-                        preQ: "破折號 (——) 的功能是？", preOpts: ["聲音延長", "解釋說明"], preAns: 1,
-                        finalQ: "作者對ADHD者的核心看法？", finalOpts: ["應接受治療", "不宜以異類眼光看待", "基因比常人優秀", "是社會的負擔"], finalAns: 1
-                    }
-                ]
+                id: 2, move: "形音義", color: "bg-red-600",
+                text: "【會考真題】下列選項「」中的字，何組讀音相同？",
+                options: [
+                    { text: "「恪」守 / 一「格」", isCorrect: false },
+                    { text: "「抵」死 / 府「邸」", isCorrect: true },
+                    { text: "字「斟」 / 「勘」正", isCorrect: false },
+                    { text: "鍾靈「毓」秀 / 「育」成", isCorrect: false }
+                ],
+                desc: "解析：抵與邸皆讀作(ㄉㄧˇ)。A為(ㄎㄜˋ/ㄍㄜˊ)，C為(ㄓㄣ/ㄎㄢ)。"
             },
             {
-                id: 3, name: "第三關：邏輯迷宮", skill: "轉折盾", desc: "必勝第三式：擋掉廢話，留下重點！", color: "text-blue-400",
-                enemies: [
-                    {
-                        name: "沸水怪", type: "小怪", hp: 120, source: "105年會考 Q31", title: "揚湯止沸",
-                        content: "揚湯以止沸，不如絕其薪而沸止之速也。是以勞心於服遠者，莫若修近而其遠自來...",
-                        targets: ["揚湯以止沸"], style: "dim",
-                        preQ: "「不如」出現時，重點在？", preOpts: ["前面 (揚湯止沸)", "後面 (絕薪)"], preAns: 1,
-                        finalQ: "何者最符合作者「治本」觀點？", finalOpts: ["揚湯止沸", "投膠變濁", "絕薪止沸", "多方救失"], finalAns: 2
-                    },
-                    {
-                        name: "深偽魔王", type: "BOSS", hp: 400, source: "113年會考 Q35", title: "深偽技術",
-                        content: "若將它運用於影視作品...有正面的效益。但也有人利用合成的假影像操弄資訊，進而詐騙牟利...",
-                        targets: ["有正面的效益"], style: "dim",
-                        preQ: "作者用「但」，想強調的是？", preOpts: ["正面效益", "負面爭議"], preAns: 1,
-                        finalQ: "深偽技術最大的隱憂是什麼？", finalOpts: ["成本過高", "取代演員工作", "造成社會不信任", "技術門檻太低"], finalAns: 2
-                    }
-                ]
+                id: 3, move: "形音義", color: "bg-red-600",
+                text: "【會考真題】根據六書造字原則，「末」字（木上端加一點）屬於哪一類？",
+                options: [
+                    { text: "象形", isCorrect: false },
+                    { text: "指事", isCorrect: true },
+                    { text: "會意", isCorrect: false },
+                    { text: "形聲", isCorrect: false }
+                ],
+                desc: "解析：「末」字是在「木」的上端加一橫畫指示位置，屬於「指事」。"
+            },
+
+            // --- 第二招：成語運用 ---
+            {
+                id: 4, move: "成語運用", color: "bg-yellow-600",
+                text: "【會考真題】兩軍交戰，策略是「先轉移敵人目標，使疏於防範，然後乘其不意攻其不備」。這適合用哪個成語？",
+                options: [
+                    { text: "拋磚引玉", isCorrect: false },
+                    { text: "聲東擊西", isCorrect: true },
+                    { text: "裡應外合", isCorrect: false },
+                    { text: "趁火打劫", isCorrect: false }
+                ],
+                desc: "解析：「聲東擊西」指表面聲言攻擊東面，實則攻擊西面，製造錯覺。"
+            },
+            {
+                id: 5, move: "成語運用", color: "bg-yellow-600",
+                text: "【會考真題】下列文句中的詞語，何者使用最恰當？",
+                options: [
+                    { text: "飲食應注重均衡，五穀不分才健康", isCorrect: false },
+                    { text: "這房子經歷風災依然堅固，真是不愧屋漏", isCorrect: false },
+                    { text: "使用儀器以蠡測海後，終於得到準確數據", isCorrect: false },
+                    { text: "對於行將就木之人，世間一切已無須牽掛", isCorrect: true }
+                ],
+                desc: "解析：A五穀不分指脫離生產；B不愧屋漏指暗室無欺；C以蠡測海指見識淺薄。"
+            },
+            {
+                id: 6, move: "成語運用", color: "bg-yellow-600",
+                text: "【會考真題】「我的作文功力和明華差不多(1)；思恩的表現更好，我只能勉強(2)；而蔚然是常勝軍，和他比我就(3)了！」",
+                options: [
+                    { text: "1.望其項背 2.不分軒輊 3.望塵莫及", isCorrect: false },
+                    { text: "1.不分軒輊 2.望其項背 3.望塵莫及", isCorrect: true },
+                    { text: "1.望塵莫及 2.不分軒輊 3.望其項背", isCorrect: false },
+                    { text: "1.不分軒輊 2.望塵莫及 3.望其項背", isCorrect: false }
+                ],
+                desc: "解析：差不多=不分軒輊；勉強看得到背影=望其項背；完全比不上=望塵莫及。"
+            },
+
+            // --- 第三招：文意理解 ---
+            {
+                id: 7, move: "文意理解", color: "bg-green-600",
+                text: "【會考真題】「人生是短暫的，死亡是自然的，認清了這點，活著的時候才可以真正的投入。」這句話涵義最接近？",
+                options: [
+                    { text: "經歷死亡幽谷，才能發現活著的可貴", isCorrect: false },
+                    { text: "了解生命限制，坦然面對死亡，就能盡情活著", isCorrect: true },
+                    { text: "生命的價值在於不斷挑戰自我", isCorrect: false },
+                    { text: "能將死亡置之度外的人往往雖死猶生", isCorrect: false }
+                ],
+                desc: "解析：文句強調「認清死亡自然」的限制後，反而能「真正投入」活著的當下。"
+            },
+            {
+                id: 8, move: "文意理解", color: "bg-green-600",
+                text: "【會考真題】「人生何嘗不像一場競賽...有的後繼無力被人超前，有的半路摔倒一蹶不起。因此，______。」畫線處最適合填入？",
+                options: [
+                    { text: "人生的競賽往往是暗潮洶湧的", isCorrect: false },
+                    { text: "臺前風光是背後汗水累積而成", isCorrect: false },
+                    { text: "堅持到底的人才是最後的贏家", isCorrect: true },
+                    { text: "勝敗皆由天定，無須怨天尤人", isCorrect: false }
+                ],
+                desc: "解析：前文提到有人抱怨、有人放棄，對比之下，強調「堅持」的重要性。"
+            },
+            {
+                id: 9, move: "文意理解", color: "bg-green-600",
+                text: "【會考真題】「真正的詩是詩人的心靈...倘若能把人剖開，就能在他裡面看到作品最微末的一撇一鉤。」意旨最接近？",
+                options: [
+                    { text: "作品皆是創作者內心情志的投射", isCorrect: true },
+                    { text: "創作心境的重要性高於呈現技巧", isCorrect: false },
+                    { text: "藝術創作的精髓源於用心仔細觀察", isCorrect: false },
+                    { text: "不同的創作可能有相同的內在精神", isCorrect: false }
+                ],
+                desc: "解析：這段文字強調作品與創作者心靈的緊密連結，作品反映了作者的內在。"
+            },
+
+            // --- 第四招：圖表判讀 ---
+            {
+                id: 10, move: "圖表判讀", color: "bg-blue-600",
+                text: "【會考真題】「背包與健康」：後背重量建議體重10%內，側背5%內。若小明體重60公斤，何者最符合健康概念？",
+                options: [
+                    { text: "後背，背包總重 7 公斤", isCorrect: false },
+                    { text: "側背，背包總重 4 公斤", isCorrect: false },
+                    { text: "後背，背包總重 5 公斤", isCorrect: true },
+                    { text: "側背，背包總重 3.5 公斤", isCorrect: false }
+                ],
+                desc: "解析：60kg的10%是6kg(後背上限)，5%是3kg(側背上限)。5kg後背符合標準。"
+            },
+            {
+                id: 11, move: "圖表判讀", color: "bg-blue-600",
+                text: "【會考真題】「各國教育經費」長條圖：甲國小學經費長條高於平均線。乙國皆低。丙國國中高。丁國高中最高。何者正確？",
+                options: [
+                    { text: "甲國小學教育經費 高於 平均值", isCorrect: true },
+                    { text: "丙國國中教育經費 低於 平均值", isCorrect: false },
+                    { text: "各國高等教育經費皆多於其他階段", isCorrect: false },
+                    { text: "丁國高中生經費是所有國家中最低", isCorrect: false }
+                ],
+                desc: "解析：依據原題圖表判讀，甲國的小學教育經費條狀圖明顯高於OECD平均線。"
+            },
+            {
+                id: 12, move: "圖表判讀", color: "bg-blue-600",
+                text: "【會考真題】關於「人工智慧、機器學習、深度學習」的關係，深度學習屬於機器學習，機器學習屬於人工智慧。正確圖示為？",
+                options: [
+                    { text: "三個圓圈完全分開", isCorrect: false },
+                    { text: "大圓(AI) 包 中圓(機器) 包 小圓(深度)", isCorrect: true },
+                    { text: "三個圓圈部分重疊", isCorrect: false },
+                    { text: "大圓(深度) 包 中圓(機器) 包 小圓(AI)", isCorrect: false }
+                ],
+                desc: "解析：根據層次關係：人工智慧 > 機器學習 > 深度學習，應為同心圓包含關係。"
+            },
+
+            // --- 第五招：邏輯推論 ---
+            {
+                id: 13, move: "邏輯推論", color: "bg-purple-600",
+                text: "【會考真題】「君子如抱美玉而深藏不市，小人則以石為玉而又炫之。」君子不同於小人的特質是？",
+                options: [
+                    { text: "臨財不苟", isCorrect: false },
+                    { text: "見多識廣", isCorrect: false },
+                    { text: "沉潛含蓄", isCorrect: true },
+                    { text: "真實坦率", isCorrect: false }
+                ],
+                desc: "解析：「深藏不市」對比「炫之」，強調君子不隨意炫耀，具有「沉潛含蓄」的特質。"
+            },
+            {
+                id: 14, move: "邏輯推論", color: "bg-purple-600",
+                text: "【會考真題】新詩：「我的快樂除以我的悲傷 / 得到的商 / 卻只是1」。這首詩暗示？",
+                options: [
+                    { text: "悲傷會過去，快樂會留下", isCorrect: false },
+                    { text: "我的快樂等同於我的悲傷", isCorrect: true },
+                    { text: "除了悲傷之外，我一無所有", isCorrect: false },
+                    { text: "每個人的愛情都只有一種結果", isCorrect: false }
+                ],
+                desc: "解析：數學邏輯推論：若 A ÷ B = 1，則 A = B。故快樂=悲傷。"
+            },
+            {
+                id: 15, move: "邏輯推論", color: "bg-purple-600",
+                text: "【會考真題】心理學家讓A組人看照片說是罪犯(覺兇惡)，B組看同張照片說是科學家(覺深邃)。這印證？",
+                options: [
+                    { text: "先入為主的成見，常會影響判斷", isCorrect: true },
+                    { text: "做任何事都要有決心與鬥志", isCorrect: false },
+                    { text: "看事情的角度因人而異，無絕對", isCorrect: false },
+                    { text: "眼見為憑是科學研究的基礎", isCorrect: false }
+                ],
+                desc: "解析：同樣的照片因「標籤」不同而產生不同解讀，這是「成見」的影響。"
             }
         ];
 
-        // 遊戲狀態
-        let currentLevelIdx = 0;
-        let currentEnemyIdx = 0;
-        let hp = 3;
-        let enemyHp = 100;
-        let maxEnemyHp = 100;
+        function App() {
+            const [gameState, setGameState] = useState("start");
+            const [qIndex, setQIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [hp, setHp] = useState(3);
+            const [showFeedback, setShowFeedback] = useState(false);
+            const [isCorrect, setIsCorrect] = useState(false);
+            const [shaking, setShaking] = useState(false);
 
-        // 初始化
-        function startGame() {
-            document.getElementById('menu-screen').classList.add('hidden');
-            document.getElementById('battle-screen').classList.remove('hidden');
-            document.getElementById('battle-screen').classList.add('flex');
-            loadLevel();
-        }
-
-        function loadLevel() {
-            const level = LEVELS[currentLevelIdx];
-            const enemy = level.enemies[currentEnemyIdx];
-            
-            // 設定數據
-            document.getElementById('level-name').innerText = level.name;
-            document.getElementById('enemy-name').innerText = `${enemy.name} (${enemy.type})`;
-            document.getElementById('question-source').innerText = enemy.source;
-            document.getElementById('question-title').innerText = enemy.title;
-            document.getElementById('question-content').innerHTML = enemy.content; // 重置文字
-            document.getElementById('monster-icon').innerText = enemy.type === '小怪' ? '🦠' : enemy.type === '菁英' ? '🐍' : '👹';
-            document.getElementById('skill-desc').innerText = level.desc;
-            document.getElementById('skill-btn-text').innerText = level.skill;
-            document.getElementById('pre-question-text').innerText = enemy.preQ;
-            document.getElementById('final-question-text').innerText = enemy.finalQ;
-
-            // 血量
-            enemyHp = enemy.hp;
-            maxEnemyHp = enemy.hp;
-            updateEnemyHpBar();
-            renderPlayerHp();
-
-            // 階段重置
-            showPhase('intro');
-            
-            // 選項生成
-            renderOptions('skill-options', enemy.preOpts, handleSkill);
-            renderOptions('attack-options', enemy.finalOpts, handleAttack);
-        }
-
-        function renderPlayerHp() {
-            const container = document.getElementById('hp-container');
-            container.innerHTML = '';
-            for(let i=0; i<3; i++) {
-                const heart = document.createElement('span');
-                heart.innerHTML = '❤️';
-                heart.style.opacity = i < hp ? '1' : '0.2';
-                heart.style.filter = i < hp ? 'none' : 'grayscale(100%)';
-                container.appendChild(heart);
-            }
-        }
-
-        function updateEnemyHpBar() {
-            const pct = (enemyHp / maxEnemyHp) * 100;
-            document.getElementById('hp-bar').style.width = `${pct}%`;
-        }
-
-        function renderOptions(containerId, options, handler) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            options.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "w-full bg-gray-700 hover:bg-gray-600 text-white text-left py-3 px-4 rounded border border-gray-600 active:bg-gray-500 transition-colors";
-                btn.innerHTML = `<span class="text-yellow-500 font-bold mr-2">${String.fromCharCode(65+idx)}.</span> ${opt}`;
-                btn.onclick = () => handler(idx);
-                container.appendChild(btn);
-            });
-        }
-
-        function showPhase(phase) {
-            document.getElementById('phase-intro').classList.add('hidden');
-            document.getElementById('phase-skill').classList.add('hidden');
-            document.getElementById('phase-attack').classList.add('hidden');
-            
-            if(phase === 'intro') document.getElementById('phase-intro').classList.remove('hidden');
-            if(phase === 'skill') document.getElementById('phase-skill').classList.remove('hidden');
-            if(phase === 'attack') document.getElementById('phase-attack').classList.remove('hidden');
-        }
-
-        function enterSkillPhase() {
-            showPhase('skill');
-        }
-
-        function showFeedback(msg, isGood) {
-            const fb = document.getElementById('feedback-area');
-            fb.innerText = msg;
-            fb.classList.remove('hidden');
-            fb.style.borderColor = isGood ? '#22c55e' : '#ef4444';
-            setTimeout(() => fb.classList.add('hidden'), 1500);
-        }
-
-        function triggerShake() {
-            const container = document.getElementById('game-container');
-            container.classList.add('shake-effect');
-            setTimeout(() => container.classList.remove('shake-effect'), 400);
-        }
-
-        function showDamageText(text) {
-            const el = document.createElement('div');
-            el.innerText = text;
-            el.className = 'damage-float';
-            document.getElementById('game-container').appendChild(el);
-            setTimeout(() => el.remove(), 1000);
-        }
-
-        // --- 核心互動 ---
-
-        function handleSkill(idx) {
-            const enemy = LEVELS[currentLevelIdx].enemies[currentEnemyIdx];
-            if (idx === enemy.preAns) {
-                showFeedback("✅ 技能發動成功！", true);
-                showDamageText("破防!");
-                
-                // 文字特效
-                let text = enemy.content;
-                const targets = Array.isArray(enemy.targets) ? enemy.targets : [enemy.targets];
-                
-                targets.forEach(t => {
-                    let replaceHtml = '';
-                    if(enemy.style === 'highlight') replaceHtml = `<span class="highlight">${t}</span>`;
-                    else if(enemy.style === 'dim') replaceHtml = `<span class="dim">${t}</span>`;
-                    else if(enemy.style === 'cut') replaceHtml = `<span class="cut"></span><span class="text-red-400 font-bold">${t}</span>`;
-                    
-                    text = text.replace(new RegExp(t, 'g'), replaceHtml);
-                });
-                
-                document.getElementById('question-content').innerHTML = text;
-                
-                setTimeout(() => showPhase('attack'), 1000);
-            } else {
-                handleError();
-            }
-        }
-
-        function handleAttack(idx) {
-            const enemy = LEVELS[currentLevelIdx].enemies[currentEnemyIdx];
-            if (idx === enemy.finalAns) {
-                showFeedback("⚔️ 會心一擊！", true);
-                showDamageText("-" + enemyHp);
-                enemyHp = 0;
-                updateEnemyHpBar();
-                
-                // 怪物受傷動畫
-                const monster = document.getElementById('monster-visual');
-                monster.style.transform = 'scale(0.8) rotate(10deg)';
-                monster.style.filter = 'grayscale(100%) brightness(0.5)';
-
-                setTimeout(() => {
-                    monster.style.transform = '';
-                    monster.style.filter = '';
-                    nextLevel();
-                }, 1500);
-            } else {
-                handleError();
-            }
-        }
-
-        function handleError() {
-            triggerShake();
-            showFeedback("❌ 判斷錯誤！", false);
-            hp--;
-            renderPlayerHp();
-            if (hp <= 0) {
-                setTimeout(() => {
-                    document.getElementById('battle-screen').classList.add('hidden');
-                    document.getElementById('end-screen').classList.remove('hidden');
-                    document.getElementById('end-title').innerText = "修煉失敗...";
-                    document.getElementById('end-title').className = "text-4xl font-bold text-red-500 mb-4";
-                    document.getElementById('end-icon').innerText = "💀";
-                }, 1000);
-            }
-        }
-
-        function nextLevel() {
-            const currentLevel = LEVELS[currentLevelIdx];
-            if (currentEnemyIdx < currentLevel.enemies.length - 1) {
-                currentEnemyIdx++;
-                loadLevel();
-            } else {
-                if (currentLevelIdx < LEVELS.length - 1) {
-                    currentLevelIdx++;
-                    currentEnemyIdx = 0;
-                    loadLevel();
-                } else {
-                    // 全通關
-                    document.getElementById('battle-screen').classList.add('hidden');
-                    document.getElementById('end-screen').classList.remove('hidden');
+            useEffect(() => {
+                if (gameState === "start") {
+                    setScore(0);
+                    setHp(3);
+                    setQIndex(0);
+                    setShowFeedback(false);
                 }
+            }, [gameState]);
+
+            const nextQ = () => {
+                setShowFeedback(false);
+                if (hp <= 0 || qIndex >= allQuestions.length - 1) {
+                    setGameState("result");
+                } else {
+                    setQIndex(prev => prev + 1);
+                }
+            };
+
+            const handleAnswer = (correct) => {
+                setIsCorrect(correct);
+                setShowFeedback(true);
+                if (correct) {
+                    setScore(prev => prev + 1);
+                } else {
+                    setHp(prev => prev - 1);
+                    setShaking(true);
+                    setTimeout(() => setShaking(false), 500);
+                }
+            };
+
+            const restart = () => {
+                setGameState("start");
+            };
+
+            if (gameState === "start") {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center space-y-8 bg-slate-900">
+                        <div className="text-6xl mb-4">📜</div>
+                        <h1 className="text-4xl font-bold text-yellow-400 mb-2">會考五招：宗師之路</h1>
+                        <p className="text-gray-400 max-w-md">掌握「形音、成語、文意、圖表、邏輯」五大絕招，挑戰15道歷屆會考真題！</p>
+                        <div className="bg-slate-800 p-4 rounded-lg text-left text-sm text-gray-300 space-y-2 border border-slate-700">
+                            <p>⚔️ <span className="text-yellow-400">總關卡：</span> 15 回合 (每招3題)</p>
+                            <p>❤️ <span className="text-red-400">生命值：</span> 3 顆心 (答錯扣血)</p>
+                            <p>💡 <span className="text-green-400">通關條件：</span> 活著走到最後</p>
+                        </div>
+                        <button onClick={() => setGameState("game")} className="bg-yellow-600 hover:bg-yellow-500 text-white text-xl font-bold py-4 px-12 rounded-full shadow-lg transition-transform transform active:scale-95">開始修煉</button>
+                    </div>
+                );
+            }
+
+            if (gameState === "game") {
+                const currentQ = allQuestions[qIndex];
+                return (
+                    <div className={`flex flex-col items-center min-h-screen p-4 max-w-2xl mx-auto ${shaking ? 'shake' : ''}`}>
+                        <div className="w-full flex justify-between items-center mb-6 bg-slate-800 p-3 rounded-lg border border-slate-700">
+                            <div className="text-yellow-400 font-bold">第 {qIndex + 1} / {allQuestions.length} 題</div>
+                            <div className="text-red-400 font-bold text-xl">{"❤️".repeat(hp)}{"🖤".repeat(3-hp)}</div>
+                        </div>
+                        <div className="w-full mb-2 fade-in">
+                            <span className={`text-xs font-bold px-2 py-1 rounded text-white mr-2 ${currentQ.color}`}>{currentQ.move}</span>
+                        </div>
+                        <div className="w-full bg-slate-800 p-6 rounded-xl shadow-2xl border border-slate-600 mb-6 relative overflow-hidden">
+                            <h2 className="text-xl font-bold leading-relaxed mt-2">{currentQ.text}</h2>
+                        </div>
+                        <div className="w-full space-y-3">
+                            {currentQ.options.map((opt, i) => (
+                                <button key={i} onClick={() => !showFeedback && handleAnswer(opt.isCorrect)} disabled={showFeedback} className={`btn-option w-full p-4 rounded-lg text-left text-lg font-medium border-2 ${showFeedback ? (opt.isCorrect ? "bg-green-600 border-green-400 text-white" : "bg-slate-700 border-slate-700 text-gray-500") : "bg-slate-700 border-slate-600 hover:bg-slate-600 text-gray-200 hover:border-yellow-500"}`}>
+                                    <span className="inline-block w-6 h-6 rounded-full bg-slate-900 text-center text-sm leading-6 mr-3 text-gray-400">{['A','B','C','D'][i]}</span>
+                                    {opt.text}
+                                </button>
+                            ))}
+                        </div>
+                        {showFeedback && (
+                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-6 fade-in backdrop-blur-sm">
+                                <div className="bg-slate-800 p-6 rounded-2xl max-w-md w-full border-2 border-slate-600 shadow-2xl">
+                                    <div className={`text-4xl text-center mb-4 ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                                        {isCorrect ? "✨ 答對了！" : "💥 答錯了..."}
+                                    </div>
+                                    <div className="text-gray-300 text-lg leading-relaxed mb-6 bg-slate-900 p-4 rounded-lg">
+                                        <span className="text-yellow-400 font-bold">解析：</span>{currentQ.desc}
+                                    </div>
+                                    <button onClick={nextQ} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors">
+                                        {hp <= 0 ? "查看結果" : (qIndex >= allQuestions.length - 1 ? "完成試煉" : "下一題 ➔")}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+
+            if (gameState === "result") {
+                const passed = hp > 0;
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center space-y-6 bg-slate-900 fade-in">
+                        <div className="text-8xl mb-2">{passed ? "🏆" : "🥀"}</div>
+                        <h2 className="text-4xl font-bold text-white">{passed ? "試煉通過！" : "修煉未成"}</h2>
+                        <div className="text-2xl text-yellow-400 font-bold">得分：{score} / 15</div>
+                        <p className="text-gray-400 max-w-md">{passed ? "恭喜你！你已經掌握了會考國文的五大核心絕招！" : "別氣餒！記住「找轉折、看圖表、抓重點」，再來挑戰一次！"}</p>
+                        <button onClick={restart} className="bg-slate-700 hover:bg-slate-600 text-white text-lg font-bold py-3 px-10 rounded-full border border-slate-500">再次挑戰</button>
+                    </div>
+                );
             }
         }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
