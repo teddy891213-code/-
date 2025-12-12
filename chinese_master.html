@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>會考國文：五招宗師之路</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { touch-action: manipulation; user-select: none; background-color: #1a202c; color: white; font-family: "Microsoft JhengHei", sans-serif; }
+        .btn-option { transition: all 0.1s; }
+        .btn-option:active { transform: scale(0.98); }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .hp-bar { transition: width 0.5s ease-in-out; }
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 題庫資料 (引用來源：歷屆會考題本 105-114年)
+        const allQuestions = [
+            // --- 第一招：看篇名/主旨 (預測核心概念) ---
+            {
+                skill: "第一招：看篇名/主旨",
+                tip: "心法：掌握核心概念，解決大意題。",
+                [cite_start]source: "110年會考 [cite: 1919]",
+                question: "「人生是短暫的，死亡是自然的，認清了這點，活著的時候才可以真正的投入。」這句話的涵義，與下列何者最接近？",
+                options: [
+                    { text: "經歷死亡幽谷，才能發現活著的可貴", correct: false },
+                    { text: "能將死亡置之度外的人往往雖死猶生", correct: false },
+                    { text: "了解生命的限制，坦然面對死亡，就能盡情地活著", correct: true },
+                    { text: "生命的價值在於不斷挑戰自我，安於現狀等於死亡", correct: false }
+                ],
+                explain: "題目核心在於「認清死亡是自然的」之後，才能「真正投入」生活。"
+            },
+            {
+                skill: "第一招：看篇名/主旨",
+                tip: "心法：文章標題或首尾句通常隱藏核心。",
+                [cite_start]source: "107年會考 [cite: 448]",
+                question: "「真正的詩是詩人的心靈，真正的船是造船者，我們倘若能把人剖開來，就能夠在他裡面看到他的作品裡最微末的一撇一鉤的理由。」意旨最接近？",
+                options: [
+                    { text: "作品皆是創作者內心情志的投射", correct: true },
+                    { text: "創作心境的重要性高於呈現技巧", correct: false },
+                    { text: "藝術創作的精髓源於用心仔細觀察", correct: false },
+                    { text: "不同的創作可能有相同的內在精神", correct: false }
+                ],
+                explain: "文中強調作品（詩、船）反映了創作者（詩人、造船者）的內在心靈。"
+            },
+            {
+                skill: "第一招：看篇名/主旨",
+                tip: "心法：解決「這篇文章在講什麼」的大意題。",
+                [cite_start]source: "105年會考 [cite: 2666]",
+                question: "「荷馬史詩是永遠的傑作，但不能永遠以它為範本。」這句話的意旨與下列何者最接近？",
+                options: [
+                    { text: "敏銳的鑑賞力是創作優良作品的前提", correct: false },
+                    { text: "創作必須求新求進，不能一味地模仿", correct: true },
+                    { text: "再偉大的作品，價值也會隨時間而減損", correct: false },
+                    { text: "作家過度被崇拜時，往往難以自我超越", correct: false }
+                ],
+                explain: "雖然是傑作，但不能永遠當「範本」（模仿對象），強調創新。"
+            },
+
+            // --- 第二招：標點斷句 (化繁為簡) ---
+            {
+                skill: "第二招：標點斷句",
+                tip: "心法：用標點將長文切成小段，降低焦慮。",
+                [cite_start]source: "111年會考 [cite: 3468]",
+                question: "「記憶是一個整體，敘述的時候必須選擇將它一片片的切下...即使是一塊肉、一棵菜甲切下來後就再也拼不完整了...」甲處最適合填入？",
+                options: [
+                    { text: "，(逗號)", correct: true },
+                    { text: "。(句號)", correct: false },
+                    { text: "；(分號)", correct: false },
+                    { text: "：(冒號)", correct: false }
+                ],
+                explain: "「即使是...」這是一個假設語氣的子句，語氣未完，應使用逗號連接後文。"
+            },
+            {
+                skill: "第二招：標點斷句",
+                tip: "心法：分號前後同樣重要；冒號後是總結。",
+                [cite_start]source: "109年會考 [cite: 1581]",
+                question: "「朋友曾問過我一個問題失去視力和失去聽力，害怕哪一項？」空格處應填入？",
+                options: [
+                    { text: "：(冒號)", correct: true },
+                    { text: "，(逗號)", correct: false },
+                    { text: "。(句號)", correct: false },
+                    { text: "；(分號)", correct: false }
+                ],
+                explain: "「問題」後面接具體的內容，具有「引出下文」的作用，故用冒號。"
+            },
+            {
+                skill: "第二招：標點斷句",
+                tip: "心法：善用標點符號釐清語氣與邏輯。",
+                [cite_start]source: "108年會考 [cite: 3089]",
+                question: "下列文句的標點符號，何者使用最恰當？",
+                options: [
+                    { text: "小弟弟富有好奇心，什麼事都非要打破沙鍋問到底不可？", correct: false },
+                    { text: "我不是跟你說過嗎？要得到好成績，不用功是不行的。", correct: true },
+                    { text: "對於這項工作，一來，我沒有這份才能、再來，也沒有時間。", correct: false },
+                    { text: "文明的現代：戰爭仍然層出不窮。", correct: false }
+                ],
+                explain: "B選項「嗎？」是疑問語氣，使用問號正確。A雖有問到底，但整句是肯定句，應用句號。"
+            },
+
+            // --- 第三招：抓重點 (轉折/總結) ---
+            {
+                skill: "第三招：抓重點",
+                tip: "心法：圈出「但是、然而」，重點在轉折詞後面。",
+                [cite_start]source: "110年會考 [cite: 1914]",
+                question: "下列文句中的連詞，何者使用最恰當？",
+                options: [
+                    { text: "即使生活變得富裕，也不應該浪費", correct: true },
+                    { text: "除非是很小的錯誤，也可能釀成大害", correct: false },
+                    { text: "只有從根本解決，就能為人民改善生活", correct: false },
+                    { text: "與其老師怎樣費心勸說，他還是我行我素", correct: false }
+                ],
+                explain: "A選項「即使...也...」是正確的假設轉折複句。C應為「只要...就...」。"
+            },
+            {
+                skill: "第三招：抓重點",
+                tip: "心法：注意「因此、故」，結論在後面。",
+                [cite_start]source: "105年會考 [cite: 2850]",
+                question: "「揚湯以止沸，不如絕其薪而沸止之速也。是以勞心於服遠者，莫若修近而其遠自來...」這段文字最符合的觀點？",
+                options: [
+                    { text: "投膠變濁，勝於澄源", correct: false },
+                    { text: "勞心服遠，近者自來", correct: true },
+                    { text: "多方救失，其失自去", correct: false },
+                    { text: "揚湯止沸，不如絕薪", correct: false } // 這是比喻，不是觀點本身
+                ],
+                explain: "重點在「是以」(因此) 後面的結論：「勞心於服遠者，莫若修近...」。"
+            },
+            {
+                skill: "第三招：抓重點",
+                tip: "心法：文言文中的「然」也是轉折訊號。",
+                [cite_start]source: "107年會考 [cite: 400]",
+                question: "下列文句中的連詞，何者使用最恰當？",
+                options: [
+                    { text: "只要腳踏實地工作，才能獲得最後成功", correct: false },
+                    { text: "即使你現在願意這樣做，對方也未必會感激", correct: true },
+                    { text: "與其思考如何克服現實，反而思考如何接受現實", correct: false },
+                    { text: "他不但精通英、日語，更何況德語也說得十分流利", correct: false }
+                ],
+                explain: "B選項「即使...也...」正確表達轉折讓步關係。A應為「只有...才...」。"
+            },
+
+            // --- 第四招：圖表閱讀 (基礎判讀) ---
+            {
+                skill: "第四招：圖表閱讀",
+                tip: "心法：定類型→讀標題→看橫縱軸(單位)。",
+                [cite_start]source: "111年會考 [cite: 3493]",
+                question: "【背包與健康】建議：後背重量<體重10%，側背<5%。小明60公斤，何者最符合健康概念？",
+                options: [
+                    { text: "後背，背包總重7公斤", correct: false },
+                    { text: "側背，背包總重4公斤", correct: false },
+                    { text: "後背，背包總重5公斤", correct: true },
+                    { text: "側背，背包總重3.5公斤", correct: false }
+                ],
+                explain: "60kg的10%是6kg(後背上限)，5%是3kg(側背上限)。5kg後背(5<6)符合標準。"
+            },
+            {
+                skill: "第四招：圖表閱讀",
+                tip: "心法：注意項目與單位，不要忘記換算。",
+                [cite_start]source: "108年會考 [cite: 3310]",
+                question: "【機場環境】飛機在順風或高溫時需較長跑道。在相同載重下，哪一座機場起飛所需的跑道可能「最短」？",
+                options: [
+                    { text: "機場A：氣溫15度，順風", correct: false },
+                    { text: "機場B：氣溫35度，逆風", correct: false },
+                    { text: "機場C：氣溫35度，順風", correct: false },
+                    { text: "機場D：氣溫15度，逆風", correct: true }
+                ],
+                explain: "需要「最短」跑道，代表環境要最有利：氣溫低(15度)且逆風(增加升力)。"
+            },
+            {
+                skill: "第四招：圖表閱讀",
+                tip: "心法：長條圖考比較，注意最高與最低值。",
+                [cite_start]source: "107年會考 [cite: 413]",
+                question: "關於「各國教育經費」圖表，下列敘述何者正確？(依據原題數據判斷)",
+                options: [
+                    { text: "甲國小學生所分得的教育經費高於OECD平均值", correct: true },
+                    { text: "各國高等教育學生分得經費皆多於其他階段", correct: false },
+                    { text: "丙國國中生所分得的教育經費高於OECD平均值", correct: false },
+                    { text: "丁國高中生所分得的教育經費最高", correct: false }
+                ],
+                explain: "這類題目需直接對應圖表高低。甲國小學長條圖高於OECD平均線。"
+            },
+
+            // --- 第五招：圖表推論 (邏輯分析) ---
+            {
+                skill: "第五招：圖表推論",
+                tip: "心法：答案必在圖表中，不需專業背景知識。",
+                [cite_start]source: "113年會考 [cite: 28]",
+                question: "阿寶不想多繳稅，他在問卷：「您是否同意政府不可為了國家建設而提高稅率？」這題應該選？",
+                options: [
+                    { text: "同意", correct: true },
+                    { text: "不同意", correct: false },
+                    { text: "無意見", correct: false },
+                    { text: "以上皆非", correct: false }
+                ],
+                explain: "題目是「不可...提高稅率」。阿寶不想繳稅=支持「不可提高」，故選「同意」。雙重否定邏輯。"
+            },
+            {
+                skill: "第五招：圖表推論",
+                tip: "心法：結合圖表資訊與文字邏輯進行判斷。",
+                [cite_start]source: "109年會考 [cite: 1679]",
+                question: "心理學家讓兩組人看同一張照片。A組被告知他是罪犯，描述其眼神兇惡；B組被告知他是科學家，描述其眼神深邃。這印證？",
+                options: [
+                    { text: "先入為主的成見，常會影響我們的判斷", correct: true },
+                    { text: "做任何事都要有決心與鬥志", correct: false },
+                    { text: "看事情的角度因人而異，無絕對是非", correct: false },
+                    { text: "眼見為憑是科學研究的基礎", correct: false }
+                ],
+                explain: "同樣的照片因「標籤」不同而產生不同解讀，這是「成見」的影響。"
+            },
+            {
+                skill: "第五招：圖表推論",
+                tip: "心法：圖表是「非連續文本」，需自行建構脈絡。",
+                [cite_start]source: "114年會考 [cite: 1096]",
+                question: "新詩：「我的快樂除以我的悲傷 / 得到的商 / 卻只是1」。這首詩暗示？",
+                options: [
+                    { text: "悲傷會過去，快樂會留下", correct: false },
+                    { text: "我的快樂等同於我的悲傷", correct: true },
+                    { text: "除了悲傷之外，我一無所有", correct: false },
+                    { text: "每個人的愛情都只有一種結果", correct: false }
+                ],
+                explain: "數學邏輯推論：若 A ÷ B = 1，則 A = B。故快樂=悲傷。"
+            }
+        ];
+
+        function App() {
+            const [gameState, setGameState] = useState("start"); // start, game, result
+            const [qIndex, setQIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [hp, setHp] = useState(3);
+            const [showFeedback, setShowFeedback] = useState(false);
+            const [isCorrect, setIsCorrect] = useState(false);
+            const [shaking, setShaking] = useState(false);
+
+            // 進入下一題或結束
+            const nextQ = () => {
+                setShowFeedback(false);
+                if (hp <= 0 || qIndex >= allQuestions.length - 1) {
+                    setGameState("result");
+                } else {
+                    setQIndex(qIndex + 1);
+                }
+            };
+
+            const handleAnswer = (correct) => {
+                setIsCorrect(correct);
+                setShowFeedback(true);
+                if (correct) {
+                    setScore(score + 1);
+                } else {
+                    setHp(hp - 1);
+                    setShaking(true);
+                    setTimeout(() => setShaking(false), 500);
+                }
+            };
+
+            const restart = () => {
+                setGameState("start");
+                setQIndex(0);
+                setScore(0);
+                setHp(3);
+                setShowFeedback(false);
+            };
+
+            // Start Screen
+            if (gameState === "start") {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center space-y-8 bg-slate-900">
+                        <div className="text-6xl mb-4">📜</div>
+                        <h1 className="text-4xl font-bold text-yellow-400 mb-2">會考五招：宗師之路</h1>
+                        <p className="text-gray-400 max-w-md">
+                            掌握「看篇名、標點斷句、抓重點、圖表閱讀、圖表推論」五大絕招，挑戰歷屆會考真題！
+                        </p>
+                        <div className="bg-slate-800 p-4 rounded-lg text-left text-sm text-gray-300 space-y-2 border border-slate-700">
+                            <p>⚔️ <span className="text-yellow-400">總關卡：</span> 15 回合 (每招3題)</p>
+                            <p>❤️ <span className="text-red-400">生命值：</span> 3 顆心 (答錯扣血)</p>
+                            <p>💡 <span className="text-green-400">通關條件：</span> 活著走到最後</p>
+                        </div>
+                        <button 
+                            onClick={() => setGameState("game")}
+                            className="bg-yellow-600 hover:bg-yellow-500 text-white text-xl font-bold py-4 px-12 rounded-full shadow-lg transition-transform transform active:scale-95"
+                        >
+                            開始修煉
+                        </button>
+                    </div>
+                );
+            }
+
+            // Game Screen
+            if (gameState === "game") {
+                const q = allQuestions[qIndex];
+                
+                return (
+                    <div className={`flex flex-col items-center min-h-screen p-4 max-w-2xl mx-auto ${shaking ? 'shake' : ''}`}>
+                        {/* Header Stats */}
+                        <div className="w-full flex justify-between items-center mb-6 bg-slate-800 p-3 rounded-lg border border-slate-700">
+                            <div className="text-yellow-400 font-bold">第 {qIndex + 1} / {allQuestions.length} 題</div>
+                            <div className="text-red-400 font-bold text-xl">
+                                {"❤️".repeat(hp)}{"🖤".repeat(3-hp)}
+                            </div>
+                        </div>
+
+                        {/* Skill Tip Badge */}
+                        <div className="w-full mb-2 fade-in">
+                            <span className="bg-blue-600 text-xs font-bold px-2 py-1 rounded text-white mr-2">
+                                {q.skill}
+                            </span>
+                            <span className="text-gray-400 text-sm">{q.tip}</span>
+                        </div>
+
+                        {/* Question Card */}
+                        <div className="w-full bg-slate-800 p-6 rounded-xl shadow-2xl border border-slate-600 mb-6 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-slate-700 text-xs px-2 py-1 text-gray-400 rounded-bl-lg">
+                                出處: {q.source}
+                            </div>
+                            <h2 className="text-xl font-bold leading-relaxed mt-2">{q.question}</h2>
+                        </div>
+
+                        {/* Options */}
+                        <div className="w-full space-y-3">
+                            {q.options.map((opt, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => !showFeedback && handleAnswer(opt.correct)}
+                                    disabled={showFeedback}
+                                    className={`btn-option w-full p-4 rounded-lg text-left text-lg font-medium border-2 
+                                        ${showFeedback 
+                                            ? (opt.correct 
+                                                ? "bg-green-600 border-green-400 text-white" 
+                                                : "bg-slate-700 border-slate-700 text-gray-500")
+                                            : "bg-slate-700 border-slate-600 hover:bg-slate-600 text-gray-200 hover:border-yellow-500"}
+                                    `}
+                                >
+                                    <span className="inline-block w-6 h-6 rounded-full bg-slate-900 text-center text-sm leading-6 mr-3 text-gray-400">
+                                        {['A','B','C','D'][i]}
+                                    </span>
+                                    {opt.text}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Feedback Modal (Overlay) */}
+                        {showFeedback && (
+                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-6 fade-in backdrop-blur-sm">
+                                <div className="bg-slate-800 p-6 rounded-2xl max-w-md w-full border-2 border-slate-600 shadow-2xl">
+                                    <div className={`text-4xl text-center mb-4 ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                                        {isCorrect ? "✨ 答對了！" : "💥 答錯了..."}
+                                    </div>
+                                    <div className="text-gray-300 text-lg leading-relaxed mb-6 bg-slate-900 p-4 rounded-lg">
+                                        <span className="text-yellow-400 font-bold">解析：</span>
+                                        {q.explain}
+                                    </div>
+                                    <button 
+                                        onClick={nextQ}
+                                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors"
+                                    >
+                                        {hp <= 0 ? "查看結果" : (qIndex >= allQuestions.length - 1 ? "完成試煉" : "下一題 ➔")}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+
+            // Result Screen
+            if (gameState === "result") {
+                const passed = hp > 0;
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center space-y-6 bg-slate-900 fade-in">
+                        <div className="text-8xl mb-2">{passed ? "🏆" : "🥀"}</div>
+                        <h2 className="text-4xl font-bold text-white">
+                            {passed ? "試煉通過！" : "修煉未成"}
+                        </h2>
+                        <div className="text-2xl text-yellow-400 font-bold">
+                            得分：{score} / 15
+                        </div>
+                        <p className="text-gray-400 max-w-md">
+                            {passed 
+                                ? "恭喜你！你已經掌握了會考國文的五大核心絕招，面對大考也能游刃有餘！" 
+                                : "別氣餒！國文五招需要反覆練習，記住「找轉折、看圖表、抓重點」，再來挑戰一次！"}
+                        </p>
+                        <button 
+                            onClick={restart}
+                            className="bg-slate-700 hover:bg-slate-600 text-white text-lg font-bold py-3 px-10 rounded-full border border-slate-500"
+                        >
+                            再次挑戰
+                        </button>
+                    </div>
+                );
+            }
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
