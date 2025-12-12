@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>國文九式・降魔修煉路</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Zen+Maru+Gothic:wght@500;700&display=swap');
+        
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: #1a1a1a;
+            color: #e5e5e5;
+            overscroll-behavior: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        .text-shadow {
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+        }
+
+        /* 模擬卷軸/古風效果 */
+        .scroll-bg {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239C92AC' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+
+        .highlight-text {
+            background-color: rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+            padding: 0 4px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .dim-text {
+            opacity: 0.3;
+            text-decoration: line-through;
+        }
+
+        .cut-mark {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background-color: #ef4444;
+            margin: 0 4px;
+            vertical-align: middle;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="scroll-bg h-screen w-screen overflow-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence } = window.Motion;
+        const { Sword, Shield, Eye, PenTool, Activity, BarChart, XCircle, CheckCircle, ArrowRight, Zap, Scroll, BookOpen } = lucide;
+
+        // --- 遊戲資料庫 (Game Data) ---
+        const LEVELS = [
+            {
+                id: 1,
+                name: "第一關：迷霧森林",
+                skill: "慧眼",
+                skillIcon: Eye,
+                desc: "必勝第一式：篇名呼應。先看篇名，預測主旨！",
+                color: "text-emerald-400",
+                bgColor: "bg-emerald-900/50",
+                enemies: [
+                    {
+                        name: "茶香霧妖",
+                        type: "小怪",
+                        hp: 1,
+                        source: "109年會考",
+                        title: "〈喝茶加不加糖，原來和階級有關〉",
+                        content: "喝茶加檸檬是美式作法...勞動階級的飲茶方式，則是以茶包沖泡於馬克杯中形成濃茶後再加入糖...",
+                        skillEffect: "highlight",
+                        skillTarget: ["勞動階級", "濃茶", "加入糖"],
+                        preQuestion: "這篇文章的主旨在講什麼？",
+                        preOptions: ["茶葉種植", "階級與喝茶習慣"],
+                        preAnswer: 1,
+                        finalQuestion: "根據本文，昔日英國勞動階級的喝茶方式為何？",
+                        options: ["瓷器、淡茶、不加糖", "馬克杯、濃茶、加糖", "瓷器、濃茶、加糖", "馬克杯、淡茶、不加糖"],
+                        answer: 1 // index 1 is correct (Option B in paper is actually D in logic? text says Mark cup, strong tea, add sugar. Option 2 matches text)
+                    },
+                    {
+                        name: "回憶樹精",
+                        type: "菁英",
+                        hp: 2,
+                        source: "105年會考",
+                        title: "向陽〈小河〉",
+                        content: "小河呢？那念念不忘的小河...乾癟、瘦削，而且看來痛苦...堆積著破銅爛鐵，紙張垃圾...",
+                        skillEffect: "highlight",
+                        skillTarget: ["乾癟、瘦削", "痛苦", "堆積著破銅爛鐵"],
+                        preQuestion: "這首詩的主角是？",
+                        preOptions: ["某個人", "一條河"],
+                        preAnswer: 1,
+                        finalQuestion: "文中畫線處『乾癟、瘦削』隱含什麼心情？",
+                        options: ["驚愕與失落", "憤怒與仇恨", "平靜與接納", "興奮與期待"],
+                        answer: 0
+                    },
+                    {
+                        name: "禮教石像",
+                        type: "BOSS",
+                        hp: 3,
+                        source: "110年會考",
+                        title: "司馬光〈答薛號州謝石月屏書〉",
+                        content: "日前令郎訪逮，出手筆並石月屏為贈...比來，數於都下朋從處見此屏...",
+                        skillEffect: "highlight",
+                        skillTarget: ["答", "謝", "令郎"],
+                        preQuestion: "這篇文章的目的是？",
+                        preOptions: ["討債", "答謝禮物"],
+                        preAnswer: 1,
+                        finalQuestion: "文中『令郎』是指誰？",
+                        options: ["薛號州的兒子", "司馬光的兒子", "石月屏的作者", "送禮的僕人"],
+                        answer: 0
+                    }
+                ]
+            },
+            {
+                id: 2,
+                name: "第二關：斷句峽谷",
+                skill: "斷句刀",
+                skillIcon: Sword,
+                desc: "必勝第二式：標點斷句。找出語氣轉折與結束點！",
+                color: "text-red-400",
+                bgColor: "bg-red-900/50",
+                enemies: [
+                    {
+                        name: "標點史萊姆",
+                        type: "小怪",
+                        hp: 1,
+                        source: "111年會考",
+                        title: "記憶與敘述",
+                        content: "敘述記憶是件難事...就算拼湊起來了乙也只算是死的標本...要想將風片切下來，豈不完全是一場徒勞嗎丁",
+                        skillEffect: "cut",
+                        skillTarget: "丁",
+                        preQuestion: "這段話最後是用什麼語氣結束？",
+                        preOptions: ["肯定句", "反問句"],
+                        preAnswer: 1,
+                        finalQuestion: "文中甲乙丙丁何處最適合填入『句號』？",
+                        options: ["甲", "乙", "丙", "丁"],
+                        answer: 3
+                    },
+                    {
+                        name: "憤怒狂牛",
+                        type: "菁英",
+                        hp: 2,
+                        source: "107年會考",
+                        title: "憤怒與酸腐",
+                        content: "我寧願去品嘗辛辣的憤怒...可以痛定思痛，有猛省的作用唯獨酸腐，只有餿臭敗壞一途...",
+                        skillEffect: "cut",
+                        skillTarget: "唯獨",
+                        preQuestion: "『唯獨』前面應該用什麼符號隔開排比句？",
+                        preOptions: ["逗號 (,)", "分號 (;)"],
+                        preAnswer: 1,
+                        finalQuestion: "文中缺空處應填入什麼標點符號？",
+                        options: ["，", "；", "！", "："],
+                        answer: 1
+                    },
+                    {
+                        name: "雙頭獵人",
+                        type: "BOSS",
+                        hp: 3,
+                        source: "106年會考",
+                        title: "獵人與農夫",
+                        content: "現在所謂注意力缺失者的特徵——容易分心、衝動、冒險性強，其實是遠古打獵採集時生存必要的特徵。",
+                        skillEffect: "highlight",
+                        skillTarget: ["——", "特徵"],
+                        preQuestion: "破折號在此處的功能是？",
+                        preOptions: ["聲音延長", "解釋說明"],
+                        preAnswer: 1,
+                        finalQuestion: "作者對ADHD者的看法為何？",
+                        options: ["應接受治療", "不宜以異類眼光看待", "基因比常人優秀", "是社會的負擔"],
+                        answer: 1
+                    }
+                ]
+            },
+            {
+                id: 3,
+                name: "第三關：邏輯迷宮",
+                skill: "轉折盾",
+                skillIcon: Shield,
+                desc: "必勝第三式：邏輯字詞。擋掉廢話，留下重點！",
+                color: "text-blue-400",
+                bgColor: "bg-blue-900/50",
+                enemies: [
+                    {
+                        name: "沸水怪",
+                        type: "小怪",
+                        hp: 1,
+                        source: "105年會考",
+                        title: "揚湯止沸",
+                        content: "夫投膠以變濁，不如澄其源...揚湯以止沸，不如絕其薪而沸止之速也。",
+                        skillEffect: "dim",
+                        skillTarget: ["揚湯以止沸"],
+                        preQuestion: "『不如』表示重點在後句，後句強調什麼？",
+                        preOptions: ["治標", "治本"],
+                        preAnswer: 1,
+                        finalQuestion: "下列何者最符合作者觀點？",
+                        options: ["揚湯止沸", "投膠變濁", "絕薪止沸", "多方救失"],
+                        answer: 2
+                    },
+                    {
+                        name: "電影幻術師",
+                        type: "菁英",
+                        hp: 2,
+                        source: "107年會考",
+                        title: "電影藍圖",
+                        content: "努力研發螺絲釘，雖然這也很重要，但先有藍圖，等整個市場有起色後，再去扶植，力量才會更大。",
+                        skillEffect: "dim",
+                        skillTarget: ["努力研發螺絲釘", "雖然這也很重要"],
+                        preQuestion: "『但』字出現，重點在哪裡？",
+                        preOptions: ["前面的螺絲釘", "後面的藍圖"],
+                        preAnswer: 1,
+                        finalQuestion: "這段文字強調電影產業發展的根本是什麼？",
+                        options: ["好的劇本和製作案(藍圖)", "好的特效(螺絲釘)", "龐大的資金", "知名演員"],
+                        answer: 0
+                    },
+                    {
+                        name: "深偽魔王",
+                        type: "BOSS",
+                        hp: 3,
+                        source: "113年會考",
+                        title: "深偽技術",
+                        content: "若將它運用於影視作品...有正面的效益。但也有人利用合成的假影像操弄資訊，進而詐騙牟利...",
+                        skillEffect: "dim",
+                        skillTarget: ["有正面的效益"],
+                        preQuestion: "作者想強調深偽技術的哪一面？",
+                        preOptions: ["正面效益", "負面爭議"],
+                        preAnswer: 1,
+                        finalQuestion: "根據本文，深偽技術最大的隱憂是什麼？",
+                        options: ["成本過高", "取代演員工作", "造成民眾對社會的不信任", "技術門檻太低"],
+                        answer: 2
+                    }
+                ]
+            },
+            {
+                id: 4,
+                name: "第四關：數據高塔",
+                skill: "鷹眼",
+                skillIcon: BarChart,
+                desc: "必勝第四式：圖表判讀。定類型、找極值！",
+                color: "text-purple-400",
+                bgColor: "bg-purple-900/50",
+                enemies: [
+                    {
+                        name: "背包方塊",
+                        type: "小怪",
+                        hp: 1,
+                        source: "105年會考",
+                        title: "背包與健康",
+                        content: "圖表顯示：體重60公斤者，建議背包重量6kg以下，背帶要短且貼背。",
+                        skillEffect: "highlight",
+                        skillTarget: ["60公斤", "背帶短", "貼背"],
+                        preQuestion: "體重60公斤的人，背包應該怎麼背？",
+                        preOptions: ["背帶長，離身體遠", "背帶短，貼近身體"],
+                        preAnswer: 1,
+                        finalQuestion: "哪一個圖示符合健康背法？",
+                        options: ["背帶很長垂到屁股", "背帶短，背包貼背", "側背且很重", "手提"],
+                        answer: 1
+                    },
+                    {
+                        name: "人口長條怪",
+                        type: "菁英",
+                        hp: 2,
+                        source: "110年會考",
+                        title: "新住民子女統計",
+                        content: "長條圖顯示：非新住民子女(網點長條)逐年下降。國小新住民子女(淺色長條)持平或微降。",
+                        skillEffect: "highlight",
+                        skillTarget: ["逐年下降", "持平"],
+                        preQuestion: "我們要找『錯誤』的敘述，首先觀察網點長條的趨勢是？",
+                        preOptions: ["上升", "下降"],
+                        preAnswer: 1,
+                        finalQuestion: "根據圖表，下列敘述何者錯誤？",
+                        options: ["國中小學生總人數下降", "國小新住民子女人數大幅上升", "國中新住民子女比例上升", "非新住民子女比例下降"],
+                        answer: 1
+                    },
+                    {
+                        name: "經費巨像",
+                        type: "BOSS",
+                        hp: 3,
+                        source: "107年會考",
+                        title: "各國教育經費",
+                        content: "長條圖顯示：丁國的高中生(深色長條)經費柱子是所有國家中最高的。",
+                        skillEffect: "highlight",
+                        skillTarget: ["丁國", "高中", "最高"],
+                        preQuestion: "比較各國柱子高度，哪一國的高中經費最高？",
+                        preOptions: ["甲國", "丁國"],
+                        preAnswer: 1,
+                        finalQuestion: "根據圖表，下列敘述何者正確？",
+                        options: ["甲國小學生經費最高", "丙國國中生經費最高", "各國高等教育經費都最多", "丁國高中生經費最高"],
+                        answer: 3
+                    }
+                ]
+            }
+        ];
+
+        // --- 組件 (Components) ---
+
+        const ProgressBar = ({ current, total }) => (
+            <div className="w-full bg-gray-700 h-2 rounded-full mb-4 overflow-hidden">
+                <motion.div 
+                    className="h-full bg-yellow-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(current / total) * 100}%` }}
+                />
+            </div>
+        );
+
+        const Typewriter = ({ text, onComplete }) => {
+            const [display, setDisplay] = useState("");
+            
+            useEffect(() => {
+                let i = 0;
+                const timer = setInterval(() => {
+                    if (i < text.length) {
+                        setDisplay(prev => prev + text.charAt(i));
+                        i++;
+                    } else {
+                        clearInterval(timer);
+                        if(onComplete) onComplete();
+                    }
+                }, 30);
+                return () => clearInterval(timer);
+            }, [text]);
+
+            return <div className="text-lg leading-relaxed">{display}</div>;
+        };
+
+        const MainMenu = ({ onStart }) => (
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-8 relative z-10">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1 }}
+                >
+                    <div className="text-yellow-500 text-xl mb-2 font-bold tracking-widest">國文會考特訓</div>
+                    <h1 className="text-5xl md:text-6xl font-black text-white text-shadow serif mb-2">國文九式</h1>
+                    <h2 className="text-3xl md:text-4xl font-bold text-red-500 text-shadow serif">降魔修煉路</h2>
+                </motion.div>
+
+                <motion.div 
+                    className="grid grid-cols-2 gap-4 w-full max-w-md"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                >
+                    {LEVELS.map((level, idx) => (
+                        <div key={idx} className={`p-4 rounded-lg border-2 border-opacity-30 ${level.color.replace('text', 'border')} bg-gray-800 bg-opacity-80`}>
+                            <div className={`text-2xl mb-2 ${level.color}`}>
+                                {React.createElement(level.skillIcon)}
+                            </div>
+                            <div className="font-bold text-sm">{level.name}</div>
+                            <div className="text-xs text-gray-400 mt-1">{level.skill}</div>
+                        </div>
+                    ))}
+                </motion.div>
+
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onStart}
+                    className="bg-red-600 text-white px-12 py-4 rounded-full text-xl font-bold shadow-lg shadow-red-900/50 border-2 border-red-400 flex items-center gap-2"
+                >
+                    <Zap className="w-6 h-6" /> 開始修煉
+                </motion.button>
+                
+                <div className="absolute bottom-4 text-xs text-gray-500">
+                    Based on 105-113 CAP Chinese Exam Questions
+                </div>
+            </div>
+        );
+
+        const BattleScene = ({ levelData, roundData, onWin, onLose }) => {
+            const [phase, setPhase] = useState("intro"); // intro, pre-skill, skill-check, final, result
+            const [processedContent, setProcessedContent] = useState(roundData.content);
+            const [feedback, setFeedback] = useState("");
+            
+            // Effect to reset state when round changes
+            useEffect(() => {
+                setPhase("intro");
+                setProcessedContent(roundData.content);
+                setFeedback("");
+            }, [roundData]);
+
+            const handleSkillUse = () => {
+                setPhase("skill-check");
+            };
+
+            const handlePreAnswer = (index) => {
+                if (index === roundData.preAnswer) {
+                    // Correct Pre-answer: Apply Skill Effect
+                    if (roundData.skillEffect === "highlight") {
+                        let newContent = roundData.content;
+                        roundData.skillTarget.forEach(target => {
+                            newContent = newContent.replace(new RegExp(target, 'g'), `<span class="highlight-text">${target}</span>`);
+                        });
+                        setProcessedContent(newContent);
+                    } else if (roundData.skillEffect === "cut") {
+                        const parts = roundData.content.split(roundData.skillTarget);
+                        setProcessedContent(`${parts[0]}<span class="cut-mark"></span>${roundData.skillTarget}${parts[1]}`);
+                    } else if (roundData.skillEffect === "dim") {
+                        let newContent = roundData.content;
+                        roundData.skillTarget.forEach(target => {
+                            newContent = newContent.replace(new RegExp(target, 'g'), `<span class="dim-text">${target}</span>`);
+                        });
+                        setProcessedContent(newContent);
+                    }
+                    
+                    setFeedback("技能發動成功！破綻已現！");
+                    setTimeout(() => {
+                        setPhase("final");
+                        setFeedback("");
+                    }, 1500);
+                } else {
+                    // Wrong Pre-answer
+                    setFeedback("預判錯誤！受到反擊！");
+                    setTimeout(() => onLose(), 1000);
+                }
+            };
+
+            const handleFinalAnswer = (index) => {
+                if (index === roundData.answer) {
+                    setFeedback("會心一擊！");
+                    setPhase("result");
+                    setTimeout(onWin, 1500);
+                } else {
+                    setFeedback("攻擊被格擋了！");
+                    setTimeout(onLose, 1000);
+                }
+            };
+
+            return (
+                <div className="h-full flex flex-col p-4 relative max-w-2xl mx-auto">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-4 bg-black/40 p-2 rounded-lg">
+                        <div>
+                            <div className="text-xs text-gray-400">{levelData.name}</div>
+                            <div className="font-bold text-yellow-500">{roundData.name} <span className="text-xs text-gray-400">({roundData.type})</span></div>
+                        </div>
+                        <div className="text-xs bg-gray-700 px-2 py-1 rounded">來源：{roundData.source}</div>
+                    </div>
+
+                    {/* Enemy Visual */}
+                    <div className="flex-1 flex flex-col items-center justify-center mb-4">
+                        <motion.div 
+                            className={`w-32 h-32 rounded-full flex items-center justify-center text-4xl border-4 ${phase === 'intro' ? 'border-gray-500' : 'border-red-500'}`}
+                            animate={phase === 'skill-check' || phase === 'final' ? { scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] } : {}}
+                            transition={{ duration: 0.5 }}
+                        >
+                            {levelData.id === 1 ? "🌫️" : levelData.id === 2 ? "🐍" : levelData.id === 3 ? "🐂" : "📊"}
+                        </motion.div>
+                        <div className="mt-4 bg-gray-800/80 p-4 rounded-lg border border-gray-600 w-full min-h-[100px]">
+                            <div className="text-yellow-400 text-sm font-bold mb-1">
+                                {levelData.id === 1 ? "【篇名】" : "【原文/圖表】"} {roundData.title}
+                            </div>
+                            <div 
+                                className="text-lg leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: processedContent }} 
+                            />
+                        </div>
+                    </div>
+
+                    {/* Interaction Area */}
+                    <div className="bg-gray-900/90 rounded-t-2xl p-6 border-t-2 border-yellow-600 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+                        
+                        <AnimatePresence mode="wait">
+                            {phase === "intro" && (
+                                <motion.div
+                                    key="intro"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    className="text-center"
+                                >
+                                    <p className="mb-4 text-gray-300">{levelData.desc}</p>
+                                    <button 
+                                        onClick={() => setPhase("pre-skill")}
+                                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2"
+                                    >
+                                        <BookOpen className="w-5 h-5" /> 觀察敵情
+                                    </button>
+                                </motion.div>
+                            )}
+
+                            {phase === "pre-skill" && (
+                                <motion.div
+                                    key="pre-skill"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                >
+                                    <div className="flex items-center gap-2 mb-4 text-yellow-400 font-bold">
+                                        {React.createElement(levelData.skillIcon, { className: "w-5 h-5" })}
+                                        發動技能：{levelData.skill}
+                                    </div>
+                                    <p className="mb-4 text-lg font-bold">{roundData.preQuestion}</p>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {roundData.preOptions.map((opt, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => handlePreAnswer(idx)}
+                                                className="bg-gray-700 hover:bg-gray-600 p-3 rounded text-left border border-gray-600"
+                                            >
+                                                {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {phase === "final" && (
+                                <motion.div
+                                    key="final"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                >
+                                    <div className="flex items-center gap-2 mb-4 text-red-400 font-bold">
+                                        <Sword className="w-5 h-5" /> 終結一擊
+                                    </div>
+                                    <p className="mb-4 text-lg font-bold">{roundData.finalQuestion}</p>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {roundData.options.map((opt, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => handleFinalAnswer(idx)}
+                                                className="bg-gray-700 hover:bg-gray-600 p-3 rounded text-left border border-gray-600 active:bg-yellow-600 transition-colors"
+                                            >
+                                                <span className="font-bold mr-2 text-yellow-500">
+                                                    {String.fromCharCode(65 + idx)}.
+                                                </span>
+                                                {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {feedback && (
+                                <motion.div 
+                                    className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black/80 rounded-t-2xl z-20"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                >
+                                    <div className="text-2xl font-bold text-white text-center">
+                                        {feedback}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [gameState, setGameState] = useState("menu"); // menu, playing, gameover, victory
+            const [currentLevelIdx, setCurrentLevelIdx] = useState(0);
+            const [currentRoundIdx, setCurrentRoundIdx] = useState(0);
+            const [lives, setLives] = useState(3);
+
+            const startLevel = () => {
+                setGameState("playing");
+            };
+
+            const handleWinRound = () => {
+                if (currentRoundIdx < LEVELS[currentLevelIdx].enemies.length - 1) {
+                    setCurrentRoundIdx(prev => prev + 1);
+                } else {
+                    if (currentLevelIdx < LEVELS.length - 1) {
+                        setCurrentLevelIdx(prev => prev + 1);
+                        setCurrentRoundIdx(0);
+                    } else {
+                        setGameState("victory");
+                    }
+                }
+            };
+
+            const handleLoseRound = () => {
+                if (lives > 1) {
+                    setLives(prev => prev - 1);
+                    // Shake effect could be added here
+                } else {
+                    setGameState("gameover");
+                }
+            };
+
+            const resetGame = () => {
+                setGameState("menu");
+                setCurrentLevelIdx(0);
+                setCurrentRoundIdx(0);
+                setLives(3);
+            };
+
+            if (gameState === "menu") return <MainMenu onStart={startLevel} />;
+
+            if (gameState === "victory") return (
+                <div className="h-full flex flex-col items-center justify-center p-6 text-center bg-yellow-900/20">
+                    <div className="text-6xl mb-4">🏆</div>
+                    <h1 className="text-4xl font-bold text-yellow-400 mb-4 text-shadow">修煉完成！</h1>
+                    <p className="text-xl mb-8">你已掌握國文九式，會考降魔無往不利！</p>
+                    <button onClick={resetGame} className="bg-yellow-600 px-8 py-3 rounded-full font-bold">再來一局</button>
+                </div>
+            );
+
+            if (gameState === "gameover") return (
+                <div className="h-full flex flex-col items-center justify-center p-6 text-center bg-red-900/20">
+                    <div className="text-6xl mb-4">💀</div>
+                    <h1 className="text-4xl font-bold text-red-500 mb-4 text-shadow">修煉失敗</h1>
+                    <p className="text-xl mb-8">勝敗乃兵家常事，大俠請重新來過。</p>
+                    <button onClick={resetGame} className="bg-gray-600 px-8 py-3 rounded-full font-bold">重新挑戰</button>
+                </div>
+            );
+
+            const currentLevel = LEVELS[currentLevelIdx];
+            const currentRound = currentLevel.enemies[currentRoundIdx];
+
+            return (
+                <div className="h-full flex flex-col">
+                    {/* Top Bar */}
+                    <div className="p-4 flex justify-between items-center bg-black/30 backdrop-blur-sm z-10">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-red-900 p-2 rounded-full border border-red-500">
+                                <Activity className="w-4 h-4 text-red-400" />
+                            </div>
+                            <div className="flex gap-1">
+                                {[...Array(3)].map((_, i) => (
+                                    <div key={i} className={`w-8 h-2 rounded-full ${i < lives ? 'bg-green-500' : 'bg-gray-700'}`} />
+                                ))}
+                            </div>
+                        </div>
+                        <div className="font-bold text-sm text-gray-400">
+                            關卡 {currentLevelIdx + 1}-{currentRoundIdx + 1}
+                        </div>
+                    </div>
+
+                    <BattleScene 
+                        levelData={currentLevel}
+                        roundData={currentRound}
+                        onWin={handleWinRound}
+                        onLose={handleLoseRound}
+                    />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
