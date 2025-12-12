@@ -14,7 +14,6 @@
         .btn-option:active { transform: scale(0.98); }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .hp-bar { transition: width 0.5s ease-in-out; }
         .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
     </style>
@@ -25,211 +24,181 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // 題庫資料 (引用來源：歷屆會考題本 105-114年)
+        // --- 完整 15 題題庫 (變數名稱已修正為 allQuestions) ---
         const allQuestions = [
-            // --- 第一招：看篇名/主旨 (預測核心概念) ---
+            // --- 第一招：形音義辨正 ---
             {
-                skill: "第一招：看篇名/主旨",
-                tip: "心法：掌握核心概念，解決大意題。",
-                [cite_start]source: "110年會考 [cite: 1919]",
-                question: "「人生是短暫的，死亡是自然的，認清了這點，活著的時候才可以真正的投入。」這句話的涵義，與下列何者最接近？",
+                id: 1, move: "形音義", color: "bg-red-600",
+                text: "【108會考】下列詞語「」中的字，何者讀音正確？",
                 options: [
-                    { text: "經歷死亡幽谷，才能發現活著的可貴", correct: false },
-                    { text: "能將死亡置之度外的人往往雖死猶生", correct: false },
-                    { text: "了解生命的限制，坦然面對死亡，就能盡情地活著", correct: true },
-                    { text: "生命的價值在於不斷挑戰自我，安於現狀等於死亡", correct: false }
+                    { text: "春寒料「峭」：ㄑㄧㄠˋ", isCorrect: true },
+                    { text: "「湛」藍天空：ㄕㄣˋ", isCorrect: false },
+                    { text: "一掃陰「霾」：ㄌㄧˊ", isCorrect: false },
+                    { text: "胼手「胝」足：ㄉㄧˇ", isCorrect: false }
                 ],
-                explain: "題目核心在於「認清死亡是自然的」之後，才能「真正投入」生活。"
+                desc: "正確讀音：湛(ㄓㄢˋ)藍、陰霾(ㄇㄞˊ)、胼手胝(ㄓ)足。"
             },
             {
-                skill: "第一招：看篇名/主旨",
-                tip: "心法：文章標題或首尾句通常隱藏核心。",
-                [cite_start]source: "107年會考 [cite: 448]",
-                question: "「真正的詩是詩人的心靈，真正的船是造船者，我們倘若能把人剖開來，就能夠在他裡面看到他的作品裡最微末的一撇一鉤的理由。」意旨最接近？",
+                id: 2, move: "形音義", color: "bg-red-600",
+                text: "【110會考】下列選項「」中的字，何組讀音相同？",
                 options: [
-                    { text: "作品皆是創作者內心情志的投射", correct: true },
-                    { text: "創作心境的重要性高於呈現技巧", correct: false },
-                    { text: "藝術創作的精髓源於用心仔細觀察", correct: false },
-                    { text: "不同的創作可能有相同的內在精神", correct: false }
+                    { text: "「恪」守 / 一「格」 (ㄎㄜˋ / ㄍㄜˊ)", isCorrect: false },
+                    { text: "「抵」死 / 府「邸」 (ㄉㄧˇ / ㄉㄧˇ)", isCorrect: true },
+                    { text: "字「斟」 / 「勘」正 (ㄓㄣ / ㄎㄢ)", isCorrect: false },
+                    { text: "鍾靈「毓」秀 / 「育」成 (ㄩˋ / ㄩˋ)", isCorrect: false }
                 ],
-                explain: "文中強調作品（詩、船）反映了創作者（詩人、造船者）的內在心靈。"
+                desc: "B選項皆讀作ㄉㄧˇ。A為ㄎㄜˋ/ㄍㄜˊ，C為ㄓㄣ/ㄎㄢ。"
             },
             {
-                skill: "第一招：看篇名/主旨",
-                tip: "心法：解決「這篇文章在講什麼」的大意題。",
-                [cite_start]source: "105年會考 [cite: 2666]",
-                question: "「荷馬史詩是永遠的傑作，但不能永遠以它為範本。」這句話的意旨與下列何者最接近？",
+                id: 3, move: "形音義", color: "bg-red-600",
+                text: "【106會考】根據六書造字原則，「末」字（木上端加一點）屬於哪一類？",
                 options: [
-                    { text: "敏銳的鑑賞力是創作優良作品的前提", correct: false },
-                    { text: "創作必須求新求進，不能一味地模仿", correct: true },
-                    { text: "再偉大的作品，價值也會隨時間而減損", correct: false },
-                    { text: "作家過度被崇拜時，往往難以自我超越", correct: false }
+                    { text: "象形", isCorrect: false },
+                    { text: "指事", isCorrect: true },
+                    { text: "會意", isCorrect: false },
+                    { text: "形聲", isCorrect: false }
                 ],
-                explain: "雖然是傑作，但不能永遠當「範本」（模仿對象），強調創新。"
+                desc: "「末」字是在「木」的上端加一橫畫，指示樹梢的位置，屬於「指事」字。"
             },
 
-            // --- 第二招：標點斷句 (化繁為簡) ---
+            // --- 第二招：成語與詞語 ---
             {
-                skill: "第二招：標點斷句",
-                tip: "心法：用標點將長文切成小段，降低焦慮。",
-                [cite_start]source: "111年會考 [cite: 3468]",
-                question: "「記憶是一個整體，敘述的時候必須選擇將它一片片的切下...即使是一塊肉、一棵菜甲切下來後就再也拼不完整了...」甲處最適合填入？",
+                id: 4, move: "成語運用", color: "bg-yellow-600",
+                text: "【108會考】兩軍交戰，策略是「先轉移敵人目標，使疏於防範，然後乘其不意攻其不備」。這適合用哪個成語形容？",
                 options: [
-                    { text: "，(逗號)", correct: true },
-                    { text: "。(句號)", correct: false },
-                    { text: "；(分號)", correct: false },
-                    { text: "：(冒號)", correct: false }
+                    { text: "拋磚引玉", isCorrect: false },
+                    { text: "聲東擊西", isCorrect: true },
+                    { text: "裡應外合", isCorrect: false },
+                    { text: "趁火打劫", isCorrect: false }
                 ],
-                explain: "「即使是...」這是一個假設語氣的子句，語氣未完，應使用逗號連接後文。"
+                desc: "「聲東擊西」指表面上聲言攻擊東面，實則攻擊西面，製造錯覺的戰術。"
             },
             {
-                skill: "第二招：標點斷句",
-                tip: "心法：分號前後同樣重要；冒號後是總結。",
-                [cite_start]source: "109年會考 [cite: 1581]",
-                question: "「朋友曾問過我一個問題失去視力和失去聽力，害怕哪一項？」空格處應填入？",
+                id: 5, move: "成語運用", color: "bg-yellow-600",
+                text: "【113會考】下列文句中的詞語，何者使用最恰當？",
                 options: [
-                    { text: "：(冒號)", correct: true },
-                    { text: "，(逗號)", correct: false },
-                    { text: "。(句號)", correct: false },
-                    { text: "；(分號)", correct: false }
+                    { text: "飲食應注重均衡，五穀不分才健康", isCorrect: false },
+                    { text: "這房子經歷風災依然堅固，真是不愧屋漏", isCorrect: false },
+                    { text: "使用儀器以蠡測海後，終於得到準確數據", isCorrect: false },
+                    { text: "對於行將就木之人，世間一切已無須牽掛", isCorrect: true }
                 ],
-                explain: "「問題」後面接具體的內容，具有「引出下文」的作用，故用冒號。"
+                desc: "A:五穀不分指脫離生產；B:不愧屋漏指暗室無欺；C:以蠡測海指見識淺薄；D:行將就木指壽命將盡，用法正確。"
             },
             {
-                skill: "第二招：標點斷句",
-                tip: "心法：善用標點符號釐清語氣與邏輯。",
-                [cite_start]source: "108年會考 [cite: 3089]",
-                question: "下列文句的標點符號，何者使用最恰當？",
+                id: 6, move: "成語運用", color: "bg-yellow-600",
+                text: "【105會考】「我的作文功力和明華差不多(1)；思恩的表現更好，我只能勉強(2)；而蔚然是常勝軍，和他比我就(3)了！」",
                 options: [
-                    { text: "小弟弟富有好奇心，什麼事都非要打破沙鍋問到底不可？", correct: false },
-                    { text: "我不是跟你說過嗎？要得到好成績，不用功是不行的。", correct: true },
-                    { text: "對於這項工作，一來，我沒有這份才能、再來，也沒有時間。", correct: false },
-                    { text: "文明的現代：戰爭仍然層出不窮。", correct: false }
+                    { text: "1.望其項背 2.不分軒輊 3.望塵莫及", isCorrect: false },
+                    { text: "1.不分軒輊 2.望其項背 3.望塵莫及", isCorrect: true },
+                    { text: "1.望塵莫及 2.不分軒輊 3.望其項背", isCorrect: false },
+                    { text: "1.不分軒輊 2.望塵莫及 3.望其項背", isCorrect: false }
                 ],
-                explain: "B選項「嗎？」是疑問語氣，使用問號正確。A雖有問到底，但整句是肯定句，應用句號。"
+                desc: "差不多=不分軒輊；勉強看得到背影(落後不遠)=望其項背；完全比不上=望塵莫及。"
             },
 
-            // --- 第三招：抓重點 (轉折/總結) ---
+            // --- 第三招：文意理解 ---
             {
-                skill: "第三招：抓重點",
-                tip: "心法：圈出「但是、然而」，重點在轉折詞後面。",
-                [cite_start]source: "110年會考 [cite: 1914]",
-                question: "下列文句中的連詞，何者使用最恰當？",
+                id: 7, move: "文意理解", color: "bg-green-600",
+                text: "【110會考】「人生是短暫的，死亡是自然的，認清了這點，活著的時候才可以真正的投入。」這句話涵義最接近？",
                 options: [
-                    { text: "即使生活變得富裕，也不應該浪費", correct: true },
-                    { text: "除非是很小的錯誤，也可能釀成大害", correct: false },
-                    { text: "只有從根本解決，就能為人民改善生活", correct: false },
-                    { text: "與其老師怎樣費心勸說，他還是我行我素", correct: false }
+                    { text: "經歷死亡幽谷，才能發現活著的可貴", isCorrect: false },
+                    { text: "了解生命限制，坦然面對死亡，就能盡情活著", isCorrect: true },
+                    { text: "生命的價值在於不斷挑戰自我", isCorrect: false },
+                    { text: "能將死亡置之度外的人往往雖死猶生", isCorrect: false }
                 ],
-                explain: "A選項「即使...也...」是正確的假設轉折複句。C應為「只要...就...」。"
+                desc: "文句強調「認清死亡自然」的限制後，反而能「真正投入」活著的當下。"
             },
             {
-                skill: "第三招：抓重點",
-                tip: "心法：注意「因此、故」，結論在後面。",
-                [cite_start]source: "105年會考 [cite: 2850]",
-                question: "「揚湯以止沸，不如絕其薪而沸止之速也。是以勞心於服遠者，莫若修近而其遠自來...」這段文字最符合的觀點？",
+                id: 8, move: "文意理解", color: "bg-green-600",
+                text: "【109會考】「人生何嘗不像一場競賽...有的後繼無力被人超前，有的半路摔倒一蹶不起。因此，______。」畫線處最適合填入？",
                 options: [
-                    { text: "投膠變濁，勝於澄源", correct: false },
-                    { text: "勞心服遠，近者自來", correct: true },
-                    { text: "多方救失，其失自去", correct: false },
-                    { text: "揚湯止沸，不如絕薪", correct: false } // 這是比喻，不是觀點本身
+                    { text: "人生的競賽往往是暗潮洶湧的", isCorrect: false },
+                    { text: "臺前風光是背後汗水累積而成", isCorrect: false },
+                    { text: "堅持到底的人才是最後的贏家", isCorrect: true },
+                    { text: "勝敗皆由天定，無須怨天尤人", isCorrect: false }
                 ],
-                explain: "重點在「是以」(因此) 後面的結論：「勞心於服遠者，莫若修近...」。"
+                desc: "前文提到有人抱怨、有人放棄，對比之下，強調「堅持」的重要性。"
             },
             {
-                skill: "第三招：抓重點",
-                tip: "心法：文言文中的「然」也是轉折訊號。",
-                [cite_start]source: "107年會考 [cite: 400]",
-                question: "下列文句中的連詞，何者使用最恰當？",
+                id: 9, move: "文意理解", color: "bg-green-600",
+                text: "【107會考】「真正的詩是詩人的心靈，真正的船是造船者...倘若能把人剖開，就能在他裡面看到作品最微末的一撇一鉤。」意旨最接近？",
                 options: [
-                    { text: "只要腳踏實地工作，才能獲得最後成功", correct: false },
-                    { text: "即使你現在願意這樣做，對方也未必會感激", correct: true },
-                    { text: "與其思考如何克服現實，反而思考如何接受現實", correct: false },
-                    { text: "他不但精通英、日語，更何況德語也說得十分流利", correct: false }
+                    { text: "作品皆是創作者內心情志的投射", isCorrect: true },
+                    { text: "創作心境的重要性高於呈現技巧", isCorrect: false },
+                    { text: "藝術創作的精髓源於用心仔細觀察", isCorrect: false },
+                    { text: "不同的創作可能有相同的內在精神", isCorrect: false }
                 ],
-                explain: "B選項「即使...也...」正確表達轉折讓步關係。A應為「只有...才...」。"
+                desc: "這段文字強調作品與創作者心靈的緊密連結，作品反映了作者的內在。"
             },
 
-            // --- 第四招：圖表閱讀 (基礎判讀) ---
+            // --- 第四招：圖表判讀 ---
             {
-                skill: "第四招：圖表閱讀",
-                tip: "心法：定類型→讀標題→看橫縱軸(單位)。",
-                [cite_start]source: "111年會考 [cite: 3493]",
-                question: "【背包與健康】建議：後背重量<體重10%，側背<5%。小明60公斤，何者最符合健康概念？",
+                id: 10, move: "圖表判讀", color: "bg-blue-600",
+                text: "【111會考】關於「背包與健康」：後背重量建議體重10%內，側背5%內。若小明體重60公斤，何者最符合健康概念？",
                 options: [
-                    { text: "後背，背包總重7公斤", correct: false },
-                    { text: "側背，背包總重4公斤", correct: false },
-                    { text: "後背，背包總重5公斤", correct: true },
-                    { text: "側背，背包總重3.5公斤", correct: false }
+                    { text: "後背，背包總重 7 公斤", isCorrect: false },
+                    { text: "側背，背包總重 4 公斤", isCorrect: false },
+                    { text: "後背，背包總重 5 公斤", isCorrect: true },
+                    { text: "側背，背包總重 3.5 公斤", isCorrect: false }
                 ],
-                explain: "60kg的10%是6kg(後背上限)，5%是3kg(側背上限)。5kg後背(5<6)符合標準。"
+                desc: "60kg的10%是6kg(後背上限)，5%是3kg(側背上限)。5kg後背(5<6)符合標準。"
             },
             {
-                skill: "第四招：圖表閱讀",
-                tip: "心法：注意項目與單位，不要忘記換算。",
-                [cite_start]source: "108年會考 [cite: 3310]",
-                question: "【機場環境】飛機在順風或高溫時需較長跑道。在相同載重下，哪一座機場起飛所需的跑道可能「最短」？",
+                id: 11, move: "圖表判讀", color: "bg-blue-600",
+                text: "【107會考】圖表：甲國小學經費高於平均。乙國各階段皆低於平均。丙國國中經費高於平均。丁國高中經費最高。何者正確？",
                 options: [
-                    { text: "機場A：氣溫15度，順風", correct: false },
-                    { text: "機場B：氣溫35度，逆風", correct: false },
-                    { text: "機場C：氣溫35度，順風", correct: false },
-                    { text: "機場D：氣溫15度，逆風", correct: true }
+                    { text: "甲國小學教育經費 高於 平均值", isCorrect: true }, 
+                    { text: "丙國國中教育經費 高於 平均值", isCorrect: false },
+                    { text: "各國高等教育經費皆多於其他階段", isCorrect: false },
+                    { text: "丁國高中生經費是所有國家中最低", isCorrect: false }
                 ],
-                explain: "需要「最短」跑道，代表環境要最有利：氣溫低(15度)且逆風(增加升力)。"
+                desc: "依據107年會考第4題圖表，甲國的小學教育經費條狀圖高於OECD平均線。"
             },
             {
-                skill: "第四招：圖表閱讀",
-                tip: "心法：長條圖考比較，注意最高與最低值。",
-                [cite_start]source: "107年會考 [cite: 413]",
-                question: "關於「各國教育經費」圖表，下列敘述何者正確？(依據原題數據判斷)",
+                id: 12, move: "圖表判讀", color: "bg-blue-600",
+                text: "【113會考】關於「人工智慧、機器學習、深度學習」的關係圖，文中描述深度學習屬於機器學習，機器學習屬於人工智慧。下列圖示關係何者正確？",
                 options: [
-                    { text: "甲國小學生所分得的教育經費高於OECD平均值", correct: true },
-                    { text: "各國高等教育學生分得經費皆多於其他階段", correct: false },
-                    { text: "丙國國中生所分得的教育經費高於OECD平均值", correct: false },
-                    { text: "丁國高中生所分得的教育經費最高", correct: false }
+                    { text: "三個圓圈完全分開", isCorrect: false },
+                    { text: "大圓(AI)包中圓(機器)，中圓包小圓(深度)", isCorrect: true },
+                    { text: "三個圓圈部分重疊", isCorrect: false },
+                    { text: "大圓(深度)包中圓(機器)，中圓包小圓(AI)", isCorrect: false }
                 ],
-                explain: "這類題目需直接對應圖表高低。甲國小學長條圖高於OECD平均線。"
+                desc: "根據層次關係：人工智慧 > 機器學習 > 深度學習，應為同心圓包含關係。"
             },
 
-            // --- 第五招：圖表推論 (邏輯分析) ---
+            // --- 第五招：邏輯推論 ---
             {
-                skill: "第五招：圖表推論",
-                tip: "心法：答案必在圖表中，不需專業背景知識。",
-                [cite_start]source: "113年會考 [cite: 28]",
-                question: "阿寶不想多繳稅，他在問卷：「您是否同意政府不可為了國家建設而提高稅率？」這題應該選？",
+                id: 13, move: "邏輯推論", color: "bg-purple-600",
+                text: "【105會考】「君子如抱美玉而深藏不市，小人則以石為玉而又炫之。」君子不同於小人的特質是？",
                 options: [
-                    { text: "同意", correct: true },
-                    { text: "不同意", correct: false },
-                    { text: "無意見", correct: false },
-                    { text: "以上皆非", correct: false }
+                    { text: "臨財不苟", isCorrect: false },
+                    { text: "見多識廣", isCorrect: false },
+                    { text: "沉潛含蓄", isCorrect: true },
+                    { text: "真實坦率", isCorrect: false }
                 ],
-                explain: "題目是「不可...提高稅率」。阿寶不想繳稅=支持「不可提高」，故選「同意」。雙重否定邏輯。"
+                desc: "「深藏不市」對比「炫之」，強調君子不隨意炫耀，具有「沉潛含蓄」的特質。"
             },
             {
-                skill: "第五招：圖表推論",
-                tip: "心法：結合圖表資訊與文字邏輯進行判斷。",
-                [cite_start]source: "109年會考 [cite: 1679]",
-                question: "心理學家讓兩組人看同一張照片。A組被告知他是罪犯，描述其眼神兇惡；B組被告知他是科學家，描述其眼神深邃。這印證？",
+                id: 14, move: "邏輯推論", color: "bg-purple-600",
+                text: "【114會考】新詩：「我的快樂除以我的悲傷 / 得到的商 / 卻只是1」。這首詩暗示？",
                 options: [
-                    { text: "先入為主的成見，常會影響我們的判斷", correct: true },
-                    { text: "做任何事都要有決心與鬥志", correct: false },
-                    { text: "看事情的角度因人而異，無絕對是非", correct: false },
-                    { text: "眼見為憑是科學研究的基礎", correct: false }
+                    { text: "悲傷會過去，快樂會留下", isCorrect: false },
+                    { text: "我的快樂等同於我的悲傷", isCorrect: true },
+                    { text: "除了悲傷之外，我一無所有", isCorrect: false },
+                    { text: "每個人的愛情都只有一種結果", isCorrect: false }
                 ],
-                explain: "同樣的照片因「標籤」不同而產生不同解讀，這是「成見」的影響。"
+                desc: "數學邏輯推論：若 A ÷ B = 1，則 A = B。故快樂=悲傷。"
             },
             {
-                skill: "第五招：圖表推論",
-                tip: "心法：圖表是「非連續文本」，需自行建構脈絡。",
-                [cite_start]source: "114年會考 [cite: 1096]",
-                question: "新詩：「我的快樂除以我的悲傷 / 得到的商 / 卻只是1」。這首詩暗示？",
+                id: 15, move: "邏輯推論", color: "bg-purple-600",
+                text: "【109會考】心理學家讓兩組人看同一張照片。A組被告知他是罪犯，描述其眼神兇惡；B組被告知他是科學家，描述其眼神深邃。這印證？",
                 options: [
-                    { text: "悲傷會過去，快樂會留下", correct: false },
-                    { text: "我的快樂等同於我的悲傷", correct: true },
-                    { text: "除了悲傷之外，我一無所有", correct: false },
-                    { text: "每個人的愛情都只有一種結果", correct: false }
+                    { text: "先入為主的成見，常會影響我們的判斷", isCorrect: true },
+                    { text: "做任何事都要有決心與鬥志", isCorrect: false },
+                    { text: "看事情的角度因人而異，無絕對是非", isCorrect: false },
+                    { text: "眼見為憑是科學研究的基礎", isCorrect: false }
                 ],
-                explain: "數學邏輯推論：若 A ÷ B = 1，則 A = B。故快樂=悲傷。"
+                desc: "同樣的照片因「標籤」不同而產生不同解讀，這是「成見」的影響。"
             }
         ];
 
@@ -242,13 +211,25 @@
             const [isCorrect, setIsCorrect] = useState(false);
             const [shaking, setShaking] = useState(false);
 
+            // 遊戲初始化
+            useEffect(() => {
+                if (gameState === "start") {
+                    setScore(0);
+                    setHp(3);
+                    setQIndex(0);
+                    setShowFeedback(false);
+                }
+            }, [gameState]);
+
+            const currentQ = allQuestions[qIndex];
+
             // 進入下一題或結束
             const nextQ = () => {
                 setShowFeedback(false);
                 if (hp <= 0 || qIndex >= allQuestions.length - 1) {
                     setGameState("result");
                 } else {
-                    setQIndex(qIndex + 1);
+                    setQIndex(prev => prev + 1);
                 }
             };
 
@@ -256,9 +237,9 @@
                 setIsCorrect(correct);
                 setShowFeedback(true);
                 if (correct) {
-                    setScore(score + 1);
+                    setScore(prev => prev + 1);
                 } else {
-                    setHp(hp - 1);
+                    setHp(prev => prev - 1);
                     setShaking(true);
                     setTimeout(() => setShaking(false), 500);
                 }
@@ -266,10 +247,6 @@
 
             const restart = () => {
                 setGameState("start");
-                setQIndex(0);
-                setScore(0);
-                setHp(3);
-                setShowFeedback(false);
             };
 
             // Start Screen
@@ -279,7 +256,7 @@
                         <div className="text-6xl mb-4">📜</div>
                         <h1 className="text-4xl font-bold text-yellow-400 mb-2">會考五招：宗師之路</h1>
                         <p className="text-gray-400 max-w-md">
-                            掌握「看篇名、標點斷句、抓重點、圖表閱讀、圖表推論」五大絕招，挑戰歷屆會考真題！
+                            掌握「形音、成語、文意、圖表、邏輯」五大絕招，挑戰15道歷屆會考真題！
                         </p>
                         <div className="bg-slate-800 p-4 rounded-lg text-left text-sm text-gray-300 space-y-2 border border-slate-700">
                             <p>⚔️ <span className="text-yellow-400">總關卡：</span> 15 回合 (每招3題)</p>
@@ -298,8 +275,6 @@
 
             // Game Screen
             if (gameState === "game") {
-                const q = allQuestions[qIndex];
-                
                 return (
                     <div className={`flex flex-col items-center min-h-screen p-4 max-w-2xl mx-auto ${shaking ? 'shake' : ''}`}>
                         {/* Header Stats */}
@@ -312,30 +287,26 @@
 
                         {/* Skill Tip Badge */}
                         <div className="w-full mb-2 fade-in">
-                            <span className="bg-blue-600 text-xs font-bold px-2 py-1 rounded text-white mr-2">
-                                {q.skill}
+                            <span className={`text-xs font-bold px-2 py-1 rounded text-white mr-2 ${currentQ.color}`}>
+                                {currentQ.move}
                             </span>
-                            <span className="text-gray-400 text-sm">{q.tip}</span>
                         </div>
 
                         {/* Question Card */}
                         <div className="w-full bg-slate-800 p-6 rounded-xl shadow-2xl border border-slate-600 mb-6 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 bg-slate-700 text-xs px-2 py-1 text-gray-400 rounded-bl-lg">
-                                出處: {q.source}
-                            </div>
-                            <h2 className="text-xl font-bold leading-relaxed mt-2">{q.question}</h2>
+                            <h2 className="text-xl font-bold leading-relaxed mt-2">{currentQ.text}</h2>
                         </div>
 
                         {/* Options */}
                         <div className="w-full space-y-3">
-                            {q.options.map((opt, i) => (
+                            {currentQ.options.map((opt, i) => (
                                 <button
                                     key={i}
-                                    onClick={() => !showFeedback && handleAnswer(opt.correct)}
+                                    onClick={() => !showFeedback && handleAnswer(opt.isCorrect)}
                                     disabled={showFeedback}
                                     className={`btn-option w-full p-4 rounded-lg text-left text-lg font-medium border-2 
                                         ${showFeedback 
-                                            ? (opt.correct 
+                                            ? (opt.isCorrect 
                                                 ? "bg-green-600 border-green-400 text-white" 
                                                 : "bg-slate-700 border-slate-700 text-gray-500")
                                             : "bg-slate-700 border-slate-600 hover:bg-slate-600 text-gray-200 hover:border-yellow-500"}
@@ -358,7 +329,7 @@
                                     </div>
                                     <div className="text-gray-300 text-lg leading-relaxed mb-6 bg-slate-900 p-4 rounded-lg">
                                         <span className="text-yellow-400 font-bold">解析：</span>
-                                        {q.explain}
+                                        {currentQ.desc}
                                     </div>
                                     <button 
                                         onClick={nextQ}
