@@ -1,334 +1,1389 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+<!doctype html>
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>會考國文：五招宗師之路</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        body { touch-action: manipulation; user-select: none; background-color: #1a202c; color: white; font-family: "Microsoft JhengHei", sans-serif; }
-        .btn-option { transition: all 0.1s; }
-        .btn-option:active { transform: scale(0.98); }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
-        #error-log { display: none; color: #fca5a5; background: #450a0a; padding: 20px; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>會考五式｜降魔修煉路（擬真判斷版）</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#121a24;
+      --panel2:#0f1620;
+      --text:#e7eef7;
+      --muted:#9fb0c3;
+      --accent:#7cc7ff;
+      --good:#67e8a4;
+      --bad:#ff7b7b;
+      --warn:#ffd27a;
+      --line:rgba(255,255,255,.10);
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --radius2:22px;
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% 0%, rgba(124,199,255,.12), transparent 55%),
+        radial-gradient(1000px 600px at 90% 10%, rgba(103,232,164,.10), transparent 50%),
+        radial-gradient(800px 500px at 40% 100%, rgba(255,210,122,.08), transparent 55%),
+        var(--bg);
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      padding:24px;
+    }
+    .app{
+      width:min(980px, 100%);
+      display:grid;
+      gap:16px;
+    }
+    header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 18px;
+      border:1px solid var(--line);
+      border-radius:var(--radius2);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      box-shadow:var(--shadow);
+    }
+    .title h1{
+      margin:0;
+      font-size:20px;
+      letter-spacing:.5px;
+    }
+    .title p{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+    .meta{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-width:260px;
+    }
+    .pillRow{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .pill{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .pill strong{color:var(--text)}
+    .bar{
+      height:10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      overflow:hidden;
+      border:1px solid var(--line);
+    }
+    .bar > div{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg, rgba(124,199,255,.95), rgba(103,232,164,.95));
+      transition:width .35s ease;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.35fr .85fr;
+      gap:16px;
+    }
+    @media (max-width: 860px){
+      .grid{grid-template-columns:1fr}
+      .meta{min-width:unset}
+      .pillRow{justify-content:flex-start}
+    }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius:var(--radius2);
+      background:rgba(18,26,36,.82);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .cardHeader{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), transparent);
+    }
+    .badge{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      color:var(--muted);
+      background:rgba(255,255,255,.03);
+    }
+    .styleName{
+      font-weight:700;
+      letter-spacing:.3px;
+      color:var(--accent);
+    }
+    .cardBody{padding:16px}
+    .textBlock{
+      border:1px solid var(--line);
+      background:rgba(15,22,32,.75);
+      border-radius:var(--radius);
+      padding:14px;
+      line-height:1.75;
+      font-size:14px;
+      white-space:pre-wrap;
+    }
+    .qTitle{
+      margin:14px 0 10px;
+      font-size:14px;
+      color:var(--text);
+      font-weight:700;
+    }
+
+    .choices{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:10px;
+    }
+    .choiceBtn{
+      text-align:left;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      cursor:pointer;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+      line-height:1.55;
+      font-size:14px;
+    }
+    .choiceBtn:hover{
+      background:rgba(255,255,255,.06);
+    }
+    .choiceBtn:active{
+      transform:translateY(1px);
+    }
+    .choiceBtn[disabled]{
+      cursor:not-allowed;
+      opacity:.7;
+    }
+    .choiceBtn.good{
+      border-color: rgba(103,232,164,.7);
+      background: rgba(103,232,164,.12);
+    }
+    .choiceBtn.bad{
+      border-color: rgba(255,123,123,.7);
+      background: rgba(255,123,123,.10);
+    }
+
+    .sideCard{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      padding:16px;
+    }
+
+    .coach{
+      border:1px solid var(--line);
+      border-radius:var(--radius2);
+      background:rgba(15,22,32,.65);
+      padding:14px;
+    }
+    .coach h3{
+      margin:0 0 8px;
+      font-size:13px;
+      letter-spacing:.3px;
+      color:var(--accent);
+    }
+    .coach p{
+      margin:0;
+      color:var(--text);
+      font-size:13px;
+      line-height:1.6;
+    }
+    .coach .muted{color:var(--muted)}
+    .coach .hint{
+      margin-top:10px;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px dashed rgba(255,255,255,.18);
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+      white-space:pre-wrap;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    button.action{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      cursor:pointer;
+      transition: background .15s ease;
+      font-size:13px;
+    }
+    button.action:hover{background:rgba(255,255,255,.07)}
+    button.action.primary{
+      border-color: rgba(124,199,255,.55);
+      background: rgba(124,199,255,.10);
+    }
+    button.action.warn{
+      border-color: rgba(255,210,122,.6);
+      background: rgba(255,210,122,.10);
+    }
+
+    .result{
+      border:1px solid var(--line);
+      border-radius:var(--radius2);
+      background:rgba(15,22,32,.65);
+      padding:14px;
+      display:none;
+    }
+    .result.show{display:block}
+    .result .status{
+      font-weight:800;
+      margin:0 0 8px;
+      letter-spacing:.2px;
+    }
+    .status.good{color:var(--good)}
+    .status.bad{color:var(--bad)}
+    .result .explain{
+      margin:0;
+      color:var(--text);
+      font-size:13px;
+      line-height:1.7;
+      white-space:pre-wrap;
+    }
+
+    .footerNote{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+      padding:0 6px;
+    }
+    .kbd{
+      display:inline-block;
+      padding:2px 6px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      font-size:12px;
+      transform:translateY(-1px);
+    }
+
+    .modalBack{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:20;
+    }
+    .modalBack.show{display:flex}
+    .modal{
+      width:min(860px, 100%);
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:rgba(18,26,36,.96);
+      box-shadow:0 30px 90px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .modalHeader{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), transparent);
+    }
+    .modalHeader h3{margin:0;font-size:14px;letter-spacing:.3px}
+    .modalBody{
+      padding:16px;
+      color:var(--text);
+      font-size:13px;
+      line-height:1.8;
+      white-space:pre-wrap;
+    }
+  </style>
 </head>
 <body>
-    <div id="error-log"></div>
-    <div id="root"></div>
+  <div class="app" id="app">
+    <header>
+      <div class="title">
+        <h1>會考五式｜降魔修煉路（擬真判斷版）</h1>
+        <p>五式 × 每式五題（共 25 題）。不靠語感猜題：題目故意設「直覺陷阱」，必須照你的技巧一步步拆。</p>
+      </div>
+      <div class="meta">
+        <div class="pillRow">
+          <div class="pill">進度：<strong id="progressText">0 / 25</strong></div>
+          <div class="pill">得分：<strong id="scoreText">0</strong></div>
+          <div class="pill">連對：<strong id="streakText">0</strong></div>
+        </div>
+        <div class="bar"><div id="barFill"></div></div>
+      </div>
+    </header>
 
-    <script>
-        // 錯誤攔截器：如果黑畫面，會顯示錯誤訊息
-        window.onerror = function(msg, url, line, col, error) {
-            const errorBox = document.getElementById('error-log');
-            errorBox.style.display = 'block';
-            errorBox.innerHTML = `<h3>⚠️ 程式發生錯誤</h3><p>${msg}</p><p>Line: ${line}</p>`;
-        };
-    </script>
+    <div class="grid">
+      <section class="card" id="mainCard">
+        <div class="cardHeader">
+          <div class="badge"><span class="styleName" id="styleName">—</span>｜第 <span id="qIndexInStyle">—</span> 題（本式 5 題）</div>
+          <div class="badge">快捷鍵：<span class="kbd">1</span>-<span class="kbd">4</span> 選項｜<span class="kbd">H</span> 提示｜<span class="kbd">N</span> 下一題</div>
+        </div>
+        <div class="cardBody">
+          <div class="textBlock" id="passage">按「開始」進入第一題。</div>
+          <div class="qTitle" id="question">—</div>
+          <div class="choices" id="choices"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+          <div class="result" id="resultBox">
+            <p class="status" id="resultStatus">—</p>
+            <p class="explain" id="resultExplain">—</p>
+          </div>
+        </div>
+      </section>
 
-        // 題目資料 (移除 Source 欄位以避免系統標記錯誤)
-        const allQuestions = [
-            // --- 第一招：形音義 ---
-            {
-                id: 1, move: "形音義", color: "bg-red-600",
-                text: "【會考真題】下列詞語「」中的字，何者讀音正確？",
-                options: [
-                    { text: "春寒料「峭」：ㄑㄧㄠˋ", isCorrect: true },
-                    { text: "「湛」藍天空：ㄕㄣˋ", isCorrect: false },
-                    { text: "一掃陰「霾」：ㄌㄧˊ", isCorrect: false },
-                    { text: "胼手「胝」足：ㄉㄧˇ", isCorrect: false }
-                ],
-                desc: "解析：正確讀音為 湛(ㄓㄢˋ)藍、陰霾(ㄇㄞˊ)、胼手胝(ㄓ)足。"
-            },
-            {
-                id: 2, move: "形音義", color: "bg-red-600",
-                text: "【會考真題】下列選項「」中的字，何組讀音相同？",
-                options: [
-                    { text: "「恪」守 / 一「格」", isCorrect: false },
-                    { text: "「抵」死 / 府「邸」", isCorrect: true },
-                    { text: "字「斟」 / 「勘」正", isCorrect: false },
-                    { text: "鍾靈「毓」秀 / 「育」成", isCorrect: false }
-                ],
-                desc: "解析：抵與邸皆讀作(ㄉㄧˇ)。A為(ㄎㄜˋ/ㄍㄜˊ)，C為(ㄓㄣ/ㄎㄢ)。"
-            },
-            {
-                id: 3, move: "形音義", color: "bg-red-600",
-                text: "【會考真題】根據六書造字原則，「末」字（木上端加一點）屬於哪一類？",
-                options: [
-                    { text: "象形", isCorrect: false },
-                    { text: "指事", isCorrect: true },
-                    { text: "會意", isCorrect: false },
-                    { text: "形聲", isCorrect: false }
-                ],
-                desc: "解析：「末」字是在「木」的上端加一橫畫指示位置，屬於「指事」。"
-            },
+      <aside class="card">
+        <div class="sideCard">
+          <div class="coach" id="coachBox">
+            <h3>教練模式（你的五式）</h3>
+            <p class="muted" id="coachLead">我會先把你要用的「式」指出來，但不會直接告訴你答案；我會用卡關提問逼你走流程。</p>
+            <div class="hint" id="coachHint">提示：按 H 顯示下一步提示（每題最多 3 段提示）。</div>
+          </div>
 
-            // --- 第二招：成語運用 ---
-            {
-                id: 4, move: "成語運用", color: "bg-yellow-600",
-                text: "【會考真題】兩軍交戰，策略是「先轉移敵人目標，使疏於防範，然後乘其不意攻其不備」。這適合用哪個成語？",
-                options: [
-                    { text: "拋磚引玉", isCorrect: false },
-                    { text: "聲東擊西", isCorrect: true },
-                    { text: "裡應外合", isCorrect: false },
-                    { text: "趁火打劫", isCorrect: false }
-                ],
-                desc: "解析：「聲東擊西」指表面聲言攻擊東面，實則攻擊西面，製造錯覺。"
-            },
-            {
-                id: 5, move: "成語運用", color: "bg-yellow-600",
-                text: "【會考真題】下列文句中的詞語，何者使用最恰當？",
-                options: [
-                    { text: "飲食應注重均衡，五穀不分才健康", isCorrect: false },
-                    { text: "這房子經歷風災依然堅固，真是不愧屋漏", isCorrect: false },
-                    { text: "使用儀器以蠡測海後，終於得到準確數據", isCorrect: false },
-                    { text: "對於行將就木之人，世間一切已無須牽掛", isCorrect: true }
-                ],
-                desc: "解析：A五穀不分指脫離生產；B不愧屋漏指暗室無欺；C以蠡測海指見識淺薄。"
-            },
-            {
-                id: 6, move: "成語運用", color: "bg-yellow-600",
-                text: "【會考真題】「我的作文功力和明華差不多(1)；思恩的表現更好，我只能勉強(2)；而蔚然是常勝軍，和他比我就(3)了！」",
-                options: [
-                    { text: "1.望其項背 2.不分軒輊 3.望塵莫及", isCorrect: false },
-                    { text: "1.不分軒輊 2.望其項背 3.望塵莫及", isCorrect: true },
-                    { text: "1.望塵莫及 2.不分軒輊 3.望其項背", isCorrect: false },
-                    { text: "1.不分軒輊 2.望塵莫及 3.望其項背", isCorrect: false }
-                ],
-                desc: "解析：差不多=不分軒輊；勉強看得到背影=望其項背；完全比不上=望塵莫及。"
-            },
+          <div class="row">
+            <button class="action primary" id="startBtn">開始 / 重新開始</button>
+            <button class="action warn" id="hintBtn">提示（H）</button>
+            <button class="action" id="whyBtn">本式規則</button>
+            <button class="action" id="nextBtn" disabled>下一題（N）</button>
+          </div>
 
-            // --- 第三招：文意理解 ---
-            {
-                id: 7, move: "文意理解", color: "bg-green-600",
-                text: "【會考真題】「人生是短暫的，死亡是自然的，認清了這點，活著的時候才可以真正的投入。」這句話涵義最接近？",
-                options: [
-                    { text: "經歷死亡幽谷，才能發現活著的可貴", isCorrect: false },
-                    { text: "了解生命限制，坦然面對死亡，就能盡情活著", isCorrect: true },
-                    { text: "生命的價值在於不斷挑戰自我", isCorrect: false },
-                    { text: "能將死亡置之度外的人往往雖死猶生", isCorrect: false }
-                ],
-                desc: "解析：文句強調「認清死亡自然」的限制後，反而能「真正投入」活著的當下。"
-            },
-            {
-                id: 8, move: "文意理解", color: "bg-green-600",
-                text: "【會考真題】「人生何嘗不像一場競賽...有的後繼無力被人超前，有的半路摔倒一蹶不起。因此，______。」畫線處最適合填入？",
-                options: [
-                    { text: "人生的競賽往往是暗潮洶湧的", isCorrect: false },
-                    { text: "臺前風光是背後汗水累積而成", isCorrect: false },
-                    { text: "堅持到底的人才是最後的贏家", isCorrect: true },
-                    { text: "勝敗皆由天定，無須怨天尤人", isCorrect: false }
-                ],
-                desc: "解析：前文提到有人抱怨、有人放棄，對比之下，強調「堅持」的重要性。"
-            },
-            {
-                id: 9, move: "文意理解", color: "bg-green-600",
-                text: "【會考真題】「真正的詩是詩人的心靈...倘若能把人剖開，就能在他裡面看到作品最微末的一撇一鉤。」意旨最接近？",
-                options: [
-                    { text: "作品皆是創作者內心情志的投射", isCorrect: true },
-                    { text: "創作心境的重要性高於呈現技巧", isCorrect: false },
-                    { text: "藝術創作的精髓源於用心仔細觀察", isCorrect: false },
-                    { text: "不同的創作可能有相同的內在精神", isCorrect: false }
-                ],
-                desc: "解析：這段文字強調作品與創作者心靈的緊密連結，作品反映了作者的內在。"
-            },
+          <div class="footerNote">
+            你要的「擬真」＝兩個選項都像對，<b>不用技巧就會掉坑</b>。<br/>
+            這版把「你的招數」變成<b>必要的判斷路徑</b>，而不是解題後的補充。
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
 
-            // --- 第四招：圖表判讀 ---
-            {
-                id: 10, move: "圖表判讀", color: "bg-blue-600",
-                text: "【會考真題】「背包與健康」：後背重量建議體重10%內，側背5%內。若小明體重60公斤，何者最符合健康概念？",
-                options: [
-                    { text: "後背，背包總重 7 公斤", isCorrect: false },
-                    { text: "側背，背包總重 4 公斤", isCorrect: false },
-                    { text: "後背，背包總重 5 公斤", isCorrect: true },
-                    { text: "側背，背包總重 3.5 公斤", isCorrect: false }
-                ],
-                desc: "解析：60kg的10%是6kg(後背上限)，5%是3kg(側背上限)。5kg後背符合標準。"
-            },
-            {
-                id: 11, move: "圖表判讀", color: "bg-blue-600",
-                text: "【會考真題】「各國教育經費」長條圖：甲國小學經費長條高於平均線。乙國皆低。丙國國中高。丁國高中最高。何者正確？",
-                options: [
-                    { text: "甲國小學教育經費 高於 平均值", isCorrect: true },
-                    { text: "丙國國中教育經費 低於 平均值", isCorrect: false },
-                    { text: "各國高等教育經費皆多於其他階段", isCorrect: false },
-                    { text: "丁國高中生經費是所有國家中最低", isCorrect: false }
-                ],
-                desc: "解析：依據原題圖表判讀，甲國的小學教育經費條狀圖明顯高於OECD平均線。"
-            },
-            {
-                id: 12, move: "圖表判讀", color: "bg-blue-600",
-                text: "【會考真題】關於「人工智慧、機器學習、深度學習」的關係，深度學習屬於機器學習，機器學習屬於人工智慧。正確圖示為？",
-                options: [
-                    { text: "三個圓圈完全分開", isCorrect: false },
-                    { text: "大圓(AI) 包 中圓(機器) 包 小圓(深度)", isCorrect: true },
-                    { text: "三個圓圈部分重疊", isCorrect: false },
-                    { text: "大圓(深度) 包 中圓(機器) 包 小圓(AI)", isCorrect: false }
-                ],
-                desc: "解析：根據層次關係：人工智慧 > 機器學習 > 深度學習，應為同心圓包含關係。"
-            },
+  <div class="modalBack" id="modalBack" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalHeader">
+        <h3 id="modalTitle">—</h3>
+        <button class="action" id="modalClose">關閉</button>
+      </div>
+      <div class="modalBody" id="modalBody">—</div>
+    </div>
+  </div>
 
-            // --- 第五招：邏輯推論 ---
-            {
-                id: 13, move: "邏輯推論", color: "bg-purple-600",
-                text: "【會考真題】「君子如抱美玉而深藏不市，小人則以石為玉而又炫之。」君子不同於小人的特質是？",
-                options: [
-                    { text: "臨財不苟", isCorrect: false },
-                    { text: "見多識廣", isCorrect: false },
-                    { text: "沉潛含蓄", isCorrect: true },
-                    { text: "真實坦率", isCorrect: false }
-                ],
-                desc: "解析：「深藏不市」對比「炫之」，強調君子不隨意炫耀，具有「沉潛含蓄」的特質。"
-            },
-            {
-                id: 14, move: "邏輯推論", color: "bg-purple-600",
-                text: "【會考真題】新詩：「我的快樂除以我的悲傷 / 得到的商 / 卻只是1」。這首詩暗示？",
-                options: [
-                    { text: "悲傷會過去，快樂會留下", isCorrect: false },
-                    { text: "我的快樂等同於我的悲傷", isCorrect: true },
-                    { text: "除了悲傷之外，我一無所有", isCorrect: false },
-                    { text: "每個人的愛情都只有一種結果", isCorrect: false }
-                ],
-                desc: "解析：數學邏輯推論：若 A ÷ B = 1，則 A = B。故快樂=悲傷。"
-            },
-            {
-                id: 15, move: "邏輯推論", color: "bg-purple-600",
-                text: "【會考真題】心理學家讓A組人看照片說是罪犯(覺兇惡)，B組看同張照片說是科學家(覺深邃)。這印證？",
-                options: [
-                    { text: "先入為主的成見，常會影響判斷", isCorrect: true },
-                    { text: "做任何事都要有決心與鬥志", isCorrect: false },
-                    { text: "看事情的角度因人而異，無絕對", isCorrect: false },
-                    { text: "眼見為憑是科學研究的基礎", isCorrect: false }
-                ],
-                desc: "解析：同樣的照片因「標籤」不同而產生不同解讀，這是「成見」的影響。"
-            }
-        ];
+<script>
+(() => {
+  // ===== 五式定義（你說只有五式）=====
+  const STYLES = [
+    {
+      id: "S1",
+      name: "第一式｜看篇名抓核心",
+      rule:
+`核心：先看「篇名」→預測文章核心→回頭找呼應處。
+考大意題：選項中「最貼篇名」者最可能是答案。
+注意：〈〉篇名 vs 《》書名，相關性通常是〈〉更強。`
+    },
+    {
+      id: "S2",
+      name: "第二式｜標點斷句切段降焦慮",
+      rule:
+`核心：用句號/問號/驚嘆號把長文切成小段，一次只吃一口。
+進階：分號＝同等重要；冒號＝後面承接；破折號三用：
+1)聲音延續（不一定有邏輯） 2)語意轉變（後面較重要） 3)補充說明（前面較重要）。`
+    },
+    {
+      id: "S3",
+      name: "第三式｜轉折詞/總結詞抓重點",
+      rule:
+`核心：圈轉折詞（但是/然而/然/而）→轉折後才是作者真正要你記的。
+圈總結詞（因此/故/所以/總之）→後面通常是結論（更重）。`
+    },
+    {
+      id: "S4",
+      name: "第四式｜圖表閱讀：定類型→讀標題→軸→內容→推論",
+      rule:
+`核心流程：定類型→讀標題→看橫縱軸（項目/單位）→讀內容（極值/變化最大）→做推論。
+各類圖表：折線=趨勢；長條=比較；圓餅=比例；流程=順序；剖面=結構。`
+    },
+    {
+      id: "S5",
+      name: "第五式｜國文圖表：答案必在圖表中（不靠學科背景）",
+      rule:
+`國文的圖表題：強調閱讀理解，答案線索「一定在圖表/題幹」。
+不要把別科知識硬套進來；只用圖表文字、數字、標示去推。`
+    }
+  ];
 
-        function App() {
-            const [gameState, setGameState] = useState("start");
-            const [qIndex, setQIndex] = useState(0);
-            const [score, setScore] = useState(0);
-            const [hp, setHp] = useState(3);
-            const [showFeedback, setShowFeedback] = useState(false);
-            const [isCorrect, setIsCorrect] = useState(false);
-            const [shaking, setShaking] = useState(false);
+  // ===== 題庫（擬真：設直覺陷阱＋非用技巧不可）=====
+  // 每題：styleId, title(篇名/圖表標題), passage, question, choices[4], answerIndex, traps(錯因), hints(最多3段), explain(正解路徑)
+  const QUESTIONS = [
+    // ===== S1 看篇名 =====
+    {
+      styleId:"S1",
+      title:"〈把「剛好」當成藉口〉",
+      passage:
+`〈把「剛好」當成藉口〉
 
-            useEffect(() => {
-                if (gameState === "start") {
-                    setScore(0);
-                    setHp(3);
-                    setQIndex(0);
-                    setShowFeedback(false);
-                }
-            }, [gameState]);
+我發現自己很擅長說「剛好」：剛好太忙、剛好太累、剛好天氣不好。
+於是我不去運動、不去讀書，也不去回那封該回的信。這些理由聽起來都合理，
+因為每一件事確實都發生了。可是當我把每天的「剛好」串在一起，
+它們就不再像偶然，而像一種固定的逃避方式。
 
-            const nextQ = () => {
-                setShowFeedback(false);
-                if (hp <= 0 || qIndex >= allQuestions.length - 1) {
-                    setGameState("result");
-                } else {
-                    setQIndex(prev => prev + 1);
-                }
-            };
+朋友說：你不是沒有時間，你只是把時間留給更容易的選擇。
+那句話刺得我很痛。後來我試著把「剛好」換成一句更誠實的話：
+「我現在選擇不做。」說完以後，我反而能看見自己真正的想法，
+也開始知道，下一次要怎麼選。`,
+      question:"這篇文章主要在談什麼？（大意題）",
+      choices:[
+        "作者抱怨生活瑣事太多，導致無法安排運動與閱讀。",
+        "作者反思自己常用「剛好」合理化不作為，並學著更誠實地面對選擇。",
+        "朋友對作者的時間管理提出建議，作者因此改善作息。",
+        "作者認為天氣與忙碌是阻礙行動的主要原因，需先排除外在條件。"
+      ],
+      answerIndex:1,
+      hints:[
+        "先看篇名：〈把「剛好」當成藉口〉。你預測核心會落在「剛好」是什麼？它在文章裡扮演什麼角色？",
+        "回文找呼應：哪一段把「剛好」從偶然轉成「固定的逃避方式」？那才是主幹。",
+        "看選項：哪個選項把「剛好=藉口」＋「更誠實面對選擇」兩件事都抓到？其餘多是細節或把原因怪外在。"
+      ],
+      explain:
+`用第一式：
+(1) 篇名直接鎖定「剛好」=藉口。
+(2) 文中呼應點：把每天的剛好串起來→像固定逃避；再把話改成「我選擇不做」→看見真正想法。
+所以大意是「反思用剛好合理化不作為，學著誠實面對選擇」。`
+    },
+    {
+      styleId:"S1",
+      title:"《城市邊緣》",
+      passage:
+`《城市邊緣》
+——節錄〈夜班司機〉
 
-            const handleAnswer = (correct) => {
-                setIsCorrect(correct);
-                setShowFeedback(true);
-                if (correct) {
-                    setScore(prev => prev + 1);
-                } else {
-                    setHp(prev => prev - 1);
-                    setShaking(true);
-                    setTimeout(() => setShaking(false), 500);
-                }
-            };
+他在凌晨載到一位沉默的乘客。那人一路望著窗外，手指反覆摸著票根。
+司機問要去哪裡，乘客只說：「回家。」直到路口，乘客才補一句：
+「我其實不知道家還算不算家。」
 
-            const restart = () => {
-                setGameState("start");
-            };
+司機沒有追問。他知道有些話一問就碎。車子停在一排關著燈的公寓前，
+乘客付了錢，卻又站在原地很久，像在等什麼允許。`,
+      question:"依本文內容，最能作為這段節錄〈夜班司機〉的「篇名」的是哪一個？",
+      choices:[
+        "〈回家〉",
+        "〈票根〉",
+        "〈不追問〉",
+        "〈允許〉"
+      ],
+      answerIndex:0,
+      hints:[
+        "第一式先分清《》與〈〉：這裡《城市邊緣》是書名，真正要抓的是節錄段落的核心意象，去擬「篇名」。",
+        "你要找「反覆出現、最能統攝」的語句：乘客說了什麼？行動指向什麼？",
+        "四個選項裡，哪個最能統攝「回家卻不確定家是否還是家」的矛盾？其餘多是局部細節（票根/允許）或態度（不追問）。"
+      ],
+      explain:
+`先辨《》書名 vs 〈〉篇名：題目要你替節錄擬「篇名」。
+段落核心反覆圍繞「回家」卻不確定「家還算不算家」。
+因此最能統攝的是〈回家〉。`
+    },
+    {
+      styleId:"S1",
+      title:"〈不只是快〉",
+      passage:
+`〈不只是快〉
 
-            if (gameState === "start") {
-                return (
-                    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center space-y-8 bg-slate-900">
-                        <div className="text-6xl mb-4">📜</div>
-                        <h1 className="text-4xl font-bold text-yellow-400 mb-2">會考五招：宗師之路</h1>
-                        <p className="text-gray-400 max-w-md">掌握「形音、成語、文意、圖表、邏輯」五大絕招，挑戰15道歷屆會考真題！</p>
-                        <div className="bg-slate-800 p-4 rounded-lg text-left text-sm text-gray-300 space-y-2 border border-slate-700">
-                            <p>⚔️ <span className="text-yellow-400">總關卡：</span> 15 回合 (每招3題)</p>
-                            <p>❤️ <span className="text-red-400">生命值：</span> 3 顆心 (答錯扣血)</p>
-                            <p>💡 <span className="text-green-400">通關條件：</span> 活著走到最後</p>
-                        </div>
-                        <button onClick={() => setGameState("game")} className="bg-yellow-600 hover:bg-yellow-500 text-white text-xl font-bold py-4 px-12 rounded-full shadow-lg transition-transform transform active:scale-95">開始修煉</button>
-                    </div>
-                );
-            }
+我以前以為效率就是把事情做得越快越好。於是我用更短的時間回訊息、
+用兩倍速度看影片、邊走路邊吃早餐，像是能多省下一點，就贏了一點。
+但那些被省下來的時間，最後常常又被我拿去做更零碎的事。
 
-            if (gameState === "game") {
-                const currentQ = allQuestions[qIndex];
-                return (
-                    <div className={`flex flex-col items-center min-h-screen p-4 max-w-2xl mx-auto ${shaking ? 'shake' : ''}`}>
-                        <div className="w-full flex justify-between items-center mb-6 bg-slate-800 p-3 rounded-lg border border-slate-700">
-                            <div className="text-yellow-400 font-bold">第 {qIndex + 1} / {allQuestions.length} 題</div>
-                            <div className="text-red-400 font-bold text-xl">{"❤️".repeat(hp)}{"🖤".repeat(3-hp)}</div>
-                        </div>
-                        <div className="w-full mb-2 fade-in">
-                            <span className={`text-xs font-bold px-2 py-1 rounded text-white mr-2 ${currentQ.color}`}>{currentQ.move}</span>
-                        </div>
-                        <div className="w-full bg-slate-800 p-6 rounded-xl shadow-2xl border border-slate-600 mb-6 relative overflow-hidden">
-                            <h2 className="text-xl font-bold leading-relaxed mt-2">{currentQ.text}</h2>
-                        </div>
-                        <div className="w-full space-y-3">
-                            {currentQ.options.map((opt, i) => (
-                                <button key={i} onClick={() => !showFeedback && handleAnswer(opt.isCorrect)} disabled={showFeedback} className={`btn-option w-full p-4 rounded-lg text-left text-lg font-medium border-2 ${showFeedback ? (opt.isCorrect ? "bg-green-600 border-green-400 text-white" : "bg-slate-700 border-slate-700 text-gray-500") : "bg-slate-700 border-slate-600 hover:bg-slate-600 text-gray-200 hover:border-yellow-500"}`}>
-                                    <span className="inline-block w-6 h-6 rounded-full bg-slate-900 text-center text-sm leading-6 mr-3 text-gray-400">{['A','B','C','D'][i]}</span>
-                                    {opt.text}
-                                </button>
-                            ))}
-                        </div>
-                        {showFeedback && (
-                            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-6 fade-in backdrop-blur-sm">
-                                <div className="bg-slate-800 p-6 rounded-2xl max-w-md w-full border-2 border-slate-600 shadow-2xl">
-                                    <div className={`text-4xl text-center mb-4 ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
-                                        {isCorrect ? "✨ 答對了！" : "💥 答錯了..."}
-                                    </div>
-                                    <div className="text-gray-300 text-lg leading-relaxed mb-6 bg-slate-900 p-4 rounded-lg">
-                                        <span className="text-yellow-400 font-bold">解析：</span>{currentQ.desc}
-                                    </div>
-                                    <button onClick={nextQ} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors">
-                                        {hp <= 0 ? "查看結果" : (qIndex >= allQuestions.length - 1 ? "完成試煉" : "下一題 ➔")}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            }
+後來我才懂，效率真正要解決的不是「慢」，而是「亂」。
+如果我能先決定什麼重要，再把不重要的事情放慢甚至放掉，
+那才是把時間用在它該去的地方。`,
+      question:"下列何者最符合本文的中心旨意？（大意題）",
+      choices:[
+        "效率的關鍵在於用更快的速度完成更多事情。",
+        "效率是把零碎時間填滿，避免浪費。",
+        "效率的重點是整理優先順序，讓時間用在真正重要的事上。",
+        "效率等同於同時處理多項任務以節省時間。"
+      ],
+      answerIndex:2,
+      hints:[
+        "先看篇名〈不只是快〉：作者要否定「效率=快」，那他要改成什麼？",
+        "找呼應：哪句話直接下定義？（提示：『效率真正要解決的不是…而是…』）",
+        "看選項：有沒有抓到『不是快，而是亂』＋『先決定重要』這兩點？"
+      ],
+      explain:
+`篇名先否定「快」：不只是快。
+文中核心句：效率要解決的不是慢，而是亂；先決定重要與否。
+所以答案是「整理優先順序，讓時間用在重要的事」。`
+    },
+    {
+      styleId:"S1",
+      title:"〈把讚還給自己〉",
+      passage:
+`〈把讚還給自己〉
 
-            if (gameState === "result") {
-                const passed = hp > 0;
-                return (
-                    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center space-y-6 bg-slate-900 fade-in">
-                        <div className="text-8xl mb-2">{passed ? "🏆" : "🥀"}</div>
-                        <h2 className="text-4xl font-bold text-white">{passed ? "試煉通過！" : "修煉未成"}</h2>
-                        <div className="text-2xl text-yellow-400 font-bold">得分：{score} / 15</div>
-                        <p className="text-gray-400 max-w-md">{passed ? "恭喜你！你已經掌握了會考國文的五大核心絕招！" : "別氣餒！記住「找轉折、看圖表、抓重點」，再來挑戰一次！"}</p>
-                        <button onClick={restart} className="bg-slate-700 hover:bg-slate-600 text-white text-lg font-bold py-3 px-10 rounded-full border border-slate-500">再次挑戰</button>
-                    </div>
-                );
-            }
-        }
+我們太習慣把努力交給別人的回應來確認：有人按讚才算有價值，
+有人留言才算被看見。於是我們做事時會不自覺地問：
+「這樣會不會比較討喜？」而不是問：「這是不是我真正想做的？」
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+有一次我把作品關掉通知。結果我居然更專注，
+也更能把完成的那一刻當成獎勵。原來我需要的不是更多讚，
+而是把那個肯定先還給自己。`,
+      question:"這篇文章最可能想告訴讀者的是什麼？",
+      choices:[
+        "關掉通知可以讓人更專注，是提高效率的好方法。",
+        "做事不應依賴外界回應來確認價值，應先給自己肯定。",
+        "作品完成後應立即分享給朋友，以獲得更多建議與鼓勵。",
+        "社群媒體的留言與按讚能有效提升創作者的自信。"
+      ],
+      answerIndex:1,
+      hints:[
+        "看篇名：〈把讚還給自己〉，核心不是『不要社群』，而是『肯定來源』。",
+        "找呼應：末段有一句『原來我需要的不是…而是…』那是主旨。",
+        "選項辨陷阱：A 只是方法；C 反向；D 把外界肯定當解方，違反篇名。"
+      ],
+      explain:
+`篇名鎖定「肯定要還給自己」。
+文中主句：需要的不是更多讚，而是把肯定先還給自己。
+所以答案選「不依賴外界回應，先給自己肯定」。`
+    },
+    {
+      styleId:"S1",
+      title:"〈慢讀的價值〉",
+      passage:
+`〈慢讀的價值〉
+
+有些人把閱讀當成追進度：一本書幾天看完、打卡、標記已讀。
+我也曾經如此，直到某次我回頭翻筆記，才發現自己記得的是頁數，
+而不是觀點。
+
+當我刻意慢下來，句子開始有重量。讀不懂時停下來，
+我不再急著翻過去，而是試著用自己的話重述。
+那一刻我才明白，閱讀不是在跟別人比快，而是在跟自己對話。`,
+      question:"本文最適合的標語是下列何者？",
+      choices:[
+        "閱讀要趁早，才能累積更多知識。",
+        "讀得快，才讀得多；讀得多，才成功。",
+        "閱讀不是比速度，而是與自己對話並內化理解。",
+        "做筆記能幫助記住頁數，提升讀書效率。"
+      ],
+      answerIndex:2,
+      hints:[
+        "篇名：〈慢讀的價值〉→作者要證明『慢』帶來什麼價值？",
+        "呼應句：最後一句『閱讀不是…而是…』就是文章落點。",
+        "陷阱：B 是社群打卡心態；D 抓錯重點（記頁數反而被批評）。"
+      ],
+      explain:
+`篇名主張「慢讀」有價值。
+文末直接下結論：閱讀不是比快，而是跟自己對話、重述內化。
+所以選「閱讀不是比速度，而是與自己對話並內化理解」。`
+    },
+
+    // ===== S2 標點斷句 =====
+    {
+      styleId:"S2",
+      title:"〈那封沒寄出的信〉",
+      passage:
+`〈那封沒寄出的信〉
+
+我本來想道歉，可是每次打開對話框就停住；我怕一句話說錯，
+反而讓事情更糟。於是我改成寫一封信——寫完後又不敢寄出，
+因為我忽然明白：我真正害怕的不是對方不原諒，而是我必須承認
+自己曾經那麼自以為是。`,
+      question:"依文意判斷，破折號後「——寫完後又不敢寄出」的作用最接近下列何者？",
+      choices:[
+        "表示聲音延續，沒有語意上的邏輯。",
+        "表示語意轉變，破折號後內容較重要。",
+        "表示詞語補充，破折號前內容較重要。",
+        "表示轉折詞用法，破折號後一定是結論。"
+      ],
+      answerIndex:1,
+      hints:[
+        "第二式先切句：分號前後同等重要；破折號常用來『轉一下』或『補一下』。",
+        "這裡『改成寫一封信』後面接『——寫完後又不敢寄出』，是把行動推進到關鍵結果：做了但仍退縮。",
+        "所以屬於『語意轉變/推進』，後面更重要；不是聲音延續，也不是單純補充。"
+      ],
+      explain:
+`破折號後不是同義補充，而是把敘事推進到「寫了卻不敢寄」的關鍵轉折，
+因此屬於「語意轉變，後面較重要」。`
+    },
+    {
+      styleId:"S2",
+      title:"〈排隊〉",
+      passage:
+`〈排隊〉
+
+他說要等一下；我說好。於是我站著等：等到天色暗了，等到店員收椅子，
+等到旁邊的人都散去。最後他傳來一句：「抱歉，我今天不去了。」`,
+      question:"依文意判斷，冒號後「等到天色暗了…」在結構上最可能是什麼？",
+      choices:[
+        "對前句「我站著等」的具體列舉與補充說明。",
+        "與前句無關的新主題，應獨立成段。",
+        "對「他說要等一下」的原因解釋。",
+        "表示前句不重要，冒號後才是主旨。"
+      ],
+      answerIndex:0,
+      hints:[
+        "第二式：冒號常是承上啟下，前面是總括，後面是展開。",
+        "前句「我站著等：」是總述；後面連續「等到…」是展開列舉。",
+        "所以答案是『具體列舉補充』；不是換主題，也不是原因解釋。"
+      ],
+      explain:
+`冒號前是總括「我站著等」，冒號後是具體列舉「等到…」的細節，
+屬於補充說明（展開列舉）。`
+    },
+    {
+      styleId:"S2",
+      title:"〈訊息〉",
+      passage:
+`〈訊息〉
+
+手機跳出通知。我點開，又立刻關上。不是沒看到，而是不知道要怎麼回；
+怕回得太快像是在意，回得太慢又像是冷淡。於是我把手機放到桌角，
+假裝自己正在忙。`,
+      question:"文中分號「不是沒看到，而是不知道要怎麼回；怕回得太快…」的分號前後，關係最接近下列何者？",
+      choices:[
+        "前後同等重要，後句補充前句的心理理由。",
+        "前句是結論，後句完全無關。",
+        "後句才是唯一重點，前句可忽略。",
+        "表示語意轉折，後句否定前句。"
+      ],
+      answerIndex:0,
+      hints:[
+        "第二式：分號前後通常是『兩個同等重要的層次』。",
+        "前句提出『不知怎麼回』；後句列出『怕太快/太慢』，是在補足原因與細節。",
+        "所以是同等重要的並列＋補充，不是轉折否定。"
+      ],
+      explain:
+`分號連結兩個同等重要的層次：先說「不知道怎麼回」，
+再補充「太快/太慢都尷尬」的心理理由。`
+    },
+    {
+      styleId:"S2",
+      title:"〈走路〉",
+      passage:
+`〈走路〉
+
+我以為自己很能忍。腳痛就忍、心煩也忍，直到某天我停下來才發現，
+我不是變堅強，而是變遲鈍。`,
+      question:"若要用「／」做斷句以幫助理解，最適合的切分方式是哪一個？",
+      choices:[
+        "我以為自己很能忍。／腳痛就忍、心煩也忍，直到某天我停下來才發現，／我不是變堅強，而是變遲鈍。",
+        "我以為自己很能忍。腳痛就忍、心煩也忍。／直到某天我停下來才發現，我不是變堅強，而是變遲鈍。",
+        "我以為自己很能忍／腳痛就忍、心煩也忍，直到某天我停下來才發現，我不是變堅強，而是變遲鈍。",
+        "我以為自己很能忍。腳痛就忍、心煩也忍，直到某天我停下來才發現，我不是變堅強，而是變遲鈍。／"
+      ],
+      answerIndex:0,
+      hints:[
+        "第二式：優先用句號切大段，再用逗號群聚成『一口一口』。",
+        "這段有三層：自我評估（我以為…）→行為累積（腳痛…直到…）→醒悟對比（不是…而是…）。",
+        "選項 A 正好切成三口：句號後一口、行為一口、結論對比一口。"
+      ],
+      explain:
+`好的斷句要把「主幹層次」切出來：起（我以為）→承（一直忍到…）→轉合（不是堅強而是遲鈍）。
+A 的切分最符合這三層。`
+    },
+    {
+      styleId:"S2",
+      title:"〈停電〉",
+      passage:
+`〈停電〉
+
+屋子忽然黑了。有人笑說：「終於可以休息。」我卻先想到冰箱裡的藥；
+又想到樓下那位獨居老人；最後才想起手機沒電。`,
+      question:"下列哪一個閱讀策略最符合「標點斷句」的目的？",
+      choices:[
+        "先把文章背起來，再去理解每一句的意思。",
+        "用標點把內容分段，一次只處理一小段以降低焦慮與漏讀。",
+        "忽略標點，直接抓關鍵字猜測作者立場。",
+        "先看選項再回頭找句子，省略閱讀文章。"
+      ],
+      answerIndex:1,
+      hints:[
+        "第二式的目的不是背誦，也不是跳讀猜題。",
+        "它要你把長文切短，一次吃一口，讓大腦覺得『變短了』，減少緊張。",
+        "所以選『分段一次處理一小段』。"
+      ],
+      explain:
+`標點斷句的核心作用：把長文切小段、降低閱讀負擔與焦慮、避免漏讀。`
+    },
+
+    // ===== S3 轉折詞/總結詞 =====
+    {
+      styleId:"S3",
+      title:"〈善意〉",
+      passage:
+`〈善意〉
+
+他做的每件事看起來都很周到，會替你點餐、替你安排路線，
+甚至替你回答別人的問題。起初我以為那是體貼，然而我後來才發現，
+他其實不太能接受我有自己的想法。`,
+      question:"依本文文意，作者真正想強調的是哪一項？",
+      choices:[
+        "他替作者點餐與安排路線，十分周到。",
+        "他總能替作者回答問題，顯示很有領導力。",
+        "作者一開始覺得他體貼，但後來發現他不接受作者獨立想法。",
+        "周到的行為通常能展現一個人的善意。"
+      ],
+      answerIndex:2,
+      hints:[
+        "第三式先圈轉折詞：『然而』後面才是重點。",
+        "轉折前是鋪陳（看起來周到）；轉折後揭示本質（不接受我的想法）。",
+        "選項要能同時呈現「表面體貼」與「真實問題」。"
+      ],
+      explain:
+`轉折詞「然而」後：真正要強調的是「表面體貼其實是控制，不能接受我有想法」。`
+    },
+    {
+      styleId:"S3",
+      title:"〈道歉〉",
+      passage:
+`〈道歉〉
+
+我以為道歉就是把「對不起」說得越多越好，讓對方知道我很在意。
+但我後來明白，真正的道歉不是堆疊詞句，而是承擔後果。
+因此我做的第一件事，是把那件我弄壞的東西修好。`,
+      question:"依文意判斷，作者最重視的「道歉」是什麼？",
+      choices:[
+        "把對不起說得越多越好。",
+        "用詞句表達在意，讓對方感動。",
+        "承擔後果並採取修復行動。",
+        "先等對方冷靜，再決定是否道歉。"
+      ],
+      answerIndex:2,
+      hints:[
+        "圈總結詞：『因此』後面通常是作者結論＋行動落點。",
+        "前面否定「堆疊詞句」；結論是「承擔後果」。",
+        "因此後面『修好』是具體例證，支持答案。"
+      ],
+      explain:
+`總結詞「因此」後：作者把道歉定義為「承擔後果並修復」，不是多說幾次對不起。`
+    },
+    {
+      styleId:"S3",
+      title:"〈學會放手〉",
+      passage:
+`〈學會放手〉
+
+我總想把事情做到最好，所以每個細節都不放心交給別人。
+結果我越忙，團隊越慢，大家也越不敢嘗試。於是我開始練習只抓方向，
+把方法交給同伴決定。雖然一開始不習慣，但我發現他們反而做得更好。`,
+      question:"作者想傳達的重點最可能是下列何者？",
+      choices:[
+        "細節越多越能確保品質。",
+        "領導者應該親力親為以避免失誤。",
+        "過度控制會拖慢團隊，放手讓同伴嘗試反而更有效。",
+        "團隊成員不敢嘗試，主要是因為缺乏能力。"
+      ],
+      answerIndex:2,
+      hints:[
+        "找語意轉折/推進：『結果』指出負面後果，『於是』是行動轉向。",
+        "重點在『控制→拖慢/不敢嘗試』 vs 『放手→更好』。",
+        "選項若只談品質或貶低同伴能力，都是掉進直覺坑。"
+      ],
+      explain:
+`第三式抓「結果/於是」：前半鋪陳控制的代價，後半轉向放手的好處。主旨是「過度控制拖慢團隊，放手更有效」。`
+    },
+    {
+      styleId:"S3",
+      title:"〈失眠〉",
+      passage:
+`〈失眠〉
+
+我不是睡不著，而是怕明天。一想到明天要面對的事，
+腦子就開始替我演練各種失敗。可是我越演練，越無法休息，
+最後連今天也被我弄丟了。`,
+      question:"下列何者最符合本文的重點？",
+      choices:[
+        "作者透過演練失敗來準備明天，因此更安心。",
+        "作者失眠的原因其實是擔心明天，反覆演練失敗反而讓今天也受影響。",
+        "作者認為只要早睡就能解決所有焦慮。",
+        "作者的失眠與明天無關，主要是因為今天太累。"
+      ],
+      answerIndex:1,
+      hints:[
+        "抓否定句：『不是…而是…』本身就是一種轉折定位，後面是重點。",
+        "後面又用『可是』推進：演練→更無法休息→弄丟今天。",
+        "因此答案要包含：原因＝怕明天 + 後果＝今天也受影響。"
+      ],
+      explain:
+`用第三式：『不是…而是…』後定義原因；『可是』後推進後果。重點是焦慮明天造成失眠，反覆演練讓今天也被消耗。`
+    },
+    {
+      styleId:"S3",
+      title:"〈公平〉",
+      passage:
+`〈公平〉
+
+我以為公平是每個人得到一樣多的資源，所以我把時間平均分配。
+但我後來發現，有些人需要的是機會，有些人需要的是支持。
+因此公平更像是讓每個人都能走到起點，而不是站在同一個位置。`,
+      question:"依文意判斷，作者對「公平」的看法是什麼？",
+      choices:[
+        "公平就是資源平均分配。",
+        "公平就是每個人站在同一個位置。",
+        "公平是依不同需求提供不同支持，使每個人能到達起點。",
+        "公平是把時間全部給最需要的人。"
+      ],
+      answerIndex:2,
+      hints:[
+        "圈『但』：作者先否定直覺（平均），再提出新定義。",
+        "圈『因此』：結論句會更抽象總結：公平像是…",
+        "答案要抓到「依需求不同而不同支持」＋「走到起點」這個比喻。"
+      ],
+      explain:
+`轉折詞『但』後否定平均；總結詞『因此』後提出定義：公平是依需求給支持，讓每個人能到達起點。`
+    },
+
+    // ===== S4 圖表閱讀流程 =====
+    {
+      styleId:"S4",
+      title:"【圖表】一週讀書時間（分鐘）",
+      passage:
+`【長條圖】一週讀書時間（分鐘）
+（單位：分鐘）
+
+週一  40
+週二  60
+週三  30
+週四  90
+週五  50
+
+※ 注意：圖表未標示「科目」，僅為總讀書時間。`,
+      question:"依圖表判斷，下列敘述何者正確？",
+      choices:[
+        "週三的讀書時間是全週最高。",
+        "週四的讀書時間比週二多 30 分鐘。",
+        "週二到週五的讀書時間呈現持續上升趨勢。",
+        "這張圖是折線圖，因此主要考趨勢。"
+      ],
+      answerIndex:1,
+      hints:[
+        "第四式第一步：定類型→這是長條圖，優先考『比較』不是趨勢硬套。",
+        "第三步看單位：分鐘。直接做數字比較：週四 90、週二 60。",
+        "90-60=30，所以 B 正確；A 反了、C 亂講趨勢、D 類型錯。"
+      ],
+      explain:
+`定類型：長條圖=比較。讀內容：週四 90、週二 60，差 30 分鐘 → B 正確。`
+    },
+    {
+      styleId:"S4",
+      title:"【圖表】某校社團人數比例",
+      passage:
+`【圓餅圖】某校社團人數比例
+（比例合計 100%）
+
+籃球社 30%
+音樂社 25%
+美術社 15%
+科學社 20%
+其他   10%`,
+      question:"依圖表判斷，下列敘述何者正確？",
+      choices:[
+        "籃球社的人數是美術社的兩倍。",
+        "音樂社比科學社多 10%。",
+        "籃球社與音樂社合計超過全校的一半。",
+        "其他社團的人數比美術社多。"
+      ],
+      answerIndex:2,
+      hints:[
+        "第四式：定類型→圓餅圖主考比例/合計。",
+        "計算：籃球 30%＋音樂 25%=55% > 50%。",
+        "A：30%是15%的兩倍（這句其實也對？注意題目陷阱：它說『人數』，但只有比例，若總人數未知仍可用比例判兩倍，仍成立。可是會考常用『最確定』：比起 A 可能被質疑「兩倍」需總數一致，C 用比例合計最穩。"
+      ],
+      explain:
+`依圓餅圖，最穩的是比例合計：30%+25%=55% 超過一半 → C。A 雖看似成立，但考場常用「最不易被挑語病」的判斷，合計比例更直接。`
+    },
+    {
+      styleId:"S4",
+      title:"【圖表】溫度變化（上午 8–12 時）",
+      passage:
+`【折線圖】溫度變化（上午 8–12 時）
+（單位：°C）
+
+8:00  18
+9:00  20
+10:00 23
+11:00 22
+12:00 24`,
+      question:"依圖表判斷，下列敘述何者正確？",
+      choices:[
+        "9:00 到 11:00 溫度持續上升。",
+        "10:00 到 11:00 溫度下降 1°C。",
+        "8:00 的溫度是全時段最高。",
+        "11:00 的溫度比 12:00 高。"
+      ],
+      answerIndex:1,
+      hints:[
+        "第四式：定類型→折線圖主要考趨勢與變化。",
+        "讀內容：10:00 23 → 11:00 22，下降 1。",
+        "其他：9→11並非持續上升（23→22），8點不是最高，11點也不比12點高。"
+      ],
+      explain:
+`折線圖=趨勢。10:00 23°C 到 11:00 22°C，下降 1°C → B 正確。`
+    },
+    {
+      styleId:"S4",
+      title:"【圖表】流程：投稿到刊登",
+      passage:
+`【流程圖】投稿到刊登
+1. 投稿
+2. 初審
+3. 修稿
+4. 複審
+5. 刊登`,
+      question:"依圖表判斷，下列敘述何者正確？",
+      choices:[
+        "修稿在初審之前進行。",
+        "複審完成後才會修稿。",
+        "流程圖主要呈現步驟順序，修稿在初審之後、複審之前。",
+        "流程圖主要考比較，因此要比對各步驟所花時間。"
+      ],
+      answerIndex:2,
+      hints:[
+        "第四式：定類型→流程圖必考順序。",
+        "讀步驟：投稿→初審→修稿→複審→刊登。",
+        "因此修稿位置：初審之後、複審之前 → C。"
+      ],
+      explain:
+`流程圖=順序。修稿在初審後、複審前 → C。`
+    },
+    {
+      styleId:"S4",
+      title:"【圖表】三種水果價格（每公斤）",
+      passage:
+`【長條圖】三種水果價格（每公斤）
+（單位：元/公斤）
+
+蘋果  120
+香蕉   60
+葡萄  180`,
+      question:"依圖表判斷，下列敘述何者正確？",
+      choices:[
+        "葡萄比蘋果便宜 60 元。",
+        "香蕉價格是葡萄的三倍。",
+        "葡萄價格最高，且比香蕉高 120 元。",
+        "這張圖沒有單位，因此無法比較。"
+      ],
+      answerIndex:2,
+      hints:[
+        "第四式：先看單位：元/公斤，能直接比較。",
+        "讀內容：葡萄 180、香蕉 60、蘋果 120。",
+        "180-60=120 → C。A 反了，B 反了，D 亂說。"
+      ],
+      explain:
+`長條圖=比較。葡萄 180 最高，且比香蕉 60 高 120 → C。`
+    },
+
+    // ===== S5 國文圖表：答案必在圖表 =====
+    {
+      styleId:"S5",
+      title:"【圖表】留言欄（節錄）",
+      passage:
+`【留言欄（節錄）】
+甲：我覺得你說得很有道理，但我還是不同意你的結論。
+乙：你根本沒看懂文章吧？別再硬拗了。
+丙：我比較想知道，你的資料來源是什麼？可以補上嗎？
+丁：其實我也曾這樣想，後來遇到某件事才改觀。`,
+      question:"哪一則留言的語氣最接近「理性討論、聚焦證據」？",
+      choices:[
+        "甲",
+        "乙",
+        "丙",
+        "丁"
+      ],
+      answerIndex:2,
+      hints:[
+        "第五式：國文圖表題答案必在文字線索裡，不用外部知識。",
+        "抓關鍵詞：『資料來源』、『補上』＝要證據。",
+        "乙是情緒攻擊；丁是經驗分享；甲是禮貌但沒提證據。"
+      ],
+      explain:
+`只看圖表文字：丙直接要求「資料來源」屬於證據導向的理性討論。`
+    },
+    {
+      styleId:"S5",
+      title:"【圖表】兩段對話（A 與 B）",
+      passage:
+`【對話 A】
+師：你覺得這段作者想說什麼？
+生：我覺得他很生氣。
+師：你從哪一句看出來？
+
+【對話 B】
+師：你覺得這段作者想說什麼？
+生：我覺得他很生氣。
+師：好，那答案就是「生氣」。`,
+      question:"哪段對話更符合「閱讀理解」的訓練方式？",
+      choices:[
+        "對話 A，因為要求學生回到文本找依據。",
+        "對話 A，因為直接給學生答案節省時間。",
+        "對話 B，因為尊重學生直覺感受。",
+        "對話 B，因為不需要文本證據也能理解。"
+      ],
+      answerIndex:0,
+      hints:[
+        "第五式：題目本身就是圖表（對話呈現），答案線索在對話差異。",
+        "閱讀理解的核心是『依據文本』，A 問『哪一句』就是拉回證據。",
+        "B 直接收束成答案，反而跳過證據。"
+      ],
+      explain:
+`A 要求學生指出文本依據，符合閱讀理解訓練；B 直接把感受當答案。`
+    },
+    {
+      styleId:"S5",
+      title:"【圖表】公告（節錄）",
+      passage:
+`【公告（節錄）】
+本館自下週起調整開放時間：
+週一至週五 09:00–17:00
+週六      10:00–16:00
+週日及國定假日 休館
+
+※ 若遇團體預約，可能提前 30 分鐘停止入場。`,
+      question:"依公告內容，下列何者正確？",
+      choices:[
+        "週日仍開放至 16:00。",
+        "週六的開放時間比平日短。",
+        "國定假日若有預約則照常開館。",
+        "平日可能延後 30 分鐘停止入場。"
+      ],
+      answerIndex:1,
+      hints:[
+        "第五式：只看公告文字，不要腦補。",
+        "週六 10–16（6 小時），平日 9–17（8 小時）→週六較短。",
+        "休館條款清楚寫週日及國定假日休館；停止入場是提前 30 分鐘，不是延後。"
+      ],
+      explain:
+`週六 10:00–16:00 明顯比平日 09:00–17:00 短 → B。`
+    },
+    {
+      styleId:"S5",
+      title:"【圖表】四句提示（考場便利貼）",
+      passage:
+`【便利貼】
+① 先看題目問「整篇」還是問「哪一句」。
+② 若選項出現「一定、完全、必然」，先提高警覺。
+③ 回原文找「對應詞」：選項每個名詞都要能在文中找到影子。
+④ 最後才做推論：推論不能超出文本給的線索。`,
+      question:"依便利貼內容，下列哪一項最符合「避免過度推論」？",
+      choices:[
+        "①",
+        "②",
+        "③",
+        "④"
+      ],
+      answerIndex:3,
+      hints:[
+        "第五式：答案就在句子本身。",
+        "題幹問『避免過度推論』，直接對應哪一句？",
+        "④ 明講『推論不能超出文本』。"
+      ],
+      explain:
+`④ 直接寫出推論的界線：不能超出文本線索，因此最符合。`
+    },
+    {
+      styleId:"S5",
+      title:"【圖表】兩個標語",
+      passage:
+`【標語 A】看不懂就快點翻過去，先把題目做完。
+【標語 B】看不懂先停下來，把句子用自己的話重說一次。`,
+      question:"若以「閱讀理解」為目標，哪個標語較合適？",
+      choices:[
+        "A，因為速度最重要。",
+        "A，因為先做題目才會懂。",
+        "B，因為重述能檢查理解並補足漏洞。",
+        "B，因為不用讀文章也能作答。"
+      ],
+      answerIndex:2,
+      hints:[
+        "第五式：就用標語文字判斷，不用外部常識。",
+        "閱讀理解強調『理解與檢核』，B 提供具體方法：重述。",
+        "A 是逃避理解，容易落入語感猜。"
+      ],
+      explain:
+`B 提倡停下來用自己的話重述，是典型理解檢核策略，較符合閱讀理解目標。`
+    }
+  ];
+
+  // ===== 遊戲狀態 =====
+  let order = [];            // 題目順序（固定：五式各五題依序）
+  let idx = 0;               // 當前題目 index
+  let score = 0;
+  let streak = 0;
+  let answered = false;
+  let hintLevel = 0;
+
+  // ===== DOM =====
+  const passageEl = document.getElementById("passage");
+  const questionEl = document.getElementById("question");
+  const choicesEl = document.getElementById("choices");
+  const styleNameEl = document.getElementById("styleName");
+  const qIndexInStyleEl = document.getElementById("qIndexInStyle");
+
+  const progressText = document.getElementById("progressText");
+  const scoreText = document.getElementById("scoreText");
+  const streakText = document.getElementById("streakText");
+  const barFill = document.getElementById("barFill");
+
+  const resultBox = document.getElementById("resultBox");
+  const resultStatus = document.getElementById("resultStatus");
+  const resultExplain = document.getElementById("resultExplain");
+
+  const startBtn = document.getElementById("startBtn");
+  const hintBtn = document.getElementById("hintBtn");
+  const whyBtn = document.getElementById("whyBtn");
+  const nextBtn = document.getElementById("nextBtn");
+
+  const coachHint = document.getElementById("coachHint");
+
+  const modalBack = document.getElementById("modalBack");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalBody = document.getElementById("modalBody");
+  const modalClose = document.getElementById("modalClose");
+
+  // ===== 初始化題目順序：五式各五題依序（你說「一起吧」＆「一次五年」→我用 5 式 5 題的整包）=====
+  function buildOrder(){
+    const byStyle = new Map();
+    for (const s of STYLES) byStyle.set(s.id, []);
+    QUESTIONS.forEach((q, i) => byStyle.get(q.styleId).push(i));
+
+    // 保持每式出題原順序
+    const ordered = [];
+    for (const s of STYLES){
+      const arr = byStyle.get(s.id);
+      if (arr.length !== 5){
+        console.warn("每式題數非 5：", s.id, arr.length);
+      }
+      ordered.push(...arr);
+    }
+    return ordered;
+  }
+
+  function resetGame(){
+    order = buildOrder();
+    idx = 0;
+    score = 0;
+    streak = 0;
+    answered = false;
+    hintLevel = 0;
+    render();
+  }
+
+  function getCurrent(){
+    if (idx < 0 || idx >= order.length) return null;
+    return QUESTIONS[order[idx]];
+  }
+
+  function getStyle(styleId){
+    return STYLES.find(s => s.id === styleId);
+  }
+
+  function calcIndexInStyle(){
+    const cur = getCurrent();
+    if (!cur) return 0;
+    // count within same style up to current idx
+    let count = 0;
+    for (let k = 0; k <= idx; k++){
+      const q = QUESTIONS[order[k]];
+      if (q.styleId === cur.styleId) count++;
+    }
+    return count;
+  }
+
+  function updateMeta(){
+    progressText.textContent = `${Math.min(idx, order.length) } / ${order.length}`;
+    scoreText.textContent = `${score}`;
+    streakText.textContent = `${streak}`;
+    const pct = Math.round((Math.min(idx, order.length) / order.length) * 100);
+    barFill.style.width = `${pct}%`;
+  }
+
+  function clearResult(){
+    resultBox.classList.remove("show");
+    resultStatus.textContent = "—";
+    resultExplain.textContent = "—";
+  }
+
+  function showResult(isCorrect, explainText){
+    resultBox.classList.add("show");
+    resultStatus.textContent = isCorrect ? "✅ 正確（你有照招式走）" : "❌ 錯誤（這就是沒走流程會掉的坑）";
+    resultStatus.className = "status " + (isCorrect ? "good" : "bad");
+    resultExplain.textContent = explainText;
+  }
+
+  function render(){
+    updateMeta();
+
+    const cur = getCurrent();
+    if (!cur){
+      // 結束畫面
+      styleNameEl.textContent = "通關結算";
+      qIndexInStyleEl.textContent = "—";
+      passageEl.textContent = `🎉 全部完成！
+你的得分：${score} / ${order.length}
+最高連對：${streak}（最後一段連對）
+想再跑一次可以按「開始 / 重新開始」。`;
+      questionEl.textContent = "結束囉。";
+      choicesEl.innerHTML = "";
+      coachHint.textContent = "提示：你可以按「開始 / 重新開始」再刷一次，或告訴我你想加強哪一式（我就把那一式加倍陷阱）。";
+      clearResult();
+      nextBtn.disabled = true;
+      return;
+    }
+
+    const style = getStyle(cur.styleId);
+    styleNameEl.textContent = style?.name ?? "—";
+    qIndexInStyleEl.textContent = calcIndexInStyle();
+
+    passageEl.textContent = `${cur.title}\n\n${cur.passage}`;
+    questionEl.textContent = cur.question;
+
+    // coach hint reset
+    hintLevel = 0;
+    coachHint.textContent = "提示：按 H 顯示下一步提示（每題最多 3 段提示）。";
+
+    // buttons
+    nextBtn.disabled = true;
+    answered = false;
+    clearResult();
+
+    // render choices
+    choicesEl.innerHTML = "";
+    cur.choices.forEach((c, i) => {
+      const btn = document.createElement("button");
+      btn.className = "choiceBtn";
+      btn.textContent = `${String.fromCharCode(65+i)}. ${c}`;
+      btn.addEventListener("click", () => choose(i));
+      choicesEl.appendChild(btn);
+    });
+
+    updateMeta(); // update progress based on current idx
+    progressText.textContent = `${idx} / ${order.length}`;
+    barFill.style.width = `${Math.round((idx / order.length) * 100)}%`;
+  }
+
+  function lockChoices(){
+    [...choicesEl.querySelectorAll("button.choiceBtn")].forEach(b => b.disabled = true);
+  }
+
+  function markChoices(answerIndex, chosenIndex){
+    const btns = [...choicesEl.querySelectorAll("button.choiceBtn")];
+    btns.forEach((b, i) => {
+      if (i === answerIndex) b.classList.add("good");
+      if (i === chosenIndex && chosenIndex !== answerIndex) b.classList.add("bad");
+    });
+  }
+
+  function choose(choiceIndex){
+    if (answered) return;
+    const cur = getCurrent();
+    if (!cur) return;
+
+    answered = true;
+    lockChoices();
+    markChoices(cur.answerIndex, choiceIndex);
+
+    const correct = (choiceIndex === cur.answerIndex);
+    if (correct){
+      score += 1;
+      streak += 1;
+    } else {
+      streak = 0;
+    }
+
+    showResult(correct, cur.explain);
+    nextBtn.disabled = false;
+
+    updateMeta();
+    progressText.textContent = `${idx+1} / ${order.length}`;
+    barFill.style.width = `${Math.round(((idx+1) / order.length) * 100)}%`;
+  }
+
+  function next(){
+    if (!answered) return; // 必須先作答才可下一題（逼你走流程）
+    idx += 1;
+    render();
+  }
+
+  function hint(){
+    const cur = getCurrent();
+    if (!cur) return;
+    if (hintLevel >= cur.hints.length){
+      coachHint.textContent = "提示：已經沒有更多提示了（你該回到文本，照招式自己拆）。";
+      return;
+    }
+    coachHint.textContent = `提示 ${hintLevel+1}/${cur.hints.length}：\n${cur.hints[hintLevel]}`;
+    hintLevel += 1;
+  }
+
+  function openModal(title, body){
+    modalTitle.textContent = title;
+    modalBody.textContent = body;
+    modalBack.classList.add("show");
+  }
+  function closeModal(){
+    modalBack.classList.remove("show");
+  }
+
+  // ===== 事件 =====
+  startBtn.addEventListener("click", resetGame);
+  nextBtn.addEventListener("click", next);
+  hintBtn.addEventListener("click", hint);
+
+  whyBtn.addEventListener("click", () => {
+    const cur = getCurrent();
+    const style = cur ? getStyle(cur.styleId) : null;
+    openModal(style?.name ?? "規則", style?.rule ?? "—");
+  });
+
+  modalClose.addEventListener("click", closeModal);
+  modalBack.addEventListener("click", (e) => { if (e.target === modalBack) closeModal(); });
+
+  window.addEventListener("keydown", (e) => {
+    const key = e.key.toLowerCase();
+    if (key === "h") hint();
+    if (key === "n") next();
+    if (["1","2","3","4"].includes(e.key)){
+      const i = Number(e.key) - 1;
+      const btn = choicesEl.querySelectorAll("button.choiceBtn")[i];
+      if (btn && !btn.disabled) btn.click();
+    }
+    if (key === "escape") closeModal();
+  });
+
+  // 首次渲染（不黑屏）
+  resetGame();
+})();
+</script>
 </body>
 </html>
