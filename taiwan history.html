@@ -1,0 +1,244 @@
+import React, { useState } from 'react';
+import { Gamepad2, Lightbulb, GraduationCap, Map, Scale, Users, FileText } from 'lucide-react';
+
+const TimelineApp = () => {
+  const [activeYear, setActiveYear] = useState('1947');
+
+  // 資料結構：圖片改用網路公開連結 (維基百科/政府公開資料)，免上傳
+  const timelineData = {
+    '1947': {
+      year: '1947',
+      title: '憲法本文制定',
+      tag: '法統最大化',
+      badgeColor: 'bg-blue-600',
+      description: '《中華民國憲法》本文制定。憲法第四條確立「固有之疆域」。領土名義上涵蓋全中國，是法統宣稱的基礎。',
+      conceptTitle: '領土概念：固有之疆域',
+      conceptContent: '未採詳盡列舉方式，保留模糊性。主權理論上及於全中國，呈現「法統最大化」的特徵。',
+      imageAlt: '1947 中華民國全圖',
+      // 使用維基百科公開的秋海棠地圖連結
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/ROC_Administrative_and_Claims.jpg/800px-ROC_Administrative_and_Claims.jpg',
+      icon: <Map className="text-blue-500" />
+    },
+    '1949': {
+      year: '1949',
+      title: '國府敗退來臺',
+      tag: '主權實踐地區化',
+      badgeColor: 'bg-indigo-600',
+      description: '國共內戰失利，政府遷台。名實分雜：實際統治範圍縮小至台澎金馬，但憲法宣稱與政治現實徹底脫鉤。',
+      conceptTitle: '實質主權變動',
+      conceptContent: '台灣成為政府有效控制的唯一基地。治權僅及於台澎金馬，形成「主權實踐地區化」。',
+      imageAlt: '1949 國軍撤退',
+      // 使用古寧頭戰役/蔣中正巡視金門的相關歷史照片
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Chiang_Kai-shek_inspection_at_Kinmen.jpg/640px-Chiang_Kai-shek_inspection_at_Kinmen.jpg',
+      icon: <Users className="text-indigo-500" />
+    },
+    '1991': {
+      year: '1991',
+      title: '憲法增修條文',
+      tag: '確立主權來源',
+      badgeColor: 'bg-teal-600',
+      description: '終止動員戡亂時期。修憲規定：總統、副總統由「自由地區」人民選舉產生。',
+      conceptTitle: '正當性轉移',
+      conceptContent: '承認國家最高領導人的正當性（主權），僅來自台澎金馬人民的選票。',
+      imageAlt: '國民大會',
+      // 使用陽明山中山樓（國民大會開會地點）照片
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Chung-Shan_Building.jpg/640px-Chung-Shan_Building.jpg',
+      icon: <FileText className="text-teal-500" />
+    },
+    '1992': {
+      year: '1992',
+      title: '兩岸人民關係條例',
+      tag: '承認分治現實',
+      badgeColor: 'bg-cyan-600',
+      description: '《兩岸人民關係條例》制定。法律上將領土明確定義為「台灣地區」（實控）和「大陸地區」（名義領土）。',
+      conceptTitle: '體制上的區分',
+      conceptContent: '承認分治現實：體制上區分「實控區」與「非實控區」。',
+      imageAlt: '兩岸交流',
+      // 使用辜汪會談歷史照片 (象徵兩岸治權分治接觸)
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/zh/2/25/Koo-Wang_Talks.jpg',
+      icon: <Scale className="text-cyan-500" />
+    },
+    '1993': {
+      year: '1993',
+      title: '釋字第328號解釋',
+      tag: '交由政治決定',
+      badgeColor: 'bg-purple-600',
+      description: '針對「固有疆域」範圍之爭議，大法官解釋：此為「重大之政治問題」，不應由行使司法權之釋憲機關予以解釋。',
+      conceptTitle: '統治行為（政治問題）',
+      conceptContent: '司法迴避。讓領土界線由政治現實和最高民意決定，而非司法審查。',
+      imageAlt: '司法大廈',
+      // 使用司法大廈（司法院）外觀照片
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Judicial_Yuan_Building_at_Night_20161224.jpg/640px-Judicial_Yuan_Building_at_Night_20161224.jpg',
+      icon: <Scale className="text-purple-500" />
+    },
+    '2005': {
+      year: '2005',
+      title: '憲法第七次增修',
+      tag: '最終確認主權',
+      badgeColor: 'bg-emerald-600',
+      description: '憲法增修條文修正：領土變更程序須經「自由地區選舉人投票複決」才能通過。',
+      conceptTitle: '主權民主化',
+      conceptContent: '實質確認了台澎金馬人民是唯一能決定國家命運的主權行使者。',
+      imageAlt: '投票民主',
+      // 使用投票/民主象徵圖片
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/ROC_2008_Presidential_Election_Ballot_Box.jpg/640px-ROC_2008_Presidential_Election_Ballot_Box.jpg',
+      icon: <Users className="text-emerald-500" />
+    }
+  };
+
+  const currentData = timelineData[activeYear];
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-800 p-4 md:p-8">
+      
+      {/* 頂部標題區 Header */}
+      <header className="bg-slate-900 text-white p-6 rounded-t-xl flex flex-col md:flex-row justify-between items-center shadow-lg gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <span className="text-yellow-400">⚖️</span> 憲法與主權界定互動學習單
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            探索從「法統最大化」到「最終確認主權」的歷史進程
+          </p>
+        </div>
+        <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-full font-bold flex items-center gap-2 transition-all shadow-md transform hover:scale-105 active:scale-95">
+          <Gamepad2 size={18} />
+          挑戰配對遊戲
+        </button>
+      </header>
+
+      {/* 主要內容區 Main Content */}
+      <div className="flex flex-col md:flex-row bg-white rounded-b-xl shadow-xl overflow-hidden min-h-[600px]">
+        
+        {/* 左側導航 Sidebar */}
+        <nav className="w-full md:w-72 bg-slate-50 border-r border-slate-200 flex-shrink-0 overflow-y-auto max-h-[300px] md:max-h-full">
+          <div className="p-4 border-b border-slate-200 sticky top-0 bg-slate-50 z-10">
+            <h2 className="text-slate-500 font-bold text-sm flex items-center gap-2">
+              <span className="text-blue-500">N</span> 時間軸導航
+            </h2>
+          </div>
+          <ul className="py-2">
+            {Object.keys(timelineData).map((year) => (
+              <li key={year}>
+                <button
+                  onClick={() => setActiveYear(year)}
+                  className={`w-full text-left px-6 py-4 border-l-4 transition-all group ${
+                    activeYear === year
+                      ? 'border-blue-600 bg-blue-50 text-blue-900'
+                      : 'border-transparent text-slate-500 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className={`block font-bold text-lg ${activeYear === year ? 'text-blue-700' : 'group-hover:text-slate-700'}`}>
+                      {year}
+                    </span>
+                    {activeYear === year && <span className="text-blue-500 animate-pulse">●</span>}
+                  </div>
+                  <span className={`text-sm block mt-1 ${activeYear === year ? 'text-blue-600 font-medium' : ''}`}>
+                    {timelineData[year].tag}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* 右側詳細內容 Content Area */}
+        <main className="flex-1 flex flex-col">
+          {/* 藍色大標題區塊 Banner */}
+          <div className="bg-slate-800 text-white p-8 md:p-10 relative overflow-hidden flex-shrink-0">
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="bg-yellow-500 text-slate-900 text-xs font-bold px-2 py-1 rounded">
+                  {currentData.year}年
+                </span>
+                <span className="text-slate-400 text-sm flex items-center gap-1">
+                  {currentData.icon} 歷史節點
+                </span>
+              </div>
+              
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-wide">
+                {currentData.title}
+              </h2>
+              
+              <div className="inline-flex items-center gap-3 bg-white/10 border border-white/20 px-4 py-3 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-colors cursor-default">
+                <Lightbulb className="text-yellow-400 flex-shrink-0" size={24} />
+                <div>
+                  <div className="text-xs text-slate-300 uppercase tracking-wider">實質主權變動意義</div>
+                  <div className="font-bold text-lg text-white">{currentData.tag}</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* 背景裝飾大年份 */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[120px] md:text-[180px] font-bold text-white/5 select-none pointer-events-none">
+              {currentData.year}
+            </div>
+          </div>
+
+          {/* 下方圖文區塊 Detail Section */}
+          <div className="flex-1 p-6 md:p-10 bg-white overflow-y-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 h-full">
+              
+              {/* 左欄：文字說明 */}
+              <div className="space-y-6 flex flex-col justify-center">
+                <div>
+                  <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">歷史背景</h3>
+                  <p className="text-lg leading-relaxed text-slate-700 text-justify">
+                    {currentData.description}
+                  </p>
+                </div>
+
+                {/* 概念解析卡片 */}
+                <div className="bg-indigo-50 border-l-4 border-indigo-500 p-6 rounded-r-lg shadow-sm">
+                  <h3 className="flex items-center gap-2 font-bold text-indigo-900 mb-3 text-lg">
+                    <GraduationCap size={24} />
+                    {currentData.conceptTitle}
+                  </h3>
+                  <p className="text-indigo-800 leading-relaxed">
+                    {currentData.conceptContent}
+                  </p>
+                </div>
+              </div>
+
+              {/* 右欄：圖片展示 */}
+              <div className="flex items-center justify-center">
+                <div className="relative group w-full max-w-md">
+                  {/* 照片邊框效果 */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-slate-200 to-slate-300 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                  <div className="relative bg-white p-2 rounded-lg ring-1 ring-slate-900/5 shadow-xl">
+                    <div className="aspect-[4/3] bg-slate-100 rounded overflow-hidden relative">
+                       {/* 這裡顯示圖片 */}
+                       <img 
+                         src={currentData.imageUrl} 
+                         alt={currentData.imageAlt}
+                         className="object-cover w-full h-full transform transition-transform duration-500 group-hover:scale-105"
+                         // 如果外部連結失效，顯示備用圖片
+                         onError={(e) => {
+                           e.target.src = `https://placehold.co/600x400/e2e8f0/475569?text=${currentData.title}`;
+                         }}
+                       />
+                       
+                       {/* 圖片標籤 */}
+                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                         <p className="text-white text-sm font-medium">
+                           {currentData.imageAlt}
+                         </p>
+                       </div>
+                    </div>
+                  </div>
+                  {/* 裝飾：便利貼效果 */}
+                  <div className="absolute -top-2 -right-2 bg-yellow-300 text-yellow-800 text-xs font-bold px-2 py-1 rotate-3 shadow-md rounded-sm z-20">
+                    史料影像
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default TimelineApp;
