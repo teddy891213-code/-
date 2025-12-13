@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>憲法與主權界定互動學習單</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 圖片懸浮特效 */
+        .illustration-container:hover svg { transform: scale(1.05); }
+        .illustration-container svg { transition: transform 0.5s ease; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 小圖標組件 ---
+        const IconScale = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"></path><path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"></path><line x1="7" y1="21" x2="17" y2="21"></line><line x1="12" y1="3" x2="12" y2="21"></line><path d="M6 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path></svg>;
+        const IconBook = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>;
+        const IconGame = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
+        const IconMap = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>;
+        const IconUsers = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+        const IconFileText = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>;
+
+        // --- 核心：內建 SVG 向量插圖生成器 ---
+        const EventIllustration = ({ year }) => {
+            switch(year) {
+                case '1947': // 憲法與秋海棠
+                    return (
+                        <svg viewBox="0 0 400 300" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="bg1947" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#1e3a8a"/><stop offset="100%" stopColor="#172554"/></linearGradient>
+                            </defs>
+                            <rect width="400" height="300" fill="url(#bg1947)"/>
+                            {/* 抽象地圖輪廓 */}
+                            <path d="M80,60 Q150,20 220,50 T320,100 T300,200 Q200,240 100,200 T80,60 Z" fill="#3b82f6" opacity="0.3" stroke="#60a5fa" strokeWidth="2" strokeDasharray="5,5"/>
+                            {/* 憲法文件 */}
+                            <rect x="140" y="80" width="120" height="160" rx="5" fill="#f8fafc" shadow="lg"/>
+                            <rect x="150" y="90" width="100" height="10" rx="2" fill="#e2e8f0"/>
+                            <rect x="150" y="110" width="100" height="4" rx="2" fill="#cbd5e1"/>
+                            <rect x="150" y="120" width="80" height="4" rx="2" fill="#cbd5e1"/>
+                            <rect x="150" y="130" width="90" height="4" rx="2" fill="#cbd5e1"/>
+                            <circle cx="200" cy="180" r="30" fill="#ef4444" opacity="0.8"/>
+                            <path d="M185,180 L200,195 L215,165" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+                            <text x="200" y="270" textAnchor="middle" fill="#93c5fd" fontSize="16" fontWeight="bold">固有疆域</text>
+                        </svg>
+                    );
+                case '1949': // 遷台與海峽
+                    return (
+                        <svg viewBox="0 0 400 300" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="bg1949" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#312e81"/><stop offset="100%" stopColor="#4338ca"/></linearGradient>
+                            </defs>
+                            <rect width="400" height="300" fill="url(#bg1949)"/>
+                            {/* 海浪 */}
+                            <path d="M0,200 Q50,180 100,200 T200,200 T300,200 T400,200 V300 H0 Z" fill="#6366f1" opacity="0.6"/>
+                            <path d="M0,220 Q60,200 120,220 T240,220 T360,220 T480,220 V300 H0 Z" fill="#818cf8" opacity="0.8"/>
+                            {/* 船艦 */}
+                            <path d="M120,180 L280,180 L260,230 H140 Z" fill="#94a3b8"/>
+                            <rect x="180" y="140" width="40" height="40" fill="#cbd5e1"/>
+                            <rect x="195" y="110" width="10" height="30" fill="#64748b"/>
+                            {/* 台灣島示意 */}
+                            <ellipse cx="320" cy="100" rx="30" ry="60" transform="rotate(20 320 100)" fill="#10b981" opacity="0.8"/>
+                            <text x="320" y="100" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">TW</text>
+                        </svg>
+                    );
+                case '1991': // 修憲
+                    return (
+                        <svg viewBox="0 0 400 300" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="bg1991" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#115e59"/><stop offset="100%" stopColor="#0f766e"/></linearGradient>
+                            </defs>
+                            <rect width="400" height="300" fill="url(#bg1991)"/>
+                            {/* 文件背景 */}
+                            <rect x="100" y="50" width="200" height="220" rx="4" fill="#ccfbf1"/>
+                            <rect x="120" y="70" width="160" height="20" rx="2" fill="#5eead4"/>
+                            <rect x="120" y="110" width="160" height="2" fill="#99f6e4"/>
+                            <rect x="120" y="130" width="160" height="2" fill="#99f6e4"/>
+                            <rect x="120" y="150" width="100" height="2" fill="#99f6e4"/>
+                            {/* 筆 */}
+                            <rect x="220" y="150" width="20" height="80" rx="2" transform="rotate(-45 220 150)" fill="#fcd34d"/>
+                            <polygon points="206,206 215,215 200,215" fill="#475569"/>
+                            <text x="200" y="250" textAnchor="middle" fill="#0f766e" fontSize="20" fontWeight="bold">憲法增修</text>
+                        </svg>
+                    );
+                case '1992': // 兩岸關係條例
+                    return (
+                        <svg viewBox="0 0 400 300" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="bg1992" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#0891b2"/><stop offset="100%" stopColor="#06b6d4"/></linearGradient>
+                            </defs>
+                            <rect width="400" height="300" fill="url(#bg1992)"/>
+                            {/* 兩個區塊象徵兩岸 */}
+                            <rect x="60" y="100" width="100" height="100" rx="10" fill="#cffafe" stroke="white" strokeWidth="2"/>
+                            <text x="110" y="155" textAnchor="middle" fill="#0891b2" fontSize="16" fontWeight="bold">台灣地區</text>
+                            
+                            <rect x="240" y="100" width="100" height="100" rx="10" fill="#ecfeff" stroke="white" strokeWidth="2" strokeDasharray="5,5"/>
+                            <text x="290" y="155" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="bold">大陸地區</text>
+                            
+                            {/* 連結線 */}
+                            <line x1="160" y1="150" x2="240" y2="150" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+                            <circle cx="200" cy="150" r="15" fill="#facc15"/>
+                            <text x="200" y="240" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">分治現實</text>
+                        </svg>
+                    );
+                case '1993': // 法槌 (釋憲)
+                    return (
+                        <svg viewBox="0 0 400 300" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="bg1993" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#581c87"/><stop offset="100%" stopColor="#7e22ce"/></linearGradient>
+                            </defs>
+                            <rect width="400" height="300" fill="url(#bg1993)"/>
+                            {/* 擊槌座 */}
+                            <ellipse cx="200" cy="220" rx="60" ry="15" fill="#a855f7"/>
+                            {/* 法槌頭 */}
+                            <rect x="120" y="100" width="160" height="60" rx="5" fill="#e9d5ff"/>
+                            <rect x="130" y="110" width="140" height="40" rx="2" fill="#c084fc"/>
+                            {/* 握把 */}
+                            <rect x="190" y="160" width="20" height="80" rx="2" fill="#fcd34d"/>
+                            <text x="200" y="60" textAnchor="middle" fill="#e9d5ff" fontSize="24" fontWeight="bold">釋字328號</text>
+                            <text x="200" y="270" textAnchor="middle" fill="#d8b4fe" fontSize="16">政治問題・司法迴避</text>
+                        </svg>
+                    );
+                case '2005': // 投票箱
+                    return (
+                        <svg viewBox="0 0 400 300" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="bg2005" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#059669"/><stop offset="100%" stopColor="#10b981"/></linearGradient>
+                            </defs>
+                            <rect width="400" height="300" fill="url(#bg2005)"/>
+                            {/* 箱子 */}
+                            <rect x="120" y="120" width="160" height="140" rx="4" fill="#d1fae5"/>
+                            <rect x="140" y="120" width="120" height="10" fill="#047857"/>
+                            {/* 選票 */}
+                            <rect x="170" y="60" width="60" height="80" fill="white" transform="rotate(-10 200 100)"/>
+                            <circle cx="190" cy="90" r="10" fill="#ef4444" transform="rotate(-10 200 100)"/>
+                            <text x="200" y="290" textAnchor="middle" fill="#ecfdf5" fontSize="16" fontWeight="bold">自由地區選舉人複決</text>
+                        </svg>
+                    );
+                default:
+                    return <div className="w-full h-full bg-slate-800"/>;
+            }
+        };
+
+        const TimelineApp = () => {
+            const [viewMode, setViewMode] = useState('timeline');
+            const [activeYear, setActiveYear] = useState('1947');
+
+            const timelineData = {
+                '1947': {
+                    year: '1947',
+                    title: '憲法本文制定',
+                    tag: '法統最大化',
+                    tagMeaning: '主權理論上及於全中國',
+                    description: '《中華民國憲法》本文制定。憲法第四條確立「固有之疆域」。領土名義上涵蓋全中國，是法統宣稱的基礎。',
+                    conceptTitle: '領土概念：固有之疆域',
+                    conceptContent: '未採詳盡列舉方式，保留模糊性。主權理論上及於全中國，呈現「法統最大化」的特徵。',
+                    icon: <IconMap />
+                },
+                '1949': {
+                    year: '1949',
+                    title: '國府敗退來臺',
+                    tag: '主權實踐地區化',
+                    tagMeaning: '台灣成為政府有效控制的唯一基地',
+                    description: '國共內戰失利，政府遷台。名實分雜：實際統治範圍縮小至台澎金馬，但憲法宣稱與政治現實徹底脫鉤。',
+                    conceptTitle: '實質主權變動',
+                    conceptContent: '治權僅及於台澎金馬，形成「主權實踐地區化」。',
+                    icon: <IconUsers />
+                },
+                '1991': {
+                    year: '1991',
+                    title: '憲法增修條文',
+                    tag: '確立主權來源',
+                    tagMeaning: '承認國家最高領導人的正當性僅來自台澎金馬',
+                    description: '終止動員戡亂時期。修憲規定：總統、副總統由「自由地區」人民選舉產生。',
+                    conceptTitle: '正當性轉移',
+                    conceptContent: '承認國家最高領導人的正當性（主權），僅來自台澎金馬人民的選票。',
+                    icon: <IconFileText />
+                },
+                '1992': {
+                    year: '1992',
+                    title: '兩岸人民關係條例',
+                    tag: '承認分治現實',
+                    tagMeaning: '體制上區分實控區與非實控區',
+                    description: '《兩岸人民關係條例》制定。法律上將領土明確定義為「台灣地區」（實控）和「大陸地區」（名義領土）。',
+                    conceptTitle: '體制上的區分',
+                    conceptContent: '承認分治現實：體制上區分「實控區」與「非實控區」。',
+                    icon: <IconScale />
+                },
+                '1993': {
+                    year: '1993',
+                    title: '釋字第328號解釋',
+                    tag: '交由政治決定',
+                    tagMeaning: '讓領土界線由政治現實和最高民意決定',
+                    description: '針對「固有疆域」爭議，大法官解釋：此為「重大之政治問題」，不應由行使司法權之釋憲機關予以解釋。',
+                    conceptTitle: '統治行為',
+                    conceptContent: '司法迴避。認定領土變更屬政治問題，非司法審查範圍。',
+                    icon: <IconScale />
+                },
+                '2005': {
+                    year: '2005',
+                    title: '憲法第七次增修',
+                    tag: '最終確認主權',
+                    tagMeaning: '台澎金馬人民是唯一能決定國家命運的主權行使者',
+                    description: '憲法增修條文修正：領土變更程序須經「自由地區選舉人投票複決」才能通過。',
+                    conceptTitle: '主權民主化',
+                    conceptContent: '實質確認了台澎金馬人民是唯一能決定國家命運的主權行使者。',
+                    icon: <IconUsers />
+                }
+            };
+
+            const currentData = timelineData[activeYear];
+
+            // --- 遊戲邏輯 ---
+            const [gameItems, setGameItems] = useState({ left: [], right: [] });
+            const [matchedPairs, setMatchedPairs] = useState([]);
+            const [selectedLeft, setSelectedLeft] = useState(null);
+            const [selectedRight, setSelectedRight] = useState(null);
+            const [isWrong, setIsWrong] = useState(false);
+
+            useEffect(() => {
+                if (viewMode === 'game') resetGame();
+            }, [viewMode]);
+
+            const resetGame = () => {
+                const leftSide = Object.values(timelineData).map(d => ({ id: d.year, text: `${d.year} ${d.title}`, type: 'left' }));
+                const rightSide = Object.values(timelineData).map(d => ({ id: d.year, text: d.tag, subText: d.tagMeaning, type: 'right' }));
+                setGameItems({
+                    left: leftSide.sort(() => Math.random() - 0.5),
+                    right: rightSide.sort(() => Math.random() - 0.5)
+                });
+                setMatchedPairs([]);
+                setSelectedLeft(null);
+                setSelectedRight(null);
+                setIsWrong(false);
+            };
+
+            const handleCardClick = (item, side) => {
+                if (isWrong) { setIsWrong(false); setSelectedLeft(null); setSelectedRight(null); }
+                if (side === 'left') {
+                    if (matchedPairs.includes(item.id)) return;
+                    setSelectedLeft(item);
+                    if (selectedRight) checkMatch(item, selectedRight);
+                } else {
+                    if (matchedPairs.includes(item.id)) return;
+                    setSelectedRight(item);
+                    if (selectedLeft) checkMatch(selectedLeft, item);
+                }
+            };
+
+            const checkMatch = (left, right) => {
+                if (left.id === right.id) {
+                    setMatchedPairs(prev => [...prev, left.id]);
+                    setSelectedLeft(null);
+                    setSelectedRight(null);
+                } else {
+                    setIsWrong(true);
+                    setTimeout(() => { setIsWrong(false); setSelectedLeft(null); setSelectedRight(null); }, 1000);
+                }
+            };
+
+            return (
+                <div className="min-h-screen pb-10">
+                    <nav className="glass-panel sticky top-0 z-50 border-b-0 border-b-slate-700">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-16">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-gradient-to-tr from-yellow-400 to-orange-500 p-2 rounded-lg shadow-lg text-slate-900">
+                                        <IconScale />
+                                    </div>
+                                    <span className="font-bold text-xl tracking-wide text-white">憲法與主權變動 <span className="text-slate-500 text-sm font-normal hidden sm:inline">| 互動式學習系統</span></span>
+                                </div>
+                                <div className="flex bg-slate-700/50 rounded-full p-1 border border-slate-600">
+                                    <button onClick={() => setViewMode('timeline')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'timeline' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'} flex items-center gap-2`}><IconBook /> 歷史探索</button>
+                                    <button onClick={() => setViewMode('game')} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'game' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'} flex items-center gap-2`}><IconGame /> 挑戰配對</button>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {/* 模式 1: 時間軸模式 */}
+                        {viewMode === 'timeline' && (
+                            <div className="flex flex-col lg:flex-row gap-8 animate-fade-in">
+                                <div className="lg:w-1/4">
+                                    <div className="glass-panel rounded-2xl p-6 sticky top-24">
+                                        <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6 ml-2">時間節點</h3>
+                                        <div className="space-y-2 relative">
+                                            <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-700 z-0"></div>
+                                            {Object.keys(timelineData).map((year) => (
+                                                <button key={year} onClick={() => setActiveYear(year)} className={`group relative z-10 w-full flex items-center gap-4 p-3 rounded-xl transition-all ${activeYear === year ? 'bg-slate-700/80 shadow-inner' : 'hover:bg-slate-700/30'}`}>
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all shrink-0 ${activeYear === year ? 'bg-blue-600 border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.5)] text-white' : 'bg-slate-800 border-slate-600 text-slate-500'}`}>
+                                                        <div className={`w-2 h-2 rounded-full ${activeYear === year ? 'bg-white' : 'bg-slate-500'}`}></div>
+                                                    </div>
+                                                    <div className="text-left"><span className={`block font-bold text-lg leading-none ${activeYear === year ? 'text-white' : 'text-slate-400'}`}>{year}</span><span className={`text-xs ${activeYear === year ? 'text-blue-300' : 'text-slate-500'}`}>{timelineData[year].tag}</span></div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="lg:w-3/4">
+                                    <div className="glass-panel rounded-3xl overflow-hidden shadow-2xl relative">
+                                        <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none select-none"><span className="text-9xl font-black text-white">{currentData.year}</span></div>
+                                        <div className="p-8 md:p-10 pb-0 relative z-10">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-sm font-medium mb-4">{currentData.icon} 歷史關鍵時刻</div>
+                                            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">{currentData.title}</h1>
+                                            <div className="h-1 w-20 bg-yellow-500 rounded-full mt-4 mb-6"></div>
+                                        </div>
+                                        <div className="p-8 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+                                            <div className="space-y-8">
+                                                <div><h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">事件背景</h3><p className="text-lg text-slate-300 leading-relaxed text-justify border-l-4 border-slate-600 pl-4">{currentData.description}</p></div>
+                                                <div className="bg-gradient-to-br from-indigo-900/50 to-slate-800 p-6 rounded-2xl border border-indigo-500/30 shadow-lg"><h3 className="text-indigo-300 font-bold flex items-center gap-2 mb-3">{currentData.conceptTitle}</h3><p className="text-indigo-100/90 leading-relaxed">{currentData.conceptContent}</p></div>
+                                                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-700/30 border border-slate-700/50"><div><div className="text-xs text-slate-400 uppercase">實質主權變動意義</div><div className="text-xl font-bold text-yellow-400">{currentData.tag}</div></div></div>
+                                            </div>
+                                            
+                                            {/* --- 圖片區域：使用內建 SVG 生成器 --- */}
+                                            <div className="relative group illustration-container cursor-default">
+                                                <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl flex items-center justify-center">
+                                                    <EventIllustration year={currentData.year} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {/* 模式 2: 遊戲模式 */}
+                        {viewMode === 'game' && (
+                            <div className="max-w-4xl mx-auto animate-fade-in">
+                                <div className="text-center mb-8"><h2 className="text-3xl font-bold text-white mb-2">主權變動連連看</h2><p className="text-slate-400">請將左側的「法律事件」與右側的「實質主權意義」進行配對</p></div>
+                                {matchedPairs.length === 6 && <div className="text-center mb-6 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-xl inline-block text-emerald-400 font-bold animate-bounce">🎉 完成！太棒了！ <button onClick={resetGame} className="ml-4 underline">再玩一次</button></div>}
+                                <div className="flex flex-col md:flex-row justify-between gap-8 md:gap-16">
+                                    <div className="flex-1 space-y-4">
+                                        {gameItems.left.map((item) => {
+                                            const isMatched = matchedPairs.includes(item.id);
+                                            const isSelected = selectedLeft?.id === item.id;
+                                            const isError = isWrong && isSelected;
+                                            return <button key={item.id} onClick={() => handleCardClick(item, 'left')} disabled={isMatched} className={`w-full p-4 rounded-xl border-l-4 text-left transition-all shadow-lg ${isMatched ? 'bg-slate-800/50 border-emerald-500 opacity-50' : isError ? 'bg-red-900/20 border-red-500' : isSelected ? 'bg-blue-600 border-blue-400 text-white scale-105' : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'}`}><div className="flex justify-between items-center"><span className="font-bold">{item.text}</span>{isMatched && <IconCheck />}</div></button>
+                                        })}
+                                    </div>
+                                    <div className="flex-1 space-y-4">
+                                        {gameItems.right.map((item) => {
+                                            const isMatched = matchedPairs.includes(item.id);
+                                            const isSelected = selectedRight?.id === item.id;
+                                            const isError = isWrong && isSelected;
+                                            return <button key={item.id} onClick={() => handleCardClick(item, 'right')} disabled={isMatched} className={`w-full p-4 rounded-xl border-r-4 text-right transition-all shadow-lg ${isMatched ? 'bg-slate-800/50 border-emerald-500 opacity-50' : isError ? 'bg-red-900/20 border-red-500' : isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-105' : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'}`}><div className="flex flex-col items-end"><div className="flex items-center gap-2 mb-1">{isMatched && <IconCheck />}<span className="font-bold">{item.text}</span></div><span className="text-xs text-slate-400">{item.subText}</span></div></button>
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TimelineApp />);
+    </script>
+</body>
+</html>
