@@ -1,385 +1,381 @@
-import React, { useState, useEffect } from 'react';
-import { Gamepad2, BookOpen, Map, Users, Scale, FileText, CheckCircle, XCircle, ArrowRight, RefreshCw } from 'lucide-react';
-
-const TimelineApp = () => {
-  const [viewMode, setViewMode] = useState('timeline'); // 'timeline' or 'game'
-  const [activeYear, setActiveYear] = useState('1947');
-
-  // --- 資料區 ---
-  const timelineData = {
-    '1947': {
-      year: '1947',
-      title: '憲法本文制定',
-      tag: '法統最大化',
-      tagMeaning: '主權理論上及於全中國',
-      description: '《中華民國憲法》本文制定。憲法第四條確立「固有之疆域」。領土名義上涵蓋全中國，是法統宣稱的基礎。',
-      conceptTitle: '領土概念：固有之疆域',
-      conceptContent: '未採詳盡列舉方式，保留模糊性。主權理論上及於全中國，呈現「法統最大化」的特徵。',
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/ROC_Administrative_and_Claims.jpg/800px-ROC_Administrative_and_Claims.jpg',
-      icon: <Map className="text-blue-400" />
-    },
-    '1949': {
-      year: '1949',
-      title: '國府敗退來臺',
-      tag: '主權實踐地區化',
-      tagMeaning: '台灣成為政府有效控制的唯一基地',
-      description: '國共內戰失利，政府遷台。名實分雜：實際統治範圍縮小至台澎金馬，但憲法宣稱與政治現實徹底脫鉤。',
-      conceptTitle: '實質主權變動',
-      conceptContent: '治權僅及於台澎金馬，形成「主權實踐地區化」。',
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Chiang_Kai-shek_inspection_at_Kinmen.jpg/640px-Chiang_Kai-shek_inspection_at_Kinmen.jpg',
-      icon: <Users className="text-indigo-400" />
-    },
-    '1991': {
-      year: '1991',
-      title: '憲法增修條文',
-      tag: '確立主權來源',
-      tagMeaning: '承認國家最高領導人的正當性僅來自台澎金馬',
-      description: '終止動員戡亂時期。修憲規定：總統、副總統由「自由地區」人民選舉產生。',
-      conceptTitle: '正當性轉移',
-      conceptContent: '承認國家最高領導人的正當性（主權），僅來自台澎金馬人民的選票。',
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Chung-Shan_Building.jpg/640px-Chung-Shan_Building.jpg',
-      icon: <FileText className="text-teal-400" />
-    },
-    '1992': {
-      year: '1992',
-      title: '兩岸人民關係條例',
-      tag: '承認分治現實',
-      tagMeaning: '體制上區分實控區與非實控區',
-      description: '《兩岸人民關係條例》制定。法律上將領土明確定義為「台灣地區」（實控）和「大陸地區」（名義領土）。',
-      conceptTitle: '體制上的區分',
-      conceptContent: '承認分治現實：體制上區分「實控區」與「非實控區」。',
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/zh/2/25/Koo-Wang_Talks.jpg',
-      icon: <Scale className="text-cyan-400" />
-    },
-    '1993': {
-      year: '1993',
-      title: '釋字第328號解釋',
-      tag: '交由政治決定',
-      tagMeaning: '讓領土界線由政治現實和最高民意決定',
-      description: '針對「固有疆域」爭議，大法官解釋：此為「重大之政治問題」，不應由行使司法權之釋憲機關予以解釋。',
-      conceptTitle: '統治行為',
-      conceptContent: '司法迴避。認定領土變更屬政治問題，非司法審查範圍。',
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Judicial_Yuan_Building_at_Night_20161224.jpg/640px-Judicial_Yuan_Building_at_Night_20161224.jpg',
-      icon: <Scale className="text-purple-400" />
-    },
-    '2005': {
-      year: '2005',
-      title: '憲法第七次增修',
-      tag: '最終確認主權',
-      tagMeaning: '台澎金馬人民是唯一能決定國家命運的主權行使者',
-      description: '憲法增修條文修正：領土變更程序須經「自由地區選舉人投票複決」才能通過。',
-      conceptTitle: '主權民主化',
-      conceptContent: '實質確認了台澎金馬人民是唯一能決定國家命運的主權行使者。',
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/ROC_2008_Presidential_Election_Ballot_Box.jpg/640px-ROC_2008_Presidential_Election_Ballot_Box.jpg',
-      icon: <Users className="text-emerald-400" />
-    }
-  };
-
-  const currentData = timelineData[activeYear];
-
-  // --- 遊戲邏輯區 ---
-  const [gameItems, setGameItems] = useState([]);
-  const [selectedLeft, setSelectedLeft] = useState(null);
-  const [selectedRight, setSelectedRight] = useState(null);
-  const [matchedPairs, setMatchedPairs] = useState([]);
-  const [isWrong, setIsWrong] = useState(false);
-
-  // 初始化遊戲數據
-  useEffect(() => {
-    if (viewMode === 'game') {
-      const leftSide = Object.values(timelineData).map(d => ({ id: d.year, text: `${d.year} ${d.title}`, type: 'left' }));
-      const rightSide = Object.values(timelineData).map(d => ({ id: d.year, text: d.tag, subText: d.tagMeaning, type: 'right' }));
-      // 簡單洗牌
-      setGameItems({
-        left: leftSide.sort(() => Math.random() - 0.5),
-        right: rightSide.sort(() => Math.random() - 0.5)
-      });
-      setMatchedPairs([]);
-      setSelectedLeft(null);
-      setSelectedRight(null);
-    }
-  }, [viewMode]);
-
-  const handleCardClick = (item, side) => {
-    if (isWrong) {
-      setIsWrong(false);
-      setSelectedLeft(null);
-      setSelectedRight(null);
-    }
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>憲法與主權界定互動學習單</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     
-    if (side === 'left') {
-      if (matchedPairs.includes(item.id)) return;
-      setSelectedLeft(item);
-      if (selectedRight) checkMatch(item, selectedRight);
-    } else {
-      if (matchedPairs.includes(item.id)) return;
-      setSelectedRight(item);
-      if (selectedLeft) checkMatch(selectedLeft, item);
-    }
-  };
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200">
+    <div id="root"></div>
 
-  const checkMatch = (left, right) => {
-    if (left.id === right.id) {
-      setMatchedPairs([...matchedPairs, left.id]);
-      setSelectedLeft(null);
-      setSelectedRight(null);
-    } else {
-      setIsWrong(true);
-      setTimeout(() => {
-        setIsWrong(false);
-        setSelectedLeft(null);
-        setSelectedRight(null);
-      }, 1000);
-    }
-  };
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Gamepad2, BookOpen, Map, Users, Scale, FileText, CheckCircle, XCircle, ArrowRight, RefreshCw, GraduationCap, Lightbulb } = lucide;
 
-  const resetGame = () => {
-      const leftSide = Object.values(timelineData).map(d => ({ id: d.year, text: `${d.year} ${d.title}`, type: 'left' }));
-      const rightSide = Object.values(timelineData).map(d => ({ id: d.year, text: d.tag, subText: d.tagMeaning, type: 'right' }));
-      setGameItems({
-        left: leftSide.sort(() => Math.random() - 0.5),
-        right: rightSide.sort(() => Math.random() - 0.5)
-      });
-      setMatchedPairs([]);
-      setSelectedLeft(null);
-      setSelectedRight(null);
-  }
+        const TimelineApp = () => {
+            const [viewMode, setViewMode] = useState('timeline');
+            const [activeYear, setActiveYear] = useState('1947');
 
+            // 資料來源：整合您提供的講義圖片與網路公開圖庫
+            const timelineData = {
+                '1947': {
+                    year: '1947',
+                    title: '憲法本文制定',
+                    tag: '法統最大化',
+                    tagMeaning: '主權理論上及於全中國',
+                    description: '《中華民國憲法》本文制定。憲法第四條確立「固有之疆域」。領土名義上涵蓋全中國，是法統宣稱的基礎。',
+                    conceptTitle: '領土概念：固有之疆域',
+                    conceptContent: '未採詳盡列舉方式，保留模糊性。主權理論上及於全中國，呈現「法統最大化」的特徵。',
+                    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/ROC_Administrative_and_Claims.jpg/800px-ROC_Administrative_and_Claims.jpg',
+                    icon: <Map className="text-blue-400" />
+                },
+                '1949': {
+                    year: '1949',
+                    title: '國府敗退來臺',
+                    tag: '主權實踐地區化',
+                    tagMeaning: '台灣成為政府有效控制的唯一基地',
+                    description: '國共內戰失利，政府遷台。名實分雜：實際統治範圍縮小至台澎金馬，但憲法宣稱與政治現實徹底脫鉤。',
+                    conceptTitle: '實質主權變動',
+                    conceptContent: '治權僅及於台澎金馬，形成「主權實踐地區化」。',
+                    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Chiang_Kai-shek_inspection_at_Kinmen.jpg/640px-Chiang_Kai-shek_inspection_at_Kinmen.jpg',
+                    icon: <Users className="text-indigo-400" />
+                },
+                '1991': {
+                    year: '1991',
+                    title: '憲法增修條文',
+                    tag: '確立主權來源',
+                    tagMeaning: '承認國家最高領導人的正當性僅來自台澎金馬',
+                    description: '終止動員戡亂時期。修憲規定：總統、副總統由「自由地區」人民選舉產生。',
+                    conceptTitle: '正當性轉移',
+                    conceptContent: '承認國家最高領導人的正當性（主權），僅來自台澎金馬人民的選票。',
+                    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Chung-Shan_Building.jpg/640px-Chung-Shan_Building.jpg',
+                    icon: <FileText className="text-teal-400" />
+                },
+                '1992': {
+                    year: '1992',
+                    title: '兩岸人民關係條例',
+                    tag: '承認分治現實',
+                    tagMeaning: '體制上區分實控區與非實控區',
+                    description: '《兩岸人民關係條例》制定。法律上將領土明確定義為「台灣地區」（實控）和「大陸地區」（名義領土）。',
+                    conceptTitle: '體制上的區分',
+                    conceptContent: '承認分治現實：體制上區分「實控區」與「非實控區」。',
+                    imageUrl: 'https://upload.wikimedia.org/wikipedia/zh/2/25/Koo-Wang_Talks.jpg',
+                    icon: <Scale className="text-cyan-400" />
+                },
+                '1993': {
+                    year: '1993',
+                    title: '釋字第328號解釋',
+                    tag: '交由政治決定',
+                    tagMeaning: '讓領土界線由政治現實和最高民意決定',
+                    description: '針對「固有疆域」爭議，大法官解釋：此為「重大之政治問題」，不應由行使司法權之釋憲機關予以解釋。',
+                    conceptTitle: '統治行為',
+                    conceptContent: '司法迴避。認定領土變更屬政治問題，非司法審查範圍。',
+                    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Judicial_Yuan_Building_at_Night_20161224.jpg/640px-Judicial_Yuan_Building_at_Night_20161224.jpg',
+                    icon: <Scale className="text-purple-400" />
+                },
+                '2005': {
+                    year: '2005',
+                    title: '憲法第七次增修',
+                    tag: '最終確認主權',
+                    tagMeaning: '台澎金馬人民是唯一能決定國家命運的主權行使者',
+                    description: '憲法增修條文修正：領土變更程序須經「自由地區選舉人投票複決」才能通過。',
+                    conceptTitle: '主權民主化',
+                    conceptContent: '實質確認了台澎金馬人民是唯一能決定國家命運的主權行使者。',
+                    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/ROC_2008_Presidential_Election_Ballot_Box.jpg/640px-ROC_2008_Presidential_Election_Ballot_Box.jpg',
+                    icon: <Users className="text-emerald-400" />
+                }
+            };
 
-  return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 font-sans selection:bg-yellow-500 selection:text-slate-900 pb-10">
-      
-      {/* --- 頂部導航欄 --- */}
-      <nav className="bg-slate-800/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-tr from-yellow-400 to-orange-500 p-2 rounded-lg shadow-lg shadow-orange-500/20">
-                <Scale className="text-slate-900 w-6 h-6" />
-              </div>
-              <span className="font-bold text-xl tracking-wide text-white">憲法與主權變動 <span className="text-slate-500 text-sm font-normal hidden sm:inline">| 互動式學習系統</span></span>
-            </div>
-            <div className="flex bg-slate-700/50 rounded-full p-1 border border-slate-600">
-              <button 
-                onClick={() => setViewMode('timeline')}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${viewMode === 'timeline' ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-              >
-                <BookOpen size={16} /> 歷史探索
-              </button>
-              <button 
-                onClick={() => setViewMode('game')}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${viewMode === 'game' ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/30' : 'text-slate-400 hover:text-white'}`}
-              >
-                <Gamepad2 size={16} /> 挑戰配對
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+            const currentData = timelineData[activeYear];
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* --- 模式 1: 時間軸學習模式 --- */}
-        {viewMode === 'timeline' && (
-          <div className="flex flex-col lg:flex-row gap-8">
-            
-            {/* 左側導航 (時間軸樣式) */}
-            <div className="lg:w-1/4">
-              <div className="sticky top-24 bg-slate-800/50 rounded-2xl p-6 border border-slate-700 backdrop-blur-sm shadow-xl">
-                <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6 ml-2">時間節點</h3>
-                <div className="space-y-0 relative">
-                  {/* 連接線 */}
-                  <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-700 z-0"></div>
-                  
-                  {Object.keys(timelineData).map((year) => (
-                    <button
-                      key={year}
-                      onClick={() => setActiveYear(year)}
-                      className={`group relative z-10 w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-300 ${activeYear === year ? 'bg-slate-700/80 shadow-inner' : 'hover:bg-slate-700/30'}`}
-                    >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 shrink-0 ${activeYear === year ? 'bg-blue-600 border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.5)] text-white' : 'bg-slate-800 border-slate-600 text-slate-500 group-hover:border-slate-400'}`}>
-                        {activeYear === year ? timelineData[year].icon : <div className="w-2 h-2 rounded-full bg-slate-500" />}
-                      </div>
-                      <div className="text-left">
-                        <span className={`block font-bold text-lg leading-none ${activeYear === year ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>{year}</span>
-                        <span className={`text-xs ${activeYear === year ? 'text-blue-300' : 'text-slate-500'}`}>{timelineData[year].tag}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+            // --- 遊戲邏輯 ---
+            const [gameItems, setGameItems] = useState({ left: [], right: [] });
+            const [selectedLeft, setSelectedLeft] = useState(null);
+            const [selectedRight, setSelectedRight] = useState(null);
+            const [matchedPairs, setMatchedPairs] = useState([]);
+            const [isWrong, setIsWrong] = useState(false);
 
-            {/* 右側內容卡片 */}
-            <div className="lg:w-3/4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-slate-800 rounded-3xl overflow-hidden shadow-2xl border border-slate-700 relative">
+            useEffect(() => {
+                if (viewMode === 'game') {
+                    resetGame();
+                }
+            }, [viewMode]);
+
+            const resetGame = () => {
+                const leftSide = Object.values(timelineData).map(d => ({ id: d.year, text: `${d.year} ${d.title}`, type: 'left' }));
+                const rightSide = Object.values(timelineData).map(d => ({ id: d.year, text: d.tag, subText: d.tagMeaning, type: 'right' }));
+                setGameItems({
+                    left: leftSide.sort(() => Math.random() - 0.5),
+                    right: rightSide.sort(() => Math.random() - 0.5)
+                });
+                setMatchedPairs([]);
+                setSelectedLeft(null);
+                setSelectedRight(null);
+                setIsWrong(false);
+            };
+
+            const handleCardClick = (item, side) => {
+                if (isWrong) {
+                    setIsWrong(false);
+                    setSelectedLeft(null);
+                    setSelectedRight(null);
+                }
                 
-                {/* 裝飾背景 */}
-                <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-                   <span className="text-9xl font-black text-white">{currentData.year}</span>
-                </div>
+                if (side === 'left') {
+                    if (matchedPairs.includes(item.id)) return;
+                    setSelectedLeft(item);
+                    if (selectedRight) checkMatch(item, selectedRight);
+                } else {
+                    if (matchedPairs.includes(item.id)) return;
+                    setSelectedRight(item);
+                    if (selectedLeft) checkMatch(selectedLeft, item);
+                }
+            };
 
-                {/* 內容 Header */}
-                <div className="p-8 md:p-10 pb-0 relative z-10">
-                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-sm font-medium mb-4">
-                     {currentData.icon} 歷史關鍵時刻
-                   </div>
-                   <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">{currentData.title}</h1>
-                   <div className="h-1 w-20 bg-yellow-500 rounded-full mt-4 mb-6"></div>
-                </div>
+            const checkMatch = (left, right) => {
+                if (left.id === right.id) {
+                    setMatchedPairs(prev => [...prev, left.id]);
+                    setSelectedLeft(null);
+                    setSelectedRight(null);
+                } else {
+                    setIsWrong(true);
+                    setTimeout(() => {
+                        setIsWrong(false);
+                        setSelectedLeft(null);
+                        setSelectedRight(null);
+                    }, 1000);
+                }
+            };
 
-                {/* 內容 Body */}
-                <div className="p-8 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <div className="space-y-8">
-                    <div>
-                      <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">事件背景</h3>
-                      <p className="text-lg text-slate-300 leading-relaxed text-justify border-l-4 border-slate-600 pl-4">
-                        {currentData.description}
-                      </p>
-                    </div>
+            useEffect(() => {
+                lucide.createIcons();
+            });
 
-                    <div className="bg-gradient-to-br from-indigo-900/50 to-slate-800 p-6 rounded-2xl border border-indigo-500/30 shadow-lg relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-500 blur-[50px] opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                      <h3 className="text-indigo-300 font-bold flex items-center gap-2 mb-3">
-                        <BookOpen size={18} />
-                        {currentData.conceptTitle}
-                      </h3>
-                      <p className="text-indigo-100/90 leading-relaxed">
-                        {currentData.conceptContent}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-700/30 border border-slate-700/50">
-                        <div className="p-3 bg-yellow-500/10 rounded-full text-yellow-500">
-                            <CheckCircle size={24} />
+            return (
+                <div className="min-h-screen pb-10">
+                    {/* 導航欄 */}
+                    <nav className="glass-panel sticky top-0 z-50 border-b-0 border-b-slate-700">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-16">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-gradient-to-tr from-yellow-400 to-orange-500 p-2 rounded-lg shadow-lg shadow-orange-500/20 text-slate-900">
+                                        <Scale size={24} />
+                                    </div>
+                                    <span className="font-bold text-xl tracking-wide text-white">憲法與主權變動 <span className="text-slate-500 text-sm font-normal hidden sm:inline">| 互動式學習系統</span></span>
+                                </div>
+                                <div className="flex bg-slate-700/50 rounded-full p-1 border border-slate-600">
+                                    <button 
+                                        onClick={() => setViewMode('timeline')}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${viewMode === 'timeline' ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                                    >
+                                        <BookOpen size={16} /> 歷史探索
+                                    </button>
+                                    <button 
+                                        onClick={() => setViewMode('game')}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${viewMode === 'game' ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/30' : 'text-slate-400 hover:text-white'}`}
+                                    >
+                                        <Gamepad2 size={16} /> 挑戰配對
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <div className="text-xs text-slate-400 uppercase">實質主權變動意義</div>
-                            <div className="text-xl font-bold text-yellow-400">{currentData.tag}</div>
-                        </div>
-                    </div>
-                  </div>
+                    </nav>
 
-                  {/* 圖片區 */}
-                  <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-                    <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl">
-                       <img 
-                         src={currentData.imageUrl} 
-                         alt={currentData.title}
-                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                         onError={(e) => { e.target.src = "https://placehold.co/600x400/1e293b/cbd5e1?text=Image+Load+Error"; }}
-                       />
-                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent opacity-80"></div>
-                       <div className="absolute bottom-4 left-4 right-4">
-                         <span className="text-xs text-slate-400 border border-slate-600 px-2 py-1 rounded bg-slate-900/50 backdrop-blur-sm">歷史影像</span>
-                         <p className="text-white font-medium mt-2 drop-shadow-md truncate">{currentData.title} - {currentData.year}</p>
-                       </div>
-                    </div>
-                  </div>
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {/* 模式 1: 時間軸模式 */}
+                        {viewMode === 'timeline' && (
+                            <div className="flex flex-col lg:flex-row gap-8">
+                                {/* 左側導航 */}
+                                <div className="lg:w-1/4">
+                                    <div className="glass-panel rounded-2xl p-6 sticky top-24">
+                                        <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6 ml-2">時間節點</h3>
+                                        <div className="space-y-2 relative">
+                                            <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-700 z-0"></div>
+                                            {Object.keys(timelineData).map((year) => (
+                                                <button
+                                                    key={year}
+                                                    onClick={() => setActiveYear(year)}
+                                                    className={`group relative z-10 w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-300 ${activeYear === year ? 'bg-slate-700/80 shadow-inner' : 'hover:bg-slate-700/30'}`}
+                                                >
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 shrink-0 ${activeYear === year ? 'bg-blue-600 border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.5)] text-white' : 'bg-slate-800 border-slate-600 text-slate-500 group-hover:border-slate-400'}`}>
+                                                        {activeYear === year ? timelineData[year].icon : <div className="w-2 h-2 rounded-full bg-slate-500" />}
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <span className={`block font-bold text-lg leading-none ${activeYear === year ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>{year}</span>
+                                                        <span className={`text-xs ${activeYear === year ? 'text-blue-300' : 'text-slate-500'}`}>{timelineData[year].tag}</span>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 右側內容 */}
+                                <div className="lg:w-3/4 animate-fade-in-up">
+                                    <div className="glass-panel rounded-3xl overflow-hidden shadow-2xl relative">
+                                        <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none select-none">
+                                            <span className="text-9xl font-black text-white">{currentData.year}</span>
+                                        </div>
+
+                                        <div className="p-8 md:p-10 pb-0 relative z-10">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-sm font-medium mb-4">
+                                                {currentData.icon} 歷史關鍵時刻
+                                            </div>
+                                            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">{currentData.title}</h1>
+                                            <div className="h-1 w-20 bg-yellow-500 rounded-full mt-4 mb-6"></div>
+                                        </div>
+
+                                        <div className="p-8 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+                                            <div className="space-y-8">
+                                                <div>
+                                                    <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">事件背景</h3>
+                                                    <p className="text-lg text-slate-300 leading-relaxed text-justify border-l-4 border-slate-600 pl-4">
+                                                        {currentData.description}
+                                                    </p>
+                                                </div>
+
+                                                <div className="bg-gradient-to-br from-indigo-900/50 to-slate-800 p-6 rounded-2xl border border-indigo-500/30 shadow-lg relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
+                                                    <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-500 blur-[50px] opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                                                    <h3 className="text-indigo-300 font-bold flex items-center gap-2 mb-3">
+                                                        <GraduationCap size={18} />
+                                                        {currentData.conceptTitle}
+                                                    </h3>
+                                                    <p className="text-indigo-100/90 leading-relaxed">
+                                                        {currentData.conceptContent}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-700/30 border border-slate-700/50">
+                                                    <div className="p-3 bg-yellow-500/10 rounded-full text-yellow-500">
+                                                        <Lightbulb size={24} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-400 uppercase">實質主權變動意義</div>
+                                                        <div className="text-xl font-bold text-yellow-400">{currentData.tag}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="relative group">
+                                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+                                                <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl">
+                                                    <img 
+                                                        src={currentData.imageUrl} 
+                                                        alt={currentData.title}
+                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent opacity-80"></div>
+                                                    <div className="absolute bottom-4 left-4 right-4">
+                                                        <span className="text-xs text-slate-400 border border-slate-600 px-2 py-1 rounded bg-slate-900/50 backdrop-blur-sm">歷史影像</span>
+                                                        <p className="text-white font-medium mt-2 drop-shadow-md truncate">{currentData.title} - {currentData.year}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 模式 2: 遊戲模式 */}
+                        {viewMode === 'game' && (
+                            <div className="max-w-4xl mx-auto">
+                                <div className="text-center mb-8">
+                                    <h2 className="text-3xl font-bold text-white mb-2">主權變動連連看</h2>
+                                    <p className="text-slate-400">請將左側的「法律事件」與右側的「實質主權意義」進行配對</p>
+                                    {matchedPairs.length === 6 && (
+                                        <div className="mt-4 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-xl inline-block text-emerald-400 font-bold animate-bounce">
+                                            🎉 太棒了！你已經完全掌握了主權變動的脈絡！
+                                            <button onClick={resetGame} className="ml-4 px-3 py-1 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition-colors">再玩一次</button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-col md:flex-row justify-between gap-8 md:gap-16 relative">
+                                    {/* 左側 */}
+                                    <div className="flex-1 space-y-4">
+                                        <h3 className="text-center text-slate-500 text-sm font-bold uppercase tracking-wider mb-4">年代與事件</h3>
+                                        {gameItems.left.map((item) => {
+                                            const isMatched = matchedPairs.includes(item.id);
+                                            const isSelected = selectedLeft?.id === item.id;
+                                            const isError = isWrong && isSelected;
+                                            return (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => handleCardClick(item, 'left')}
+                                                    disabled={isMatched}
+                                                    className={`w-full p-4 rounded-xl border-l-4 text-left transition-all duration-200 shadow-lg relative overflow-hidden
+                                                        ${isMatched ? 'bg-slate-800/50 border-emerald-500 opacity-50 cursor-default' 
+                                                        : isError ? 'bg-red-900/20 border-red-500 text-red-200'
+                                                        : isSelected ? 'bg-blue-600 border-blue-400 text-white scale-105 z-10' 
+                                                        : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-400'}
+                                                    `}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-bold text-lg">{item.text}</span>
+                                                        {isMatched && <CheckCircle size={20} className="text-emerald-500" />}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    
+                                    {/* 右側 */}
+                                    <div className="flex-1 space-y-4">
+                                        <h3 className="text-center text-slate-500 text-sm font-bold uppercase tracking-wider mb-4">實質主權意義</h3>
+                                        {gameItems.right.map((item) => {
+                                            const isMatched = matchedPairs.includes(item.id);
+                                            const isSelected = selectedRight?.id === item.id;
+                                            const isError = isWrong && isSelected;
+                                            return (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => handleCardClick(item, 'right')}
+                                                    disabled={isMatched}
+                                                    className={`w-full p-4 rounded-xl border-r-4 text-right transition-all duration-200 shadow-lg
+                                                        ${isMatched ? 'bg-slate-800/50 border-emerald-500 opacity-50 cursor-default' 
+                                                        : isError ? 'bg-red-900/20 border-red-500 text-red-200'
+                                                        : isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-105 z-10' 
+                                                        : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-400'}
+                                                    `}
+                                                >
+                                                    <div className="flex flex-col items-end">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            {isMatched && <CheckCircle size={20} className="text-emerald-500" />}
+                                                            <span className="font-bold text-lg">{item.text}</span>
+                                                        </div>
+                                                        <span className="text-xs text-slate-400">{item.subText}</span>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+            );
+        };
 
-        {/* --- 模式 2: 遊戲配對模式 --- */}
-        {viewMode === 'game' && (
-          <div className="max-w-4xl mx-auto animate-in fade-in zoom-in duration-300">
-            <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2">主權變動連連看</h2>
-                <p className="text-slate-400">請將左側的「法律事件」與右側的「實質主權意義」進行配對</p>
-                {matchedPairs.length === 6 && (
-                    <div className="mt-4 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-xl inline-block text-emerald-400 font-bold animate-bounce">
-                        🎉 太棒了！你已經完全掌握了主權變動的脈絡！
-                        <button onClick={resetGame} className="ml-4 px-3 py-1 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition-colors">再玩一次</button>
-                    </div>
-                )}
-            </div>
-
-            <div className="flex justify-between gap-8 md:gap-16 relative">
-              
-              {/* 左側：事件 */}
-              <div className="flex-1 space-y-4">
-                <h3 className="text-center text-slate-500 text-sm font-bold uppercase tracking-wider mb-4">年代與事件</h3>
-                {gameItems.left && gameItems.left.map((item) => {
-                  const isMatched = matchedPairs.includes(item.id);
-                  const isSelected = selectedLeft?.id === item.id;
-                  const isError = isWrong && isSelected;
-
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleCardClick(item, 'left')}
-                      disabled={isMatched}
-                      className={`w-full p-4 rounded-xl border-l-4 text-left transition-all duration-200 shadow-lg relative overflow-hidden
-                        ${isMatched 
-                          ? 'bg-slate-800/50 border-emerald-500 opacity-50 cursor-default' 
-                          : isError
-                            ? 'bg-red-900/20 border-red-500 text-red-200 animate-pulse'
-                            : isSelected 
-                              ? 'bg-blue-600 border-blue-400 text-white scale-105 z-10' 
-                              : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-400 hover:translate-x-1'
-                        }
-                      `}
-                    >
-                      <div className="flex items-center justify-between">
-                         <span className="font-bold text-lg">{item.text}</span>
-                         {isMatched && <CheckCircle size={20} className="text-emerald-500" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* 中間裝飾線 */}
-              <div className="hidden md:flex flex-col items-center justify-center opacity-20">
-                 <div className="w-0.5 h-full bg-slate-600 absolute top-10 bottom-0 left-1/2 -translate-x-1/2"></div>
-              </div>
-
-              {/* 右側：意義 */}
-              <div className="flex-1 space-y-4">
-                 <h3 className="text-center text-slate-500 text-sm font-bold uppercase tracking-wider mb-4">實質主權意義</h3>
-                 {gameItems.right && gameItems.right.map((item) => {
-                  const isMatched = matchedPairs.includes(item.id);
-                  const isSelected = selectedRight?.id === item.id;
-                  const isError = isWrong && isSelected;
-
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleCardClick(item, 'right')}
-                      disabled={isMatched}
-                      className={`w-full p-4 rounded-xl border-r-4 text-right transition-all duration-200 shadow-lg
-                        ${isMatched 
-                          ? 'bg-slate-800/50 border-emerald-500 opacity-50 cursor-default' 
-                          : isError
-                             ? 'bg-red-900/20 border-red-500 text-red-200 animate-pulse'
-                             : isSelected 
-                               ? 'bg-indigo-600 border-indigo-400 text-white scale-105 z-10' 
-                               : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-400 hover:-translate-x-1'
-                        }
-                      `}
-                    >
-                      <div className="flex flex-col items-end">
-                         <div className="flex items-center gap-2 mb-1">
-                             {isMatched && <CheckCircle size={20} className="text-emerald-500" />}
-                             <span className="font-bold text-lg">{item.text}</span>
-                         </div>
-                         <span className="text-xs text-slate-400">{item.subText}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-            </div>
-          </div>
-        )}
-
-      </main>
-    </div>
-  );
-};
-
-export default TimelineApp;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TimelineApp />);
+    </script>
+</body>
+</html>
