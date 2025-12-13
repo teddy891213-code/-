@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AIBOXVR 專屬射擊遊戲</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
+    <script src="https://unpkg.com/aframe-particle-system-component@1.0.x/dist/aframe-particle-system-component.min.js"></script>
+</head>
+<body>
+    <script>
+        // 遊戲狀態管理
+        var gameStarted = false;
+
+        // 1. 槍枝與射擊邏輯 (綁定你的實體按鈕)
+        AFRAME.registerComponent('player-gun', {
+            init: function () {
+                var el = this.el; // 這是槍
+                var scene = el.sceneEl;
+                
+                // 監聽「點擊」事件 (對應 Cardboard 的實體按鈕按下)
+                scene.addEventListener('click', function () {
+                    
+                    if (!gameStarted) {
+                        startGame();
+                        return;
+                    }
+
+                    // --- A. 槍的後座力動畫 (配合按鈕手感) ---
+                    // 瞬間後退
+                    el.setAttribute('animation__recoil', {
+                        property: 'position',
+                        to: '0.2 -0.2 -0.2', // 後縮位置
+                        dur: 50,
+                        easing: 'easeOutQuad'
+                    });
+                    
+                    // 彈回原位
+                    setTimeout(() => {
+                        el.setAttribute('animation__recoil', {
+                            property: 'position',
+                            to: '0.2 -0.3 -0.5', // 原始位置
+                            dur: 150,
+                            easing: 'easeOutQuad'
+                        });
+                    }, 50);
+
+                    // --- B. 發射雷射 ---
+                    shootLaser(el);
+                });
+            }
+        });
+
+        function shootLaser(gunEl) {
+            var scene = document.querySelector('a-scene');
+            
+            // 產生雷射光束
+            var bullet = document.createElement('a-entity');
+            
+            // 取得槍口的絕對位置與方向
+            var position = gunEl.object3D.getWorldPosition(new THREE.Vector3());
+            var rotation = gunEl.object3D.getWorldQuaternion(new THREE.Quaternion());
+
+            // 設定雷射外觀 (光劍感)
+            bullet.setAttribute('geometry', 'primitive: cylinder; height: 1; radius: 0.02');
+            bullet.setAttribute('material', 'color: #00FFFF; opacity: 0.8; shader: flat');
+            bullet.setAttribute('position', position);
+            bullet.object3D.setRotationFromQuaternion(rotation);
+            bullet.object3D.rotateX(Math.PI / 2); // 轉正
+            
+            // 雷射飛行动畫
+            bullet.setAttribute('animation', {
+                property: 'position',
+                to: computeBulletEnd(position, rotation, 50), // 射程 50 公尺
+                dur: 300, // 速度極快
+                easing: 'linear'
+            });
+
+            // 綁定碰撞偵測 (使用 raycaster)
+            bullet.setAttribute('raycaster', {
+                objects: '.enemy',
+                showLine: false,
+                direction: '0 1 0', // 因為圓柱體躺平了，這其實是它的前方
+                far: 2 // 只偵測近距離碰撞 (簡單模擬)
+            });
+
+            scene.appendChild(bullet);
+
+            // 0.3秒後移除子彈
+            setTimeout(() => { 
+                if(bullet.parentNode) bullet.parentNode.removeChild(bullet); 
+            }, 300);
+
+            // 簡單的碰撞檢查 (Raycaster 有點重，這裡用簡單距離判斷來模擬擊中)
+            checkHit(position, rotation);
+        }
+
+        // 計算子彈落點
+        function computeBulletEnd(pos, quat, distance) {
+            var direction = new THREE.Vector3(0, 0, -1);
+            direction.applyQuaternion(quat);
+            direction.multiplyScalar(distance);
+            return pos.clone().add(direction);
+        }
+
+        // 判斷是否打中敵人
+        function checkHit(origin, quat) {
+            var direction = new THREE.Vector3(0, 0, -1);
+            direction.applyQuaternion(quat);
+            
+            // 抓出所有敵人
+            var enemies = document.querySelectorAll('.enemy');
+            
+            enemies.forEach(function(enemy) {
+                if(enemy.getAttribute('visible') === false) return;
+
+                var enemyPos = enemy.object3D.position;
+                // 計算視線與敵人的夾角，如果夠小代表瞄準了
+                var toEnemy = enemyPos.clone().sub(origin).normalize();
+                var angle = direction.angleTo(toEnemy);
+                
+                // 如果瞄準角度小於 5 度 (0.08弧度) 就判定擊中
+                if (angle < 0.08) {
+                    destroyEnemy(enemy);
+                }
+            });
+        }
+
+        function destroyEnemy(el) {
+            // 1. 爆炸特效
+            var explosion = document.createElement('a-entity');
+            explosion.setAttribute('position', el.getAttribute('position'));
+            explosion.setAttribute('particle-system', {
+                color: '#EF2D5E, #F2E901', 
+                particleCount: 40, 
+                lifetime: 0.5, 
+                size: 2,
+                velocityValue: '0 5 0' 
+            });
+            el.sceneEl.appendChild(explosion);
+            
+            // 2. 移除敵人
+            el.parentNode.removeChild(el);
+            
+            // 3. 隨機重生
+            setTimeout(spawnEnemy, 1000);
+        }
+
+        function spawnEnemy() {
+            var scene = document.querySelector('a-scene');
+            var enemy = document.createElement('a-box');
+            enemy.setAttribute('class', 'enemy');
+            enemy.setAttribute('material', 'color: #FF0000; roughness: 0.5');
+            
+            // 隨機位置
+            var x = (Math.random() - 0.5) * 20;
+            var y = Math.random() * 5 + 1;
+            var z = (Math.random() - 0.5) * 20;
+            // 避免離太近
+            if(Math.abs(z) < 5) z = -8;
+
+            enemy.setAttribute('position', `${x} ${y} ${z}`);
+            
+            // 讓敵人自轉
+            enemy.setAttribute('animation', {
+                property: 'rotation',
+                to: '0 360 0',
+                loop: true,
+                dur: 3000,
+                easing: 'linear'
+            });
+
+            scene.appendChild(enemy);
+        }
+
+        function startGame() {
+            gameStarted = true;
+            // 隱藏標題
+            document.querySelector('#title-text').setAttribute('visible', false);
+            document.querySelector('#subtitle-text').setAttribute('visible', false);
+            // 生成初始敵人
+            for(var i=0; i<5; i++) spawnEnemy();
+        }
+
+    </script>
+
+    <a-scene environment="preset: tron; skyType: atmosphere; lighting: point">
+        
+        <a-camera>
+            <a-cursor fuse="false" color="#00FF00" scale="0.8 0.8 0.8" opacity="0.6"></a-cursor>
+
+            <a-entity id="myGun" player-gun position="0.2 -0.3 -0.5">
+                <a-box color="#333" depth="0.6" height="0.15" width="0.1"></a-box>
+                <a-cylinder color="#00FFFF" height="0.6" radius="0.02" rotation="90 0 0" position="0 0.05 -0.1" material="emission: #00FFFF; opacity: 0.8"></a-cylinder>
+                <a-cylinder color="#222" height="0.1" radius="0.06" rotation="90 0 0" position="0 0.15 0.1"></a-cylinder>
+            </a-entity>
+            
+            <a-text id="title-text" value="VR SNIPER" position="0 0.5 -2" align="center" color="#FFF" width="6"></a-text>
+            <a-text id="subtitle-text" value="Press Button to Start" position="0 0.2 -2" align="center" color="#FFFF00" width="3" animation="property: opacity; from: 1; to: 0.2; dir: alternate; loop: true; dur: 800"></a-text>
+
+        </a-camera>
+
+        </a-scene>
+</body>
+</html>
