@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>地方政府 VR 判斷遊戲</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin:0; overflow:hidden; background:#000; font-family:sans-serif; }
+    #ui {
+      position:fixed;
+      top:10px;
+      left:50%;
+      transform:translateX(-50%);
+      background:rgba(0,0,0,0.6);
+      color:#fff;
+      padding:10px 14px;
+      border-radius:10px;
+      font-size:14px;
+      max-width:90%;
+      text-align:center;
+    }
+  </style>
+</head>
+<body>
+<div id="ui">載入中…</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+
+<script>
+/* =========================
+   題庫（3 題）
+========================= */
+const QUESTIONS = [
+  {
+    desc: "你看到的是一個大型會議空間，桌上放著厚厚的預算書，有人舉手表決。",
+    correct: "立法",
+    wrongHint: "有人在簡報市政府預算編列",
+    explainWrong: "行政機關可以編列預算，但沒有表決與審查權。",
+    mapAnswer: "地方"
+  },
+  {
+    desc: "你看到工程簡報，投影顯示道路改善進度，文件抬頭是縣政府。",
+    correct: "行政",
+    wrongHint: "牆上貼著議會質詢資料",
+    explainWrong: "議會負責監督，不負責實際執行工程。",
+    mapAnswer: "縣市"
+  },
+  {
+    desc: "你看到原住民族圖騰，討論祭儀活動，文件註記需報請市政府核准。",
+    correct: "原民區",
+    wrongHint: "外觀看起來像一般區公所",
+    explainWrong: "一般區沒有自治權，但山地原住民區是例外。",
+    mapAnswer: "原民"
+  }
+];
+
+const q = QUESTIONS[Math.floor(Math.random()*QUESTIONS.length)];
+
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+camera.position.set(0,0,0.1);
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2(0,0);
+let clickable = [];
+let stage = 1;
+
+/* =========================
+   UI
+========================= */
+const ui = document.getElementById("ui");
+ui.innerText = "第一關：環視場景，選出正確判斷";
+
+/* =========================
+   建立選項球
+========================= */
+function makeOption(text, x) {
+  const geo = new THREE.SphereGeometry(0.25, 16, 16);
+  const mat = new THREE.MeshBasicMaterial({color:0x3366ff});
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x, 0, -2);
+  mesh.userData.text = text;
+  scene.add(mesh);
+  clickable.push(mesh);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "white";
+  ctx.font = "20px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(text, 128, 40);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.8,0.2),
+    new THREE.MeshBasicMaterial({map:tex, transparent:true})
+  );
+  plane.position.set(x, -0.5, -2);
+  scene.add(plane);
+}
+
+makeOption("行政", -1);
+makeOption("立法", 0);
+makeOption("原民區", 1);
+
+/* =========================
+   點擊（Cardboard 按鍵）
+========================= */
+window.addEventListener("click", ()=>{
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObjects(clickable);
+  if(hit.length===0) return;
+
+  const choice = hit[0].object.userData.text;
+
+  if(stage===1){
+    if(choice===q.correct){
+      ui.innerText = "判斷正確！進入地圖定位關";
+      stage = 2;
+      setTimeout(loadMap, 1200);
+    }else{
+      ui.innerText = "誘答錯誤：" + q.explainWrong;
+    }
+  }else if(stage===2){
+    if(choice===q.mapAnswer){
+      ui.innerText = "定位正確！請換下一位玩家";
+    }else{
+      ui.innerText = "這個層級不會出現剛才的權限";
+    }
+  }
+});
+
+/* =========================
+   第二關：地圖
+========================= */
+function loadMap(){
+  clickable.forEach(o=>scene.remove(o));
+  clickable=[];
+
+  makeOption("地方", -1);
+  makeOption("縣市", 0);
+  makeOption("原民", 1);
+
+  ui.innerText = "第二關：在台灣鳥瞰圖中，選擇正確層級";
+}
+
+/* =========================
+   背景球（空間感）
+========================= */
+const bg = new THREE.Mesh(
+  new THREE.SphereGeometry(50,32,32),
+  new THREE.MeshBasicMaterial({color:0x111111, side:THREE.BackSide})
+);
+scene.add(bg);
+
+/* =========================
+   Render
+========================= */
+function animate(){
+  requestAnimationFrame(animate);
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>
