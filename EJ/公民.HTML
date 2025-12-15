@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>公民科 VR 制度探究 (Google Cardboard Edition)</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: "Microsoft JhengHei", sans-serif; }
+        #start-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center;
+        }
+        .btn {
+            background: #4CC3D9; color: white; padding: 15px 30px;
+            border: none; border-radius: 5px; font-size: 1.2rem; cursor: pointer; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <h1>公民 V21：制度探險 VR</h1>
+        <p>請將手機橫放，點擊下方按鈕</p>
+        <p>進入畫面後，請點擊右下角 "VR" 眼鏡圖示進入 Cardboard 模式</p>
+        <button class="btn" onclick="startGame()">開始遊戲</button>
+    </div>
+
+    <a-scene loading-screen="dotsColor: white; backgroundColor: black">
+        
+        <a-assets>
+            <canvas id="textCanvas" width="512" height="256"></canvas>
+            <canvas id="feedbackCanvas" width="512" height="256"></canvas>
+        </a-assets>
+
+        <a-entity id="rig" position="0 1.6 0">
+            <a-camera look-controls="touchEnabled: true" wasd-controls-enabled="false">
+                <a-entity cursor="fuse: true; fuseTimeout: 2000"
+                          position="0 0 -1"
+                          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                          material="color: white; shader: flat"
+                          animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 150; from: 0.1 0.1 0.1; to: 1 1 1"
+                          animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 2000; from: 1 1 1; to: 0.1 0.1 0.1"
+                          animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 500; to: 1 1 1">
+                </a-entity>
+                <a-text id="hud-text" value="Look around..." position="0 -0.5 -1" align="center" width="2" color="yellow" visible="false"></a-text>
+            </a-camera>
+        </a-entity>
+
+        <a-sky id="sky-bg" color="#ECECEC"></a-sky>
+
+        <a-entity id="game-world"></a-entity>
+
+    </a-scene>
+
+    <script>
+        // --- 題庫資料 (包含正確答案與誘答) ---
+        const questions = [
+            {
+                id: 1,
+                title: "地方立法機關（預算審查）",
+                sceneColor: "#F0F8FF", // 淡藍色背景
+                objects: [
+                    { type: 'cylinder', pos: '0 0 -5', color: '#8B4513', height: 2, radius: 4, thetaLength: 180, rot: '0 90 0' }, // 半圓形座位
+                    { type: 'box', pos: '0 2 -6', color: '#000', width: 4, height: 2, depth: 0.1 } // 螢幕
+                ],
+                clues: [
+                    { text: "議員舉手表決", isCorrect: true, feedback: "正確！議員表決是立法權的核心表現。", type: "correct" },
+                    { text: "第X屆定期會", isCorrect: true, feedback: "正確！定期會是議會運作的特徵。", type: "correct_alt" },
+                    { text: "市府官員簡報", isCorrect: false, feedback: "這是誘答：官員來報告是為了被質詢，這裡是議會，不是行政機關。", type: "decoy" },
+                    { text: "預算編列說明", isCorrect: false, feedback: "這是誘答：行政機關「編列」預算，議會負責「審查」。這裡正在審查。", type: "decoy" }
+                ],
+                mapStage: {
+                    correct: ["直轄市議會", "縣議會"],
+                    decoys: ["市政府", "鄉公所", "行政院"]
+                }
+            },
+            {
+                id: 2,
+                title: "地方行政機關（工程執行）",
+                sceneColor: "#F5F5DC", // 米色背景
+                objects: [
+                    { type: 'box', pos: '0 1 -4', color: '#555', width: 3, height: 1.5, depth: 0.5 }, // 簡報桌
+                    { type: 'plane', pos: '0 0 -4', rot: '-90 0 0', width: 10, height: 10, color: '#DDD' } // 地板
+                ],
+                clues: [
+                    { text: "工程進度簡報", isCorrect: true, feedback: "正確！執行工程進度屬於行政權的落實。", type: "correct" },
+                    { text: "工務處識別證", isCorrect: true, feedback: "正確！工務處是典型的行政單位。", type: "correct_alt" },
+                    { text: "議會質詢資料", isCorrect: false, feedback: "這是誘答：議會負責監督，但不會自己跳下來開施工會議。", type: "decoy" },
+                    { text: "多人旁聽座位", isCorrect: false, feedback: "這是誘答：旁聽席通常出現在議會或法院，行政會議通常是內部的。", type: "decoy" }
+                ],
+                mapStage: {
+                    correct: ["縣政府"],
+                    decoys: ["縣議會", "立法院", "區公所"]
+                }
+            },
+            {
+                id: 3,
+                title: "直轄市山地原住民區",
+                sceneColor: "#E0F2F1", // 淡綠色戶外感
+                objects: [
+                    { type: 'cylinder', pos: '3 0 -3', color: '#A0522D', height: 4, radius: 0.5 }, // 圖騰柱
+                    { type: 'plane', pos: '0 0 0', rot: '-90 0 0', width: 30, height: 30, color: '#2E8B57' } // 草地
+                ],
+                clues: [
+                    { text: "原住民圖騰", isCorrect: true, feedback: "正確！顯示此區具有原住民族文化特徵。", type: "correct_alt" },
+                    { text: "區長發言", isCorrect: true, feedback: "正確！山地原住民區區長是民選的，有自治權。", type: "correct" },
+                    { text: "市政府公文", isCorrect: false, feedback: "這是誘答：雖然受市府監督，但如果只看公文會誤以為是一般行政區。", type: "decoy" },
+                    { text: "區公所招牌", isCorrect: false, feedback: "這是誘答：一般區公所沒有自治權，但「山地原住民區」是例外。", type: "decoy" }
+                ],
+                mapStage: {
+                    correct: ["烏來/和平/茂林"],
+                    decoys: ["板橋區", "大安區", "一般鄉鎮"]
+                }
+            }
+        ];
+
+        // --- 遊戲狀態管理 ---
+        let currentQuestion = null;
+        let gameStage = 0; // 0: Start, 1: Scene, 2: Map, 3: End
+
+        // 輔助：繪製中文文字到 Canvas 並轉為材質 (解決 A-Frame 中文亂碼問題)
+        function createTextTexture(text, bgColor = "white", textColor = "black") {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            // 背景
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 邊框
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 10;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+            // 文字
+            ctx.fillStyle = textColor;
+            ctx.font = "bold 40px 'Microsoft JhengHei'";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            
+            // 自動換行簡單處理
+            const maxCharsPerLine = 10;
+            const rows = [];
+            for (let i = 0; i < text.length; i += maxCharsPerLine) {
+                rows.push(text.substring(i, i + maxCharsPerLine));
+            }
+
+            rows.forEach((line, index) => {
+                const y = 128 - ((rows.length - 1) * 25) + (index * 50);
+                ctx.fillText(line, 256, y);
+            });
+
+            return canvas.toDataURL();
+        }
+
+        function startGame() {
+            document.getElementById('start-overlay').style.display = 'none';
+            // 隨機選一題
+            currentQuestion = questions[Math.floor(Math.random() * questions.length)];
+            loadSceneLevel();
+        }
+
+        // --- 第一關：場景線索 ---
+        function loadSceneLevel() {
+            gameStage = 1;
+            const world = document.getElementById('game-world');
+            world.innerHTML = ''; // 清空
+
+            // 設定背景
+            document.getElementById('sky-bg').setAttribute('color', currentQuestion.sceneColor);
+
+            // 建立簡易場景物件
+            currentQuestion.objects.forEach(obj => {
+                const entity = document.createElement('a-entity');
+                entity.setAttribute('geometry', `primitive: ${obj.type}; width: ${obj.width || 1}; height: ${obj.height || 1}; depth: ${obj.depth || 1}; radius: ${obj.radius || 1}; thetaLength: ${obj.thetaLength || 360}`);
+                entity.setAttribute('material', `color: ${obj.color}`);
+                entity.setAttribute('position', obj.pos);
+                if(obj.rot) entity.setAttribute('rotation', obj.rot);
+                world.appendChild(entity);
+            });
+
+            // 放置線索 (東南西北)
+            const positions = [
+                { x: 0, y: 1.6, z: -3, rot: '0 0 0' },   // 前
+                { x: 3, y: 1.6, z: 0, rot: '0 -90 0' },  // 右
+                { x: -3, y: 1.6, z: 0, rot: '0 90 0' },  // 左
+                { x: 0, y: 1.6, z: 3, rot: '0 180 0' }   // 後
+            ];
+
+            // 隨機打亂線索順序
+            let shuffledClues = [...currentQuestion.clues].sort(() => Math.random() - 0.5);
+            // 確保只取前4個 (雖然設定剛好4個)
+            shuffledClues = shuffledClues.slice(0, 4);
+
+            shuffledClues.forEach((clue, index) => {
+                const pos = positions[index];
+                
+                // 建立線索面板
+                const plane = document.createElement('a-image');
+                plane.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+                plane.setAttribute('rotation', pos.rot);
+                plane.setAttribute('width', 2);
+                plane.setAttribute('height', 1);
+                plane.setAttribute('src', createTextTexture(clue.text, "#FFF", "#000"));
+                plane.setAttribute('class', 'clickable'); // 標記為可互動
+
+                // 互動邏輯
+                plane.addEventListener('click', () => {
+                   handleClueSelection(clue, plane);
+                });
+
+                world.appendChild(plane);
+            });
+
+            // 抬頭顯示提示
+            const titleEntity = document.createElement('a-image');
+            titleEntity.setAttribute('position', '0 3 -4');
+            titleEntity.setAttribute('width', 4);
+            titleEntity.setAttribute('height', 1);
+            titleEntity.setAttribute('src', createTextTexture(`任務：${currentQuestion.title}\n請環顧四周尋找關鍵線索`, "rgba(0,0,0,0.5)", "#FFF"));
+            world.appendChild(titleEntity);
+        }
+
+        function handleClueSelection(clue, element) {
+            // 避免重複點擊
+            if (element.getAttribute('data-clicked')) return;
+            
+            const feedbackSrc = createTextTexture(clue.feedback, clue.isCorrect ? "#D4EDDA" : "#F8D7DA", "#000");
+            
+            // 顯示回饋面板 (覆蓋原面板)
+            const feedbackPlane = document.createElement('a-image');
+            feedbackPlane.setAttribute('position', '0 0 0.1'); // 稍微浮出
+            feedbackPlane.setAttribute('width', 2);
+            feedbackPlane.setAttribute('height', 1);
+            feedbackPlane.setAttribute('src', feedbackSrc);
+            element.appendChild(feedbackPlane);
+
+            if (clue.isCorrect) {
+                setTimeout(() => {
+                    loadMapLevel();
+                }, 3000); // 3秒後進入下一關
+            } else {
+                element.setAttribute('data-clicked', 'true');
+                // 錯誤線索停留顯示，不跳轉，讓學生繼續找
+            }
+        }
+
+        // --- 第二關：地圖定位 ---
+        function loadMapLevel() {
+            gameStage = 2;
+            const world = document.getElementById('game-world');
+            world.innerHTML = ''; // 清空
+            document.getElementById('sky-bg').setAttribute('color', '#333');
+
+            // 建立層級架構圖 (模擬地圖概念)
+            const levels = [
+                { name: "中央政府", y: 3, type: 'decoy' },
+                { name: "地方 (直轄市/縣市)", y: 1.5, type: 'target' }, 
+                { name: "基層 (鄉鎮市區)", y: 0, type: 'decoy' }
+            ];
+
+            // 標題
+            const title = document.createElement('a-image');
+            title.setAttribute('position', '0 4 -4');
+            title.setAttribute('width', 4);
+            title.setAttribute('height', 1);
+            title.setAttribute('src', createTextTexture("第二關：這是哪個層級？", "#000", "#FFF"));
+            world.appendChild(title);
+
+            // 產生選項
+            const options = [];
+            
+            // 根據正確答案決定要把「正確選項」放在哪一層
+            // 簡化邏輯：
+            // 題目1(議會) -> 地方層級
+            // 題目2(縣府) -> 地方層級
+            // 題目3(原民區) -> 地方自治團體 (雖是基層但屬自治體，這裡為了簡化遊戲邏輯，我們將其視為特殊選項)
+            
+            let targetAnswers = currentQuestion.mapStage.correct;
+            let decoyAnswers = currentQuestion.mapStage.decoys;
+
+            // 放置三個選項面板在前方
+            const positions = [
+                { x: -2.5, y: 1.6, z: -3, delay: 0 },
+                { x: 0, y: 1.6, z: -3, delay: 100 },
+                { x: 2.5, y: 1.6, z: -3, delay: 200 }
+            ];
+
+            const allOptions = [
+                { text: targetAnswers[0], isCorrect: true },
+                { text: decoyAnswers[0], isCorrect: false },
+                { text: decoyAnswers[1], isCorrect: false }
+            ].sort(() => Math.random() - 0.5);
+
+            allOptions.forEach((opt, index) => {
+                const pos = positions[index];
+                const box = document.createElement('a-image');
+                box.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+                box.setAttribute('width', 2);
+                box.setAttribute('height', 1);
+                box.setAttribute('src', createTextTexture(opt.text, "#FFF", "#000"));
+                
+                box.addEventListener('click', () => {
+                    const resultText = opt.isCorrect ? "答對了！制度正確。" : "答錯囉，層級不符。";
+                    const resultColor = opt.isCorrect ? "#D4EDDA" : "#F8D7DA";
+                    
+                    // 顯示回饋
+                    const fb = document.createElement('a-image');
+                    fb.setAttribute('position', '0 0 0.1');
+                    fb.setAttribute('width', 2);
+                    fb.setAttribute('height', 1);
+                    fb.setAttribute('src', createTextTexture(resultText, resultColor, "#000"));
+                    box.appendChild(fb);
+
+                    if(opt.isCorrect) {
+                        setTimeout(showEndScreen, 3000);
+                    }
+                });
+
+                world.appendChild(box);
+            });
+        }
+
+        // --- 結束畫面 ---
+        function showEndScreen() {
+            gameStage = 3;
+            const world = document.getElementById('game-world');
+            world.innerHTML = '';
+            document.getElementById('sky-bg').setAttribute('color', '#000');
+
+            const endPanel = document.createElement('a-image');
+            endPanel.setAttribute('position', '0 1.6 -2');
+            endPanel.setAttribute('width', 4);
+            endPanel.setAttribute('height', 2);
+            endPanel.setAttribute('src', createTextTexture("恭喜過關！\n請將 VR 眼鏡交給下一位同學", "#FFD700", "#000"));
+            
+            // 5秒後自動重置
+            setTimeout(() => {
+               window.location.reload();
+            }, 8000);
+
+            world.appendChild(endPanel);
+        }
+
+    </script>
+</body>
+</html>
