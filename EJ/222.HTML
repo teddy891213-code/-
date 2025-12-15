@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>憲法捍衛者 V8：終極星戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Courier, monospace; touch-action: none; }
+        
+        /* 3D 視角容器 */
+        .vr-viewport { position: relative; width: 100%; height: 100%; overflow: hidden; perspective: 800px; background: #000; }
+        
+        /* 世界容器 */
+        .vr-world {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        /* 星空背景 (會隨鏡頭移動) */
+        .star-field {
+            position: absolute; top: -100%; left: -100%; width: 300%; height: 300%;
+            background-image: 
+                radial-gradient(1px 1px at 50px 50px, white, transparent),
+                radial-gradient(2px 2px at 150px 150px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 300px 200px, white, transparent);
+            background-size: 500px 500px;
+            transform: translateZ(-2000px);
+            opacity: 0.8;
+        }
+
+        .reticle-ring { transition: stroke-dashoffset 0.1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
+
+        /* UFO 懸浮動畫 */
+        @keyframes ufo-float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-5px) rotate(2deg); } }
+        
+        /* 引擎發光 */
+        @keyframes engine-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const questionBank = [
+            {
+                id: 1,
+                text: "射擊：直轄市「行政機關」",
+                hint: "關鍵字：市政府 (執行)",
+                targets: [
+                    { text: "新北市政府", type: "correct", color: "#3b82f6" },
+                    { text: "台中市政府", type: "correct", color: "#3b82f6" },
+                    { text: "高雄市政府", type: "correct", color: "#3b82f6" },
+                    { text: "台北市政府", type: "correct", color: "#3b82f6" },
+                    { text: "新北市議會", type: "wrong", color: "#ef4444" },
+                    { text: "板橋區公所", type: "wrong", color: "#6b7280" },
+                    { text: "台中市議會", type: "wrong", color: "#ef4444" }
+                ]
+            },
+            {
+                id: 2,
+                text: "射擊：縣市「立法機關」",
+                hint: "關鍵字：議會 (監督)",
+                targets: [
+                    { text: "花蓮縣議會", type: "correct", color: "#a855f7" },
+                    { text: "嘉義縣議會", type: "correct", color: "#a855f7" },
+                    { text: "新竹市議會", type: "correct", color: "#a855f7" },
+                    { text: "彰化縣議會", type: "correct", color: "#a855f7" },
+                    { text: "花蓮縣政府", type: "wrong", color: "#ef4444" },
+                    { text: "台東縣政府", type: "wrong", color: "#ef4444" },
+                    { text: "宜蘭市公所", type: "wrong", color: "#6b7280" }
+                ]
+            },
+            {
+                id: 3,
+                text: "射擊：山地原住民區",
+                hint: "關鍵：區公所 / 自治",
+                targets: [
+                    { text: "烏來區公所", type: "correct", color: "#22c55e" },
+                    { text: "和平區公所", type: "correct", color: "#22c55e" },
+                    { text: "茂林區公所", type: "correct", color: "#22c55e" },
+                    { text: "那瑪夏區公所", type: "correct", color: "#22c55e" },
+                    { text: "大安區公所", type: "wrong", color: "#6b7280" },
+                    { text: "中和區公所", type: "wrong", color: "#6b7280" },
+                    { text: "信義區公所", type: "wrong", color: "#6b7280" }
+                ]
+            }
+        ];
+
+        // 🛸 純種 UFO 元件 (無行星/星星)
+        const RealUFO = ({ color, text, variant }) => {
+            const renderShip = () => {
+                if (variant === 0) {
+                    // 經典圓盤 (Saucer)
+                    return (
+                        <svg viewBox="0 0 100 50" className="w-28 h-14 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+                            <path d="M10 25 Q50 -5 90 25 Q50 55 10 25 Z" fill={color} stroke="white" strokeWidth="2" />
+                            <ellipse cx="50" cy="20" rx="20" ry="8" fill="rgba(255,255,255,0.9)" />
+                            <rect x="20" y="24" width="60" height="2" fill="#fff" className="animate-pulse" />
+                        </svg>
+                    );
+                } else if (variant === 1) {
+                    // 帝國戰艦 (Battleship)
+                    return (
+                        <svg viewBox="0 0 100 60" className="w-24 h-16 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+                            <path d="M5 30 L30 10 L70 10 L95 30 L70 50 L30 50 Z" fill={color} stroke="white" strokeWidth="2" />
+                            <circle cx="20" cy="30" r="4" fill="orange" className="animate-pulse" />
+                            <circle cx="80" cy="30" r="4" fill="orange" className="animate-pulse" />
+                            <rect x="40" y="20" width="20" height="20" fill="rgba(0,0,0,0.5)" />
+                        </svg>
+                    );
+                } else {
+                    // 三角突擊艇 (Delta Wing) - 取代原本的球體
+                    return (
+                        <svg viewBox="0 0 100 100" className="w-24 h-24 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+                            <path d="M50 10 L90 80 L50 70 L10 80 Z" fill={color} stroke="white" strokeWidth="2" />
+                            <circle cx="50" cy="70" r="5" fill="#0ff" style={{animation: 'engine-pulse 0.2s infinite'}} />
+                        </svg>
+                    );
+                }
+            };
+
+            return (
+                <div className="flex flex-col items-center" style={{animation: 'ufo-float 3s ease-in-out infinite'}}>
+                    {renderShip()}
+                    <div className="mt-1 bg-black/70 border border-white/30 text-white px-2 py-0.5 rounded text-lg font-bold whitespace-nowrap backdrop-blur-sm">
+                        {text}
+                    </div>
+                </div>
+            );
+        };
+
+        const EyeView = ({ isLeft, gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation }) => {
+            // 🎥 關鍵：鏡頭運鏡邏輯
+            // 使用 rotateY 控制水平視角，rotateX 控制垂直視角
+            // 加上背景位移，強化「轉頭」的感覺
+            const worldStyle = {
+                transform: `rotateX(${Math.max(-45, Math.min(45, orientation.beta - 45))}deg) rotateY(${-orientation.gamma * 1.5}deg)`
+            };
+            
+            // 星空背景位移 (Parallax)
+            const starStyle = {
+                transform: `translate3d(${orientation.gamma * 5}px, ${(orientation.beta - 45) * 5}px, -2000px)`
+            };
+
+            return (
+                <div className={`vr-viewport border-r-2 border-gray-800 ${isLeft ? '' : 'border-l-0'}`}>
+                    
+                    {/* 3D 世界 */}
+                    <div className="vr-world" style={worldStyle}>
+                        <div className="star-field" style={starStyle}></div>
+                        
+                        {/* 敵人 */}
+                        {gameState === 'playing' && enemies.map(enemy => (
+                            <div
+                                key={enemy.id}
+                                className="absolute top-1/2 left-1/2 flex flex-col items-center justify-center transform transition-transform duration-75 will-change-transform"
+                                style={{
+                                    // 3D 空間定位：x/y 是方位，z 是距離
+                                    // 這樣敵人是固定在空間中，鏡頭轉動時才會看到它們
+                                    transform: `translate3d(${enemy.x}vw, ${enemy.y}vh, 0) scale(${enemy.scale})`,
+                                    zIndex: Math.floor(enemy.scale * 100),
+                                    opacity: enemy.scale < 0.05 ? 0 : 1,
+                                    filter: focusingId === enemy.id ? 'drop-shadow(0 0 25px #fbbf24)' : 'none'
+                                }}
+                            >
+                                <RealUFO color={enemy.color} text={enemy.text} variant={enemy.variant} />
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* HUD 介面 (固定在螢幕上) */}
+                    <div className={`absolute inset-0 pointer-events-none z-50 transition-colors duration-100 ${health < 30 ? 'bg-red-900/40 animate-pulse' : ''}`}></div>
+
+                    <div className="absolute top-6 left-0 w-full flex justify-center z-20 pointer-events-none">
+                        <div className="bg-black/80 border-2 border-cyan-500 px-6 py-2 rounded-full backdrop-blur-md shadow-[0_0_15px_#06b6d4]">
+                            <div className="text-yellow-400 text-xl font-bold">{currentQ.text}</div>
+                        </div>
+                    </div>
+
+                    <div className="absolute bottom-8 w-full flex justify-between px-12 z-20 text-xl font-bold font-mono">
+                        <div className="text-green-400">SCORE: {score}</div>
+                        <div className={health < 40 ? "text-red-500" : "text-cyan-400"}>SHIELD: {health}%</div>
+                    </div>
+
+                    {/* 準心 */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
+                        <svg width="60" height="60" viewBox="0 0 60 60">
+                            <circle cx="30" cy="30" r="3" fill="#0f0" />
+                            <circle cx="30" cy="30" r="25" fill="none" stroke="#0f0" strokeWidth="3"
+                                strokeDasharray="157" strokeDashoffset={157 - (157 * focusProgress / 100)}
+                                className="reticle-ring" opacity={focusProgress > 0 ? 1 : 0.2} />
+                        </svg>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [gameState, setGameState] = useState('start'); 
+            const [mode, setMode] = useState('single'); 
+            const [score, setScore] = useState(0);
+            const [health, setHealth] = useState(100);
+            const [level, setLevel] = useState(0);
+            const [enemies, setEnemies] = useState([]);
+            
+            // 陀螺儀狀態
+            const [orientation, setOrientation] = useState({ alpha: 0, beta: 45, gamma: 0 });
+            
+            // 凝視系統
+            const [focusingId, setFocusingId] = useState(null);
+            const [focusProgress, setFocusProgress] = useState(0);
+
+            const frameRef = useRef();
+            const spawnTimerRef = useRef();
+            const lastTimeRef = useRef(0);
+            const focusTimerRef = useRef(0);
+
+            const currentQ = questionBank[level];
+
+            // 權限請求 (iOS 必備)
+            const requestPermission = async () => {
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    try {
+                        const response = await DeviceOrientationEvent.requestPermission();
+                        if (response === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                        } else {
+                            alert('請允許動作偵測，否則無法轉動視角！');
+                        }
+                    } catch (e) { console.error(e); }
+                } else {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                }
+            };
+
+            const handleOrientation = (event) => {
+                setOrientation({
+                    alpha: event.alpha || 0,
+                    beta: event.beta || 45,
+                    gamma: event.gamma || 0
+                });
+            };
+
+            const spawnEnemy = () => {
+                const isCorrect = Math.random() > 0.4;
+                const targetPool = isCorrect 
+                    ? currentQ.targets.filter(t => t.type === 'correct') 
+                    : currentQ.targets.filter(t => t.type === 'wrong');
+                const template = targetPool[Math.floor(Math.random() * targetPool.length)];
+                
+                // 擴大生成範圍，強迫轉頭
+                const startX = (Math.random() - 0.5) * 250; 
+                const startY = (Math.random() - 0.5) * 120;
+
+                setEnemies(prev => [...prev, {
+                    id: Date.now() + Math.random(),
+                    ...template,
+                    x: startX,
+                    y: startY,
+                    variant: Math.floor(Math.random() * 3), // 隨機 3 種 UFO
+                    scale: 0.02, 
+                    // 速度適中，但頻率高
+                    speed: 0.0006 + (level * 0.00005) 
+                }]);
+            };
+
+            const gameLoop = (time) => {
+                if (gameState !== 'playing') return;
+                const deltaTime = time - lastTimeRef.current;
+                lastTimeRef.current = time;
+
+                let hitId = null;
+
+                setEnemies(prev => {
+                    const nextEnemies = [];
+                    let closestId = null;
+                    let minDistance = 25; 
+
+                    prev.forEach(enemy => {
+                        enemy.scale += enemy.speed * (deltaTime || 16);
+
+                        // 計算視覺位置 (簡易版)
+                        // Gamma (左右) -> X 軸位移
+                        // Beta (上下) -> Y 軸位移
+                        // 係數 1.5 對應上面的 worldStyle 旋轉倍率
+                        const viewX = -orientation.gamma * 2.5; 
+                        const viewY = (orientation.beta - 45) * 2.5;
+
+                        const screenX = enemy.x + viewX;
+                        const screenY = enemy.y + viewY;
+                        const dist = Math.sqrt(screenX * screenX + screenY * screenY);
+
+                        // 鎖定判斷
+                        if (enemy.scale > 0.2 && dist < 35) {
+                            closestId = enemy.id;
+                        }
+
+                        // 撞擊判斷
+                        if (enemy.scale > 2.0) {
+                            if (enemy.type === 'correct') setHealth(h => Math.max(0, h - 15));
+                        } else {
+                            nextEnemies.push(enemy);
+                        }
+                    });
+
+                    // 凝視計時
+                    if (closestId) {
+                        if (closestId !== focusingId) {
+                            setFocusingId(closestId);
+                            setFocusProgress(0);
+                            focusTimerRef.current = 0;
+                        } else {
+                            focusTimerRef.current += deltaTime;
+                            // 鎖定時間 1.2 秒
+                            const progress = Math.min(100, (focusTimerRef.current / 1200) * 100);
+                            setFocusProgress(progress);
+                            if (focusTimerRef.current >= 1200) {
+                                hitId = closestId; 
+                                setFocusingId(null);
+                                setFocusProgress(0);
+                                focusTimerRef.current = 0;
+                            }
+                        }
+                    } else {
+                        setFocusingId(null);
+                        setFocusProgress(0);
+                    }
+
+                    if (hitId) {
+                        const hitEnemy = prev.find(e => e.id === hitId);
+                        if (hitEnemy) handleHit(hitEnemy);
+                        return nextEnemies.filter(e => e.id !== hitId);
+                    }
+
+                    return nextEnemies;
+                });
+
+                if (health <= 0) setGameState('gameover');
+                else frameRef.current = requestAnimationFrame(gameLoop);
+            };
+
+            const handleHit = (enemy) => {
+                if (enemy.type === 'correct') {
+                    setScore(s => s + 100);
+                    if ((score + 100) % 500 === 0 && level < questionBank.length - 1) {
+                        setLevel(l => l + 1);
+                        setEnemies([]);
+                    } else if ((score + 100) >= questionBank.length * 500) {
+                        setGameState('win');
+                    }
+                } else {
+                    setHealth(h => Math.max(0, h - 20));
+                    if (navigator.vibrate) navigator.vibrate(200);
+                }
+            };
+
+            useEffect(() => {
+                if (gameState === 'playing') {
+                    lastTimeRef.current = performance.now();
+                    frameRef.current = requestAnimationFrame(gameLoop);
+                    // 🚀 頻率提升：0.5 秒一隻！
+                    spawnTimerRef.current = setInterval(spawnEnemy, 500); 
+                }
+                return () => {
+                    cancelAnimationFrame(frameRef.current);
+                    clearInterval(spawnTimerRef.current);
+                    window.removeEventListener('deviceorientation', handleOrientation);
+                };
+            }, [gameState, level, health, focusingId, score, orientation]);
+
+            const startGame = (m) => {
+                setMode(m);
+                requestPermission();
+                setGameState('playing');
+                setHealth(100); setScore(0); setLevel(0);
+            };
+
+            if (gameState === 'start' || gameState === 'gameover' || gameState === 'win') {
+                return (
+                    <div className="flex flex-col items-center justify-center h-screen bg-black text-white font-mono p-4 text-center bg-[url('https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2342&q=80')] bg-cover bg-center">
+                        <div className="bg-black/80 p-8 rounded-2xl backdrop-blur-md border border-cyan-500/50 w-full max-w-md">
+                            <h1 className="text-4xl font-bold mb-2 text-cyan-400">憲法捍衛者 V8</h1>
+                            <p className="text-gray-300 mb-6">終極星戰・UFO 艦隊來襲</p>
+                            
+                            {gameState !== 'start' && <div className="text-4xl mb-6 text-yellow-400 font-bold">SCORE: {score}</div>}
+
+                            <div className="space-y-4">
+                                <button onClick={() => startGame('single')} className="w-full py-4 bg-gray-700 border-2 border-cyan-500 rounded-xl font-bold hover:bg-gray-600 transition">
+                                    📱 單螢幕 (手持轉動)
+                                </button>
+                                <button onClick={() => startGame('vr')} className="w-full py-4 bg-cyan-600 rounded-xl font-bold shadow-[0_0_20px_#0891b2] hover:bg-cyan-700 transition">
+                                    👓 VR 眼鏡 (放入紙盒)
+                                </button>
+                            </div>
+                            <p className="mt-6 text-xs text-gray-400">
+                                *請務必允許手機的「動作與方向」權限，否則畫面無法轉動。
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="w-full h-screen bg-black flex overflow-hidden">
+                    {mode === 'vr' ? (
+                        <>
+                            <div className="w-1/2 h-full relative overflow-hidden">
+                                <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation}} />
+                            </div>
+                            <div className="w-1/2 h-full relative overflow-hidden">
+                                <EyeView isLeft={false} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation}} />
+                            </div>
+                            <div className="absolute top-1/2 left-1/2 w-[1px] h-10 bg-white/30 transform -translate-x-1/2 -translate-y-1/2"></div>
+                        </>
+                    ) : (
+                        <div className="w-full h-full relative overflow-hidden">
+                            <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation}} />
+                            {/* 單螢幕觸控輔助 (以防陀螺儀失效) */}
+                            {enemies.map(enemy => (
+                                <div key={`touch-${enemy.id}`} 
+                                    className="absolute top-1/2 left-1/2 w-32 h-32 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                                    style={{ 
+                                        transform: `translate3d(${enemy.x + (-orientation.gamma * 2.5)}vw, ${enemy.y + ((orientation.beta - 45) * 2.5)}vh, 0) scale(${enemy.scale})`, 
+                                        zIndex: 200 
+                                    }}
+                                    onClick={() => {
+                                        if(enemy.type === 'correct') handleHit(enemy);
+                                        else setHealth(h => Math.max(0, h-20));
+                                    }}
+                                ></div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
