@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>澳洲氣候與景點大探索</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* V21 觸控協定優化 */
+        body { touch-action: manipulation; user-select: none; -webkit-user-select: none; overscroll-behavior: none; }
+        .map-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; aspect-ratio: 4/3; }
+        .marker { 
+            position: absolute; 
+            transform: translate(-50%, -50%); 
+            cursor: pointer; 
+            transition: all 0.3s;
+            animation: bounce 2s infinite;
+        }
+        .marker:active { transform: translate(-50%, -50%) scale(0.9); }
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+            50% { transform: translate(-50%, -50%) translateY(-10px); }
+        }
+        .info-panel {
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-blue-50 text-gray-800 h-screen flex flex-col overflow-hidden font-sans">
+
+    <div id="root" class="h-full flex flex-col"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // 教材資料庫：根據您提供的圖片整理
+        const locations = [
+            {
+                id: 1,
+                name: "澳洲中部 (艾利斯泉)",
+                x: 48, y: 50, // 地圖上的百分比座標
+                type: "desert",
+                icon: "🏜️",
+                climate: "熱帶沙漠氣候",
+                reason: "副熱帶高壓籠罩 + 大分水嶺背風坡",
+                desc: "氣候乾燥，沙漠廣布，人口稀少。這裡有著名的紅色巨岩「烏魯魯 (Uluru)」。",
+                landmark: "🗿 烏魯魯 (Uluru)"
+            },
+            {
+                id: 2,
+                name: "東南沿海 (雪梨)",
+                x: 88, y: 65,
+                type: "humid",
+                icon: "🏙️",
+                climate: "夏雨型暖溼氣候",
+                reason: "東南信風迎風坡 + 東澳暖流",
+                desc: "降水較多，氣候濕潤，是澳洲的精華區，人口與大都市集中（如雪梨）。",
+                landmark: "🎭 雪梨歌劇院"
+            },
+            {
+                id: 3,
+                name: "東北海岸 (大堡礁)",
+                x: 80, y: 25,
+                type: "coral",
+                icon: "🐠",
+                climate: "熱帶莽原/雨林",
+                reason: "溫暖海水環境",
+                desc: "世界最大、最長的珊瑚礁群，位於澳洲東北海岸。",
+                landmark: "🪸 大堡礁"
+            },
+            {
+                id: 4,
+                name: "西南角 (伯斯)",
+                x: 15, y: 65,
+                type: "med",
+                icon: "🍇",
+                climate: "溫帶地中海型氣候",
+                reason: "夏乾冬雨 (冬季受西風吹拂)",
+                desc: "夏季乾燥炎熱，冬季因西風帶北移帶來雨水。",
+                landmark: "🌊 西澳海岸"
+            },
+            {
+                id: 5,
+                name: "南部 (墨爾本/塔斯馬尼亞)",
+                x: 75, y: 85,
+                type: "west",
+                icon: "🌧️",
+                climate: "溫帶海洋性氣候",
+                reason: "終年受西風吹拂",
+                desc: "氣候呈現濕潤，四季分明。",
+                landmark: "🐑 牧羊業重鎮"
+            }
+        ];
+
+        // 簡易澳洲地圖 SVG 路徑
+        const AustraliaMap = () => (
+            <svg viewBox="0 0 800 600" className="w-full h-full drop-shadow-xl filter">
+                <path d="M 580 160 L 620 200 L 650 350 L 620 450 L 580 480 L 500 460 L 400 450 L 250 420 L 150 400 L 100 300 L 120 200 L 200 150 L 300 120 L 450 100 Z" fill="#D1FAE5" stroke="#059669" strokeWidth="0" className="opacity-0" />
+                {/* 簡化的澳洲輪廓示意圖，使用圖片背景會更好，這邊用CSS繪製一個示意背景 */}
+                <path fill="#FCD34D" stroke="#B45309" strokeWidth="3" d="M225,123 C247,113 322,66 365,71 C408,76 430,90 448,111 C466,132 462,143 490,147 C518,151 545,189 568,230 C591,271 627,294 621,348 C615,402 590,443 556,448 C522,453 497,433 468,433 C439,433 398,443 365,443 C332,443 273,436 242,416 C211,396 179,392 148,343 C117,294 100,268 126,220 C152,172 203,133 225,123 Z" />
+                {/* 塔斯馬尼亞 */}
+                <path fill="#6EE7B7" stroke="#047857" strokeWidth="3" d="M570,490 C580,480 600,480 605,500 C610,520 590,530 575,520 C560,510 560,500 570,490 Z" />
+            </svg>
+        );
+
+        const App = () => {
+            const [activeLocation, setActiveLocation] = useState(null);
+            const [showIntro, setShowIntro] = useState(true);
+
+            return (
+                <div className="flex flex-col h-full bg-gradient-to-b from-blue-300 to-blue-100 relative">
+                    
+                    {/* Header */}
+                    <header className="p-4 bg-white/90 shadow-md z-10 text-center">
+                        <h1 className="text-2xl font-bold text-blue-800">🇦🇺 澳洲氣候與景點探索</h1>
+                        <p className="text-sm text-gray-600">點擊地圖上的圖示，了解氣候成因！</p>
+                    </header>
+
+                    {/* Main Map Area */}
+                    <main className="flex-1 flex items-center justify-center relative overflow-hidden p-4">
+                        <div className="map-container relative">
+                            <AustraliaMap />
+                            
+                            {/* 地形標示 (靜態文字) */}
+                            <div className="absolute top-[40%] left-[35%] text-amber-800 font-bold opacity-50 pointer-events-none select-none">西部高原</div>
+                            <div className="absolute top-[45%] right-[20%] text-green-800 font-bold opacity-50 pointer-events-none select-none">大分水嶺</div>
+
+                            {/* 互動按鈕 */}
+                            {locations.map(loc => (
+                                <button
+                                    key={loc.id}
+                                    className="marker bg-white rounded-full w-12 h-12 flex items-center justify-center text-2xl shadow-lg border-2 border-blue-500 hover:scale-110 active:bg-blue-200 z-20"
+                                    style={{ left: `${loc.x}%`, top: `${loc.y}%` }}
+                                    onClick={() => setActiveLocation(loc)}
+                                >
+                                    {loc.icon}
+                                </button>
+                            ))}
+                        </div>
+                    </main>
+
+                    {/* Info Modal / Bottom Sheet */}
+                    {activeLocation && (
+                        <div className="absolute bottom-0 left-0 w-full info-panel bg-white/95 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.2)] p-6 z-30 transition-transform duration-300 border-t-4 border-yellow-400">
+                            <button 
+                                onClick={() => setActiveLocation(null)}
+                                className="absolute top-4 right-4 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center text-gray-600 font-bold"
+                            >
+                                ✕
+                            </button>
+                            
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className="text-4xl">{activeLocation.icon}</span>
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-gray-800">{activeLocation.name}</h2>
+                                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-semibold">{activeLocation.climate}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-3">
+                                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                                        <h3 className="font-bold text-yellow-800 text-sm mb-1">☀️ 氣候成因</h3>
+                                        <p className="text-gray-700">{activeLocation.reason}</p>
+                                    </div>
+                                    
+                                    <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                                        <h3 className="font-bold text-green-800 text-sm mb-1">📷 特色景點</h3>
+                                        <p className="text-gray-700 font-bold">{activeLocation.landmark}</p>
+                                        <p className="text-gray-600 text-sm mt-1">{activeLocation.desc}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Intro Modal */}
+                    {showIntro && (
+                        <div className="absolute inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl animate-bounce-in">
+                                <div className="text-6xl mb-4">🌏</div>
+                                <h2 className="text-2xl font-bold mb-2">澳洲地理考察團</h2>
+                                <p className="text-gray-600 mb-6">你是地理探險家，請探索澳洲各地，找出氣候乾燥或濕潤的真正原因！</p>
+                                <button 
+                                    onClick={() => setShowIntro(false)}
+                                    className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold text-lg shadow-lg hover:bg-blue-700 active:scale-95 transition-all w-full"
+                                >
+                                    出發！ 🚀
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
