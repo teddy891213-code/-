@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>憲法捍衛者 V9.1：手機修正版</title>
+    <title>憲法捍衛者 V10：穩定操控版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -27,12 +27,15 @@
             position: absolute; top: -100%; left: -100%; width: 300%; height: 300%;
             background-image: 
                 radial-gradient(1.5px 1.5px at 100px 100px, white, transparent),
-                radial-gradient(1px 1px at 200px 300px, rgba(255,255,255,0.8), transparent);
+                radial-gradient(2px 2px at 200px 300px, rgba(255,255,255,0.6), transparent);
             background-size: 600px 600px;
-            transform: translateZ(-2000px); 
+            transform: translateZ(-3000px); 
         }
 
         .reticle-ring { transition: stroke-dashoffset 0.1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        
+        /* 提示動畫 */
+        @keyframes fade-out { 0% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
     </style>
 </head>
 <body>
@@ -124,40 +127,16 @@
             );
         };
 
-        const EyeView = ({ isLeft, gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation, calibration }) => {
-            
-            // 🎥 絕對視角邏輯 (含自動校正)
-            // 校正原理：將目前的角度 (beta, gamma) 減去 初始角度 (calibration)
-            // 這樣遊戲開始時，視角永遠是 (0,0) 正前方
-            
-            const currentBeta = orientation.beta || 0;
-            const currentGamma = orientation.gamma || 0;
-            
-            // 計算相對角度
-            let relativeBeta = currentBeta - calibration.beta;
-            let relativeGamma = currentGamma - calibration.gamma;
-
-            // 限制上下角度 (-60 ~ 60)
-            const lookUpLimit = Math.max(-60, Math.min(60, relativeBeta)); 
-            
+        const EyeView = ({ isLeft, gameState, score, health, currentQ, enemies, focusingId, focusProgress, viewAngle }) => {
+            // viewAngle 包含了 {x, y}，這是整合了陀螺儀 + 手指滑動的最終角度
             const worldStyle = {
-                transform: `rotateX(${lookUpLimit}deg) rotateY(${-relativeGamma}deg)`
+                transform: `rotateX(${viewAngle.y}deg) rotateY(${viewAngle.x}deg)`
             };
 
             return (
                 <div className={`vr-viewport border-r-2 border-gray-800 ${isLeft ? '' : 'border-l-0'}`}>
-                    
-                    {/* Debug 資訊 (只在左眼顯示) */}
-                    {isLeft && gameState === 'playing' && (
-                        <div className="absolute bottom-2 left-2 text-[10px] text-green-500 font-mono z-50 bg-black/50 p-1 pointer-events-none">
-                            G: {Math.round(currentGamma)} | B: {Math.round(currentBeta)}<br/>
-                            {currentGamma === 0 && currentBeta === 0 ? "⚠️ 沒抓到感應器 (請開權限)" : "✅ 感應器運作中"}
-                        </div>
-                    )}
-
                     <div className="vr-world" style={worldStyle}>
                         <div className="star-field"></div>
-                        
                         {gameState === 'playing' && enemies.map(enemy => (
                             <div
                                 key={enemy.id}
@@ -173,6 +152,7 @@
                         ))}
                     </div>
 
+                    {/* HUD */}
                     <div className={`absolute inset-0 pointer-events-none z-50 transition-colors duration-100 ${health < 30 ? 'bg-red-900/40 animate-pulse' : ''}`}></div>
 
                     <div className="absolute top-8 left-0 w-full flex justify-center z-20 pointer-events-none">
@@ -206,11 +186,15 @@
             const [level, setLevel] = useState(0);
             const [enemies, setEnemies] = useState([]);
             
-            // 陀螺儀
-            const [orientation, setOrientation] = useState({ beta: 0, gamma: 0 });
-            // 校正值
-            const [calibration, setCalibration] = useState({ beta: 0, gamma: 0 });
+            // 🔥 核心視角變數
+            // 不管是陀螺儀還是手滑，最後都更新這個 viewAngle
+            const [viewAngle, setViewAngle] = useState({ x: 0, y: 0 });
             
+            // 觸控拖曳用
+            const touchRef = useRef({ startX: 0, startY: 0, isDragging: false, lastAngleX: 0, lastAngleY: 0 });
+            // 陀螺儀校正用
+            const gyroRef = useRef({ baseBeta: 0, baseGamma: 0, active: false });
+
             const [focusingId, setFocusingId] = useState(null);
             const [focusProgress, setFocusProgress] = useState(0);
 
@@ -218,36 +202,80 @@
             const spawnTimerRef = useRef();
             const lastTimeRef = useRef(0);
             const focusTimerRef = useRef(0);
-            // 記錄最新的 orientation 以便校正時使用
-            const orientationRef = useRef({ beta: 0, gamma: 0 });
 
             const currentQ = questionBank[level];
 
-            // 權限請求 (核心修復)
+            // 處理陀螺儀事件
+            const handleOrientation = (event) => {
+                const beta = event.beta || 0;   // 上下
+                const gamma = event.gamma || 0; // 左右
+                
+                // 第一次抓到數據時，設定為基準點
+                if (!gyroRef.current.active && (beta !== 0 || gamma !== 0)) {
+                    gyroRef.current.baseBeta = beta;
+                    gyroRef.current.baseGamma = gamma;
+                    gyroRef.current.active = true;
+                }
+
+                if (gyroRef.current.active) {
+                    // 計算相對角度，並反轉 (因為是轉動世界)
+                    const rotY = -(gamma - gyroRef.current.baseGamma);
+                    const rotX = (beta - gyroRef.current.baseBeta);
+                    
+                    // 只有在沒有觸控拖曳時，陀螺儀才主導
+                    if (!touchRef.current.isDragging) {
+                        setViewAngle(prev => ({
+                            x: rotY + touchRef.current.lastAngleX, // 疊加手動調整的偏移量
+                            y: Math.max(-60, Math.min(60, rotX + touchRef.current.lastAngleY))
+                        }));
+                    }
+                }
+            };
+
+            // 處理觸控滑動 (Fallback)
+            const handleTouchStart = (e) => {
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                touchRef.current.startX = clientX;
+                touchRef.current.startY = clientY;
+                touchRef.current.isDragging = true;
+            };
+
+            const handleTouchMove = (e) => {
+                if (!touchRef.current.isDragging) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                const deltaX = (clientX - touchRef.current.startX) * 0.5; // 靈敏度
+                const deltaY = (clientY - touchRef.current.startY) * 0.5;
+
+                setViewAngle(prev => ({
+                    x: prev.x + deltaX,
+                    y: Math.max(-60, Math.min(60, prev.y - deltaY))
+                }));
+
+                touchRef.current.startX = clientX;
+                touchRef.current.startY = clientY;
+            };
+
+            const handleTouchEnd = () => {
+                touchRef.current.isDragging = false;
+                // 記錄最後的角度，讓下次陀螺儀可以接續
+                touchRef.current.lastAngleX = viewAngle.x; 
+                touchRef.current.lastAngleY = viewAngle.y;
+            };
+
             const requestPermission = async () => {
                 if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                     try {
                         const response = await DeviceOrientationEvent.requestPermission();
                         if (response === 'granted') {
                             window.addEventListener('deviceorientation', handleOrientation);
-                            return true;
-                        } else {
-                            alert('您拒絕了權限，無法偵測轉頭！請重新整理網頁。');
-                            return false;
                         }
-                    } catch (e) { console.error(e); return false; }
+                    } catch (e) { console.error(e); }
                 } else {
                     window.addEventListener('deviceorientation', handleOrientation);
-                    return true;
                 }
-            };
-
-            const handleOrientation = (event) => {
-                const beta = event.beta || 0;
-                const gamma = event.gamma || 0;
-                
-                setOrientation({ beta, gamma });
-                orientationRef.current = { beta, gamma };
             };
 
             const spawnEnemy = () => {
@@ -257,17 +285,18 @@
                     : currentQ.targets.filter(t => t.type === 'wrong');
                 const template = targetPool[Math.floor(Math.random() * targetPool.length)];
                 
-                const startX = (Math.random() - 0.5) * 240; 
-                const startY = (Math.random() - 0.5) * 120;
+                const startX = (Math.random() - 0.5) * 200; 
+                const startY = (Math.random() - 0.5) * 100;
 
                 setEnemies(prev => [...prev, {
                     id: Date.now() + Math.random(),
                     ...template,
                     x: startX,
                     y: startY,
-                    z: -2500, // 修正：拉近一點點，避免手機版太遠被裁切
+                    z: -3000, 
                     variant: Math.floor(Math.random() * 3),
-                    speed: 15 + (level * 2) 
+                    // 🚀 速度變慢 (10 + level*1.5)
+                    speed: 10 + (level * 1.5) 
                 }]);
             };
 
@@ -281,20 +310,16 @@
                 setEnemies(prev => {
                     const nextEnemies = [];
                     let closestId = null;
-                    // const minDistance = 50; 
 
                     prev.forEach(enemy => {
                         const moveStep = enemy.speed * (deltaTime / 16);
                         enemy.z += moveStep;
 
-                        // 瞄準判定 (需扣除校正值)
-                        const currentBeta = orientation.beta || 0;
-                        const currentGamma = orientation.gamma || 0;
-                        const relBeta = currentBeta - calibration.beta;
-                        const relGamma = currentGamma - calibration.gamma;
-
-                        const diffX = enemy.x - (-relGamma * 2);
-                        const diffY = enemy.y - (relBeta * 2);
+                        // 瞄準判定：使用 viewAngle
+                        // 反向思考：敵人的座標 - 我的視角座標
+                        // 視角 x (左右轉) 對應敵人的 X 軸
+                        const diffX = enemy.x - (-viewAngle.x); 
+                        const diffY = enemy.y - (viewAngle.y); // 注意 Y 軸方向
                         
                         const dist = Math.sqrt(diffX * diffX + diffY * diffY);
 
@@ -316,6 +341,7 @@
                             focusTimerRef.current = 0;
                         } else {
                             focusTimerRef.current += deltaTime;
+                            // 鎖定時間 1.0 秒
                             const progress = Math.min(100, (focusTimerRef.current / 1000) * 100);
                             setFocusProgress(progress);
                             if (focusTimerRef.current >= 1000) {
@@ -362,29 +388,22 @@
                 if (gameState === 'playing') {
                     lastTimeRef.current = performance.now();
                     frameRef.current = requestAnimationFrame(gameLoop);
-                    spawnTimerRef.current = setInterval(spawnEnemy, 500); 
+                    // 🚀 頻率調慢：1.2 秒一隻
+                    spawnTimerRef.current = setInterval(spawnEnemy, 1200); 
                 }
                 return () => {
                     cancelAnimationFrame(frameRef.current);
                     clearInterval(spawnTimerRef.current);
                     window.removeEventListener('deviceorientation', handleOrientation);
                 };
-            }, [gameState, level, health, focusingId, score, orientation, calibration]);
+            }, [gameState, level, health, focusingId, score, viewAngle]);
 
             const startGame = async (m) => {
-                const granted = await requestPermission();
-                if (!granted) return;
-
+                await requestPermission();
                 setMode(m);
-                
-                // 🔥 自動校正：等待一點時間讓感應器啟動，然後抓現在的角度當作歸零點
-                setTimeout(() => {
-                    setCalibration({
-                        beta: orientationRef.current.beta,
-                        gamma: orientationRef.current.gamma
-                    });
-                }, 100);
-
+                // 重置視角
+                gyroRef.current.active = false;
+                setViewAngle({x: 0, y: 0});
                 setGameState('playing');
                 setHealth(100); setScore(0); setLevel(0);
             };
@@ -392,60 +411,51 @@
             if (gameState === 'start' || gameState === 'gameover' || gameState === 'win') {
                 return (
                     <div className="flex flex-col items-center justify-center h-screen bg-black text-white font-mono p-4 text-center bg-[url('https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2342&q=80')] bg-cover bg-center">
-                        <div className="bg-black/90 p-8 rounded-2xl border border-green-500/50 w-full max-w-md">
-                            <h1 className="text-4xl font-bold mb-2 text-green-400">憲法捍衛者 V9.1</h1>
-                            <p className="text-gray-300 mb-6">手機修正版・自動校正視角</p>
+                        <div className="bg-black/90 p-8 rounded-2xl border border-blue-500/50 w-full max-w-md">
+                            <h1 className="text-4xl font-bold mb-2 text-blue-400">憲法捍衛者 V10</h1>
+                            <p className="text-gray-300 mb-6">穩定操控版 (滑動+陀螺儀)</p>
                             
                             {gameState !== 'start' && <div className="text-4xl mb-6 text-yellow-400 font-bold">SCORE: {score}</div>}
 
                             <div className="space-y-4">
-                                <button onClick={() => startGame('single')} className="w-full py-4 bg-gray-700 border-2 border-green-500 rounded-xl font-bold hover:bg-gray-600 transition">
-                                    📱 單螢幕 (手持瞄準)
+                                <button onClick={() => startGame('single')} className="w-full py-4 bg-gray-700 border-2 border-blue-500 rounded-xl font-bold hover:bg-gray-600 transition">
+                                    📱 單螢幕 (手持)
                                 </button>
-                                <button onClick={() => startGame('vr')} className="w-full py-4 bg-green-600 rounded-xl font-bold shadow-[0_0_20px_#16a34a] hover:bg-green-700 transition">
+                                <button onClick={() => startGame('vr')} className="w-full py-4 bg-blue-600 rounded-xl font-bold shadow-[0_0_20px_#2563eb] hover:bg-blue-700 transition">
                                     👓 VR 眼鏡 (放入紙盒)
                                 </button>
                             </div>
-                            
-                            <div className="mt-4 p-2 bg-red-900/30 border border-red-500 rounded text-xs text-left">
-                                <strong>⚠️ 手機版必讀：</strong><br/>
-                                1. 請務必點擊「允許」動作偵測。<br/>
-                                2. 按下開始時，請保持手機「正對前方」，程式會以此方向為基準。
-                            </div>
+                            <p className="mt-6 text-xs text-gray-400">
+                                💡 技巧：如果陀螺儀不動，請直接用手指在螢幕上<span className="text-white font-bold">滑動</span>來轉頭。
+                            </p>
                         </div>
                     </div>
                 );
             }
 
             return (
-                <div className="w-full h-screen bg-black flex overflow-hidden">
+                <div 
+                    className="w-full h-screen bg-black flex overflow-hidden cursor-move"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onMouseDown={handleTouchStart}
+                    onMouseMove={handleTouchMove}
+                    onMouseUp={handleTouchEnd}
+                >
                     {mode === 'vr' ? (
                         <>
                             <div className="w-1/2 h-full relative overflow-hidden">
-                                <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation, calibration}} />
+                                <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, viewAngle}} />
                             </div>
                             <div className="w-1/2 h-full relative overflow-hidden">
-                                <EyeView isLeft={false} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation, calibration}} />
+                                <EyeView isLeft={false} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, viewAngle}} />
                             </div>
                             <div className="absolute top-1/2 left-1/2 w-[1px] h-10 bg-white/30 transform -translate-x-1/2 -translate-y-1/2"></div>
                         </>
                     ) : (
                         <div className="w-full h-full relative overflow-hidden">
-                            <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation, calibration}} />
-                             {/* 單螢幕觸控輔助 (支援校正後的座標) */}
-                            {enemies.map(enemy => (
-                                <div key={`touch-${enemy.id}`} 
-                                    className="absolute top-1/2 left-1/2 w-32 h-32 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
-                                    style={{ 
-                                        transform: `translate3d(${enemy.x - (-(orientation.gamma - calibration.gamma) * 2)}vw, ${enemy.y - ((orientation.beta - calibration.beta) * 2)}vh, 0)`, 
-                                        zIndex: 200 
-                                    }}
-                                    onClick={() => {
-                                        if(enemy.type === 'correct') handleHit(enemy);
-                                        else setHealth(h => Math.max(0, h-20));
-                                    }}
-                                ></div>
-                            ))}
+                            <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, viewAngle}} />
                         </div>
                     )}
                 </div>
