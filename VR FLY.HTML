@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>憲法捍衛者 V6：帝國艦隊</title>
+    <title>憲法捍衛者 V7：真實視界</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -11,31 +11,32 @@
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Courier, monospace; touch-action: none; }
         
-        /* 3D 容器 */
-        .vr-scene { position: relative; width: 100%; height: 100%; overflow: hidden; perspective: 600px; background: radial-gradient(circle at center, #0f0518 0%, #000 100%); }
+        /* 3D 視角容器 */
+        .vr-viewport { position: relative; width: 100%; height: 100%; overflow: hidden; perspective: 800px; background: #000; }
         
-        /* 星空背景 */
+        /* 世界容器 (會跟著陀螺儀轉動) */
+        .vr-world {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        /* 星空 (加大範圍以免轉頭看到黑邊) */
         .star-field {
-            position: absolute; width: 100%; height: 100%;
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background-image: radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px);
             background-size: 550px 550px;
-            animation: stars-move 30s linear infinite;
+            transform: translateZ(-1000px); /* 推遠 */
         }
-        @keyframes stars-move { from { background-position: 0 0; } to { background-position: 550px 550px; } }
-
-        /* 局部旋轉動畫 (只轉雷達或環，不轉機身) */
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .radar-spin { transform-origin: center; animation: spin 2s linear infinite; }
-        .ring-spin { transform-origin: center; animation: spin 4s linear infinite; }
 
         /* 鎖定圈圈 */
         .reticle-ring { transition: stroke-dashoffset 0.1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
 
-        /* 懸浮微動 (讓飛機不要死板) */
-        @keyframes hover-float { 
-            0%, 100% { transform: translateY(0); } 
-            50% { transform: translateY(-5px); } 
-        }
+        /* 懸浮動畫 */
+        @keyframes float-anim { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        /* 旋轉動畫 */
+        @keyframes slow-spin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
     </style>
 </head>
 <body>
@@ -48,13 +49,13 @@
         const questionBank = [
             {
                 id: 1,
-                text: "目標：直轄市「行政機關」",
+                text: "尋找：直轄市「行政機關」",
                 hint: "關鍵字：市政府 (執行)",
                 targets: [
                     { text: "新北市政府", type: "correct", color: "#3b82f6" },
                     { text: "台中市政府", type: "correct", color: "#3b82f6" },
                     { text: "高雄市政府", type: "correct", color: "#3b82f6" },
-                    { text: "台北市政府", type: "correct", color: "#3b82f6" },
+                    { text: "台南市政府", type: "correct", color: "#3b82f6" },
                     { text: "新北市議會", type: "wrong", color: "#ef4444" },
                     { text: "板橋區公所", type: "wrong", color: "#9ca3af" },
                     { text: "台中市議會", type: "wrong", color: "#ef4444" }
@@ -62,13 +63,13 @@
             },
             {
                 id: 2,
-                text: "目標：縣市「立法機關」",
+                text: "尋找：縣市「立法機關」",
                 hint: "關鍵字：議會 (監督)",
                 targets: [
                     { text: "花蓮縣議會", type: "correct", color: "#a855f7" },
                     { text: "嘉義縣議會", type: "correct", color: "#a855f7" },
                     { text: "新竹市議會", type: "correct", color: "#a855f7" },
-                    { text: "宜蘭縣議會", type: "correct", color: "#a855f7" },
+                    { text: "彰化縣議會", type: "correct", color: "#a855f7" },
                     { text: "花蓮縣政府", type: "wrong", color: "#ef4444" },
                     { text: "台東縣政府", type: "wrong", color: "#ef4444" },
                     { text: "宜蘭市公所", type: "wrong", color: "#9ca3af" }
@@ -76,7 +77,7 @@
             },
             {
                 id: 3,
-                text: "目標：山地原住民區",
+                text: "尋找：山地原住民區",
                 hint: "關鍵：區公所 / 自治",
                 targets: [
                     { text: "烏來區公所", type: "correct", color: "#22c55e" },
@@ -90,50 +91,40 @@
             }
         ];
 
-        // 🚀 多樣化的 UFO 元件
-        const UFO = ({ color, text, variant }) => {
-            // 根據 variant (0, 1, 2) 顯示不同飛船
+        // 🚀 多樣化的敵人元件 (修正視覺問題)
+        const EnemyShip = ({ color, text, variant }) => {
             const renderShip = () => {
                 if (variant === 0) {
-                    // 經典圓盤型 (Classic Saucer)
+                    // 圓盤型 UFO
                     return (
-                        <svg viewBox="0 0 100 60" className="w-24 h-16 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
+                        <svg viewBox="0 0 100 60" className="w-28 h-20 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
                             <ellipse cx="50" cy="30" rx="48" ry="14" fill={color} stroke="white" strokeWidth="2" />
                             <circle cx="50" cy="22" r="16" fill="rgba(255,255,255,0.9)" />
-                            {/* 旋轉的燈光環 */}
-                            <g className="radar-spin" style={{transformOrigin: '50% 30px'}}>
-                                <circle cx="50" cy="30" r="3" fill="#ff0" transform="translate(30, 0)" />
-                                <circle cx="50" cy="30" r="3" fill="#ff0" transform="translate(-30, 0)" />
-                            </g>
+                            <circle cx="20" cy="30" r="4" fill="#ff0" className="animate-ping" />
+                            <circle cx="80" cy="30" r="4" fill="#ff0" className="animate-ping" style={{animationDelay: '0.5s'}} />
                         </svg>
                     );
                 } else if (variant === 1) {
-                    // 戰機型 (Fighter)
+                    // 戰機型
                     return (
-                        <svg viewBox="0 0 100 80" className="w-24 h-20 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
-                            <path d="M50 0 L80 60 L50 50 L20 60 Z" fill={color} stroke="white" strokeWidth="2" />
-                            <rect x="45" y="60" width="10" height="15" fill="orange" className="animate-pulse" />
-                            <circle cx="50" cy="30" r="5" fill="#0ff" className="animate-ping" />
+                        <svg viewBox="0 0 100 80" className="w-24 h-24 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
+                            <path d="M50 5 L80 70 L50 60 L20 70 Z" fill={color} stroke="white" strokeWidth="2" />
+                            <rect x="48" y="70" width="4" height="10" fill="cyan" className="animate-pulse" />
                         </svg>
                     );
                 } else {
-                    // 無人機型 (Drone Orb)
+                    // 🆕 修正：金字塔/菱形母艦 (取代原本像行星的球體)
                     return (
-                        <svg viewBox="0 0 100 100" className="w-24 h-24 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
-                            <circle cx="50" cy="50" r="20" fill={color} stroke="white" strokeWidth="2" />
-                            {/* 旋轉的外環 */}
-                            <g className="ring-spin" style={{transformOrigin: '50px 50px'}}>
-                                <path d="M50 10 A40 40 0 0 1 90 50" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                                <path d="M50 90 A40 40 0 0 1 10 50" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                            </g>
-                            <circle cx="50" cy="50" r="8" fill="red" className="animate-pulse" />
+                        <svg viewBox="0 0 100 100" className="w-28 h-28 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]" style={{animation: 'slow-spin 8s linear infinite'}}>
+                            <path d="M50 10 L90 50 L50 90 L10 50 Z" fill={color} stroke="white" strokeWidth="3" fillOpacity="0.8" />
+                            <rect x="40" y="40" width="20" height="20" fill="#fff" transform="rotate(45 50 50)" />
                         </svg>
                     );
                 }
             };
 
             return (
-                <div className="flex flex-col items-center" style={{animation: 'hover-float 2s ease-in-out infinite'}}>
+                <div className="flex flex-col items-center" style={{animation: 'float-anim 3s ease-in-out infinite'}}>
                     {renderShip()}
                     <div className="mt-2 bg-black/80 border border-white/50 text-white px-3 py-1 rounded text-xl font-bold whitespace-nowrap backdrop-blur-sm shadow-lg">
                         {text}
@@ -142,51 +133,72 @@
             );
         };
 
-        const EyeView = ({ isLeft, gameState, score, health, currentQ, enemies, focusingId, focusProgress }) => {
+        const EyeView = ({ isLeft, gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation }) => {
+            // 計算視角轉換 (模擬 VR 轉頭)
+            // 將手機的角度 (orientation) 轉換為 CSS transform
+            // gamma (左右傾斜) -> rotateY (左右轉)
+            // beta (前後傾斜) -> rotateX (上下看)
+            // 我們反向移動世界，造成「我看著世界」的錯覺
+            const worldStyle = {
+                transform: `rotateX(${Math.max(-30, Math.min(30, orientation.beta - 45))}deg) rotateY(${-orientation.gamma}deg)`
+            };
+
             return (
-                <div className={`vr-scene border-r-2 border-gray-900 ${isLeft ? '' : 'border-l-0'}`}>
-                    <div className="star-field"></div>
+                <div className={`vr-viewport border-r-2 border-gray-900 ${isLeft ? '' : 'border-l-0'}`}>
                     
+                    {/* 這層是「世界」，會跟著陀螺儀轉 */}
+                    <div className="vr-world" style={worldStyle}>
+                        <div className="star-field"></div>
+                        
+                        {/* 敵人 (位置是絕對的 3D 座標) */}
+                        {gameState === 'playing' && enemies.map(enemy => (
+                            <div
+                                key={enemy.id}
+                                className="absolute top-1/2 left-1/2 flex flex-col items-center justify-center transform transition-transform duration-75 will-change-transform"
+                                style={{
+                                    // 使用 translate3d 將敵人放在 3D 空間中
+                                    // x, y 是隨機分佈，z 是距離 (scale 模擬)
+                                    // 為了配合陀螺儀，我們需要讓敵人真正分佈在「四周」
+                                    // 這裡用簡化的 2.5D：隨著 scale 變大 (z變近)
+                                    // 我們加上 enemy.offsetX/Y 讓他分佈在視野不同處
+                                    transform: `translate3d(${enemy.x}vw, ${enemy.y}vh, 0) scale(${enemy.scale})`,
+                                    zIndex: Math.floor(enemy.scale * 100),
+                                    opacity: enemy.scale < 0.05 ? 0 : 1,
+                                    filter: focusingId === enemy.id ? 'drop-shadow(0 0 20px #facc15)' : 'none'
+                                }}
+                            >
+                                <EnemyShip color={enemy.color} text={enemy.text} variant={enemy.variant} />
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* --- 以下是 HUD (固定在螢幕上，不隨世界轉動) --- */}
+
                     <div className={`absolute inset-0 pointer-events-none z-50 transition-colors duration-200 ${health < 30 ? 'bg-red-900/30 animate-pulse' : ''}`}></div>
 
-                    {/* HUD */}
-                    <div className="absolute top-10 left-0 w-full flex justify-center z-20 pointer-events-none">
-                        <div className="bg-slate-900/90 border-2 border-blue-500 px-8 py-4 rounded-xl text-center backdrop-blur-md shadow-[0_0_25px_#3b82f6]">
-                            <div className="text-yellow-400 text-3xl font-bold tracking-widest mb-2">{currentQ.text}</div>
-                            <div className="text-blue-100 text-xl">{currentQ.hint}</div>
+                    {/* 上方題目 */}
+                    <div className="absolute top-8 left-0 w-full flex justify-center z-20 pointer-events-none">
+                        <div className="bg-slate-900/90 border-2 border-blue-500 px-6 py-3 rounded-xl text-center backdrop-blur-md">
+                            <div className="text-yellow-400 text-2xl font-bold mb-1">{currentQ.text}</div>
+                            <div className="text-blue-200 text-lg">{currentQ.hint}</div>
                         </div>
                     </div>
 
-                    <div className="absolute bottom-12 w-full flex justify-between px-20 z-20 text-2xl font-bold font-mono">
+                    {/* 下方數據 */}
+                    <div className="absolute bottom-10 w-full flex justify-between px-16 z-20 text-2xl font-bold font-mono">
                         <div className="text-green-400 drop-shadow-md">SCORE: {score}</div>
                         <div className={health < 40 ? "text-red-500 drop-shadow-md" : "text-blue-400 drop-shadow-md"}>SHIELD: {health}%</div>
                     </div>
 
-                    {/* 準心 */}
+                    {/* 中央準心 */}
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
                         <svg width="80" height="80" viewBox="0 0 80 80">
-                            <circle cx="40" cy="40" r="4" fill="#0f0" />
+                            <circle cx="40" cy="40" r="3" fill="#0f0" />
                             <circle cx="40" cy="40" r="30" fill="none" stroke="#0f0" strokeWidth="4"
                                 strokeDasharray="188" strokeDashoffset={188 - (188 * focusProgress / 100)}
                                 className="reticle-ring" opacity={focusProgress > 0 ? 1 : 0.3} />
                         </svg>
                     </div>
-
-                    {/* 敵人渲染 */}
-                    {gameState === 'playing' && enemies.map(enemy => (
-                        <div
-                            key={enemy.id}
-                            className="absolute top-1/2 left-1/2 flex flex-col items-center justify-center transform transition-transform duration-75 will-change-transform"
-                            style={{
-                                transform: `translate(-50%, -50%) translate3d(${enemy.x}vw, ${enemy.y}vh, 0) scale(${enemy.scale})`,
-                                zIndex: Math.floor(enemy.scale * 100),
-                                opacity: enemy.scale < 0.05 ? 0 : 1,
-                                filter: focusingId === enemy.id ? 'drop-shadow(0 0 15px #facc15)' : 'none'
-                            }}
-                        >
-                            <UFO color={enemy.color} text={enemy.text} variant={enemy.variant} />
-                        </div>
-                    ))}
                 </div>
             );
         };
@@ -199,6 +211,11 @@
             const [level, setLevel] = useState(0);
             const [enemies, setEnemies] = useState([]);
             
+            // 陀螺儀數據
+            const [orientation, setOrientation] = useState({ alpha: 0, beta: 45, gamma: 0 });
+            // iOS 權限狀態
+            const [permissionGranted, setPermissionGranted] = useState(false);
+
             const [focusingId, setFocusingId] = useState(null);
             const [focusProgress, setFocusProgress] = useState(0);
 
@@ -209,26 +226,54 @@
 
             const currentQ = questionBank[level];
 
+            // 請求 iOS 權限
+            const requestPermission = async () => {
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    try {
+                        const response = await DeviceOrientationEvent.requestPermission();
+                        if (response === 'granted') {
+                            setPermissionGranted(true);
+                            window.addEventListener('deviceorientation', handleOrientation);
+                        } else {
+                            alert('需要動作權限才能遊玩 VR 模式');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                } else {
+                    // Android 或一般瀏覽器直接監聽
+                    setPermissionGranted(true);
+                    window.addEventListener('deviceorientation', handleOrientation);
+                }
+            };
+
+            const handleOrientation = (event) => {
+                setOrientation({
+                    alpha: event.alpha || 0,
+                    beta: event.beta || 45,   // 前後傾斜
+                    gamma: event.gamma || 0   // 左右傾斜
+                });
+            };
+
             const spawnEnemy = () => {
-                const isCorrect = Math.random() > 0.45; // 稍微平衡正確機率
+                const isCorrect = Math.random() > 0.45;
                 const targetPool = isCorrect 
                     ? currentQ.targets.filter(t => t.type === 'correct') 
                     : currentQ.targets.filter(t => t.type === 'wrong');
                 const template = targetPool[Math.floor(Math.random() * targetPool.length)];
                 
-                // 擴大隨機出現範圍
-                const startX = (Math.random() - 0.5) * 110;
-                const startY = (Math.random() - 0.5) * 85;
+                // 擴大隨機分佈範圍 (因為現在可以轉頭看了)
+                // 範圍從 -150 到 150，迫使玩家轉頭
+                const startX = (Math.random() - 0.5) * 200; 
+                const startY = (Math.random() - 0.5) * 100;
 
                 setEnemies(prev => [...prev, {
                     id: Date.now() + Math.random(),
                     ...template,
                     x: startX,
                     y: startY,
-                    variant: Math.floor(Math.random() * 3), // 隨機 0~2 造型
+                    variant: Math.floor(Math.random() * 3),
                     scale: 0.02, 
-                    // 🚀 關鍵修改：速度變慢 (攻擊時間拉長到 4秒以上)
-                    // 原本 0.0025 -> 改為 0.00045
                     speed: 0.00045 + (level * 0.00005) 
                 }]);
             };
@@ -243,32 +288,43 @@
                 setEnemies(prev => {
                     const nextEnemies = [];
                     let closestId = null;
-                    let minDistance = 25; // 鎖定判定範圍
+                    let minDistance = 25; 
 
                     prev.forEach(enemy => {
-                        // 1. 移動
                         enemy.scale += enemy.speed * (deltaTime || 16);
 
-                        // 2. 距離判定 (用於凝視)
-                        const dist = Math.sqrt(enemy.x * enemy.x + enemy.y * enemy.y);
+                        // 計算視覺距離
+                        // 重要：這裡要考慮陀螺儀的位移修正
+                        // 但為了簡化運算，我們假設準心永遠在 (0,0)
+                        // 我們計算敵人的 (x,y) 經過 transform 後是否接近中心
                         
-                        // 鎖定條件：不能太遠(太小)，且要在準心範圍內
-                        if (enemy.scale > 0.25 && dist < minDistance) {
+                        // 簡單版判定：
+                        // 如果敵人座標 (x,y) 加上 視角偏移 (gamma, beta) 接近 0
+                        // 視角偏移 gamma (左右) 對應 x
+                        // 視角偏移 beta-45 (上下) 對應 y
+                        
+                        // 修正係數 (手感調整)
+                        const viewX = -orientation.gamma * 2.5; 
+                        const viewY = (orientation.beta - 45) * 2.5;
+
+                        // 敵人在螢幕上的相對位置
+                        const screenX = enemy.x + viewX;
+                        const screenY = enemy.y + viewY;
+                        
+                        const dist = Math.sqrt(screenX * screenX + screenY * screenY);
+
+                        if (enemy.scale > 0.25 && dist < 30) { // 30 是判定半徑
                             closestId = enemy.id;
-                            minDistance = dist;
                         }
 
-                        // 3. 撞擊判定 (scale > 2.0 代表非常近了)
                         if (enemy.scale > 2.0) {
-                            if (enemy.type === 'correct') {
-                                setHealth(h => Math.max(0, h - 15)); // 漏接
-                            }
+                            if (enemy.type === 'correct') setHealth(h => Math.max(0, h - 15));
                         } else {
                             nextEnemies.push(enemy);
                         }
                     });
 
-                    // 4. 凝視鎖定邏輯
+                    // 凝視邏輯
                     if (closestId) {
                         if (closestId !== focusingId) {
                             setFocusingId(closestId);
@@ -276,7 +332,6 @@
                             focusTimerRef.current = 0;
                         } else {
                             focusTimerRef.current += deltaTime;
-                            // 鎖定時間：1.2秒 (稍微縮短一點點，增加手感)
                             const progress = Math.min(100, (focusTimerRef.current / 1200) * 100);
                             setFocusProgress(progress);
                             if (focusTimerRef.current >= 1200) {
@@ -323,40 +378,57 @@
                 if (gameState === 'playing') {
                     lastTimeRef.current = performance.now();
                     frameRef.current = requestAnimationFrame(gameLoop);
-                    // 🚀 關鍵修改：頻率變高 (0.8秒一隻)
                     spawnTimerRef.current = setInterval(spawnEnemy, 800); 
                 }
                 return () => {
                     cancelAnimationFrame(frameRef.current);
                     clearInterval(spawnTimerRef.current);
+                    window.removeEventListener('deviceorientation', handleOrientation);
                 };
-            }, [gameState, level, health, focusingId, score]);
+            }, [gameState, level, health, focusingId, score, orientation]); // 依賴 orientation 以更新畫面
 
+            const startGame = (selectedMode) => {
+                setMode(selectedMode);
+                // 嘗試請求權限 (若是 iOS)
+                requestPermission();
+                setGameState('playing');
+                setHealth(100);
+                setScore(0);
+                setLevel(0);
+            };
+
+            // 開始畫面
             if (gameState === 'start' || gameState === 'gameover' || gameState === 'win') {
                 return (
                     <div className="flex flex-col items-center justify-center h-screen bg-black text-white font-mono p-4 text-center bg-[url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-4.0.3&auto=format&fit=crop&w=2342&q=80')] bg-cover bg-center">
-                        <div className="bg-black/80 p-8 rounded-2xl backdrop-blur-sm border border-blue-500/30">
-                            <h1 className="text-4xl md:text-6xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                                {gameState === 'start' ? '憲法捍衛者 V6' : (gameState === 'win' ? '任務完成！' : '護盾損毀')}
+                        <div className="bg-black/85 p-8 rounded-2xl backdrop-blur-md border border-purple-500/50 max-w-lg w-full">
+                            <h1 className="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+                                {gameState === 'start' ? '憲法捍衛者 V7' : (gameState === 'win' ? '任務完成！' : '戰線崩潰')}
                             </h1>
-                            <p className="mb-8 text-gray-300">帝國艦隊來襲！請鎖定並擊落正確目標。</p>
+                            <p className="mb-6 text-gray-300">
+                                真實陀螺儀 VR 版<br/>
+                                <span className="text-yellow-400 text-sm">請轉動手機來尋找敵人！</span>
+                            </p>
                             
-                            {gameState !== 'start' && <div className="text-4xl mb-8 text-yellow-400 font-bold">SCORE: {score}</div>}
+                            {gameState !== 'start' && <div className="text-4xl mb-6 text-yellow-400 font-bold">SCORE: {score}</div>}
 
-                            <div className="space-y-4 w-full max-w-md mx-auto">
-                                <button onClick={() => { setMode('single'); setGameState('playing'); setHealth(100); setScore(0); setLevel(0); }}
-                                    className="w-full py-4 bg-gray-800 border-2 border-blue-500 rounded-xl hover:bg-gray-700 text-xl font-bold transition flex items-center justify-center gap-2">
-                                    📱 單螢幕模式
+                            <div className="space-y-4">
+                                <button onClick={() => startGame('single')}
+                                    className="w-full py-4 bg-gray-700 border-2 border-gray-500 rounded-xl hover:bg-gray-600 text-lg font-bold transition">
+                                    📱 單螢幕模式 (手持轉動)
                                 </button>
-                                <button onClick={() => { setMode('vr'); setGameState('playing'); setHealth(100); setScore(0); setLevel(0); }}
-                                    className="w-full py-4 bg-blue-600 rounded-xl hover:bg-blue-700 text-xl font-bold shadow-[0_0_20px_#2563eb] transition flex items-center justify-center gap-2">
-                                    👓 VR 眼鏡模式
+                                <button onClick={() => startGame('vr')}
+                                    className="w-full py-4 bg-purple-600 rounded-xl hover:bg-purple-700 text-lg font-bold shadow-[0_0_20px_#9333ea] transition">
+                                    👓 VR 眼鏡模式 (放入紙盒)
                                 </button>
                             </div>
-                            <p className="mt-8 text-xs text-gray-400">
-                                說明：敵機從遠處飛來約需 4 秒。<br/>
-                                請快速掃描，鎖定正確目標 1.2 秒即可擊落。
-                            </p>
+                            
+                            <div className="mt-6 text-left bg-gray-900/50 p-3 rounded border border-gray-700">
+                                <p className="text-xs text-red-400 font-bold mb-1">⚠️ iOS / iPhone 用戶請注意：</p>
+                                <p className="text-xs text-gray-400">
+                                    按下開始後，若跳出「權限請求」，請務必點選<span className="text-white font-bold">「允許」</span>，否則畫面不會轉動。
+                                </p>
+                            </div>
                         </div>
                     </div>
                 );
@@ -367,21 +439,25 @@
                     {mode === 'vr' ? (
                         <>
                             <div className="w-1/2 h-full relative overflow-hidden">
-                                <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress}} />
+                                <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation}} />
                             </div>
                             <div className="w-1/2 h-full relative overflow-hidden">
-                                <EyeView isLeft={false} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress}} />
+                                <EyeView isLeft={false} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation}} />
                             </div>
                             <div className="absolute top-1/2 left-1/2 w-[1px] h-10 bg-white/30 transform -translate-x-1/2 -translate-y-1/2"></div>
                         </>
                     ) : (
                         <div className="w-full h-full relative overflow-hidden">
-                            <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress}} />
-                            {/* 手持模式點擊功能 */}
+                            <EyeView isLeft={true} {...{gameState, score, health, currentQ, enemies, focusingId, focusProgress, orientation}} />
+                            {/* 單螢幕模式點擊輔助 */}
                             {enemies.map(enemy => (
                                 <div key={`touch-${enemy.id}`} 
                                     className="absolute top-1/2 left-1/2 w-32 h-32 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
-                                    style={{ transform: `translate(-50%, -50%) translate3d(${enemy.x}vw, ${enemy.y}vh, 0) scale(${enemy.scale})`, zIndex: 200 }}
+                                    style={{ 
+                                        // 需要加上視角偏移才能正確點擊
+                                        transform: `translate3d(${enemy.x + (-orientation.gamma * 2.5)}vw, ${enemy.y + ((orientation.beta - 45) * 2.5)}vh, 0) scale(${enemy.scale})`, 
+                                        zIndex: 200 
+                                    }}
                                     onClick={() => {
                                         if(enemy.type === 'correct') handleHit(enemy);
                                         else setHealth(h => Math.max(0, h-20));
