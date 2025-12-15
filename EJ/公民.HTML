@@ -3,177 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>公民科 VR 制度實境 (高畫質觸控版)</title>
+    <title>公民 V3：制度實境探究 (高畫質版)</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
-    
     <style>
         body { margin: 0; overflow: hidden; font-family: "Microsoft JhengHei", sans-serif; }
         
-        /* UI 介面層 (HUD) */
-        #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; /* 讓點擊穿透到 VR 場景 */
-            display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
-            z-index: 100;
-        }
-
-        /* 任務提示框 */
-        .task-box {
-            background: rgba(0, 0, 0, 0.7);
-            color: #FFF;
-            padding: 15px 20px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 50px;
-            border: 2px solid #4CC3D9;
-            max-width: 80%;
-            pointer-events: auto; /* 允許點擊文字框關閉它 */
-        }
-
+        /* 啟動畫面美化 */
         #start-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 999;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            z-index: 999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: white; text-align: center; pointer-events: auto;
+            color: white; text-align: center;
         }
+        
+        h1 { text-shadow: 2px 2px 10px rgba(0,0,0,0.5); margin-bottom: 10px; }
+        p { font-size: 1.1rem; opacity: 0.9; max-width: 80%; line-height: 1.6; }
 
         .btn {
-            background: linear-gradient(45deg, #FF512F, #DD2476);
-            color: white; padding: 15px 40px;
-            border: none; border-radius: 30px; 
-            font-size: 1.5rem; cursor: pointer; margin-top: 30px;
-            box-shadow: 0 4px 15px rgba(221, 36, 118, 0.5);
-            transition: transform 0.1s;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white; padding: 15px 50px;
+            border-radius: 50px; 
+            font-size: 1.2rem; cursor: pointer; margin-top: 30px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
-        .btn:active { transform: scale(0.95); }
+        .btn:hover { background: white; color: #333; transform: scale(1.05); }
+
+        /* 任務提示卡 (HUD) */
+        #hud {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 80%; max-width: 600px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            pointer-events: none; /* 讓點擊穿透 */
+            z-index: 10;
+        }
+        #hud h2 { margin: 0 0 5px 0; color: #00e5ff; font-size: 1.2rem; }
+        #hud span { font-size: 0.95rem; color: #ddd; }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <h1 style="font-size: 2rem; text-shadow: 0 0 10px #FFF;">公民 VR：制度偵探</h1>
-        <p style="color: #AAA;">請轉動手機尋找線索，點擊螢幕確認</p>
-        <button class="btn" onclick="gameStart()">開始調查</button>
+        <h1>公民制度實境 VR</h1>
+        <p>【高畫質重製版】</p>
+        <p>請開啟手機旋轉/陀螺儀權限<br>轉動身體尋找懸浮線索，直接點擊螢幕調查。</p>
+        <button class="btn" onclick="startGame()">進入現場</button>
     </div>
 
-    <div id="ui-layer">
-        <div id="task-display" class="task-box" style="display:none;">
-            <h3 id="task-title" style="margin:0 0 5px 0; color: #FFD700;">任務目標</h3>
-            <span id="task-desc">載入中...</span>
-        </div>
+    <div id="hud">
+        <h2 id="hud-title">任務載入中...</h2>
+        <span id="hud-desc">正在連線至現場...</span>
     </div>
 
-    <a-scene cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+    <a-scene loading-screen="dotsColor: white; backgroundColor: black" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
         
         <a-assets>
-            <canvas id="textCanvas" width="512" height="256"></canvas>
+            <img id="bg-parliament" src="https://images.unsplash.com/photo-1574950529672-9118c7c93322?q=80&w=2549&auto=format&fit=crop" crossorigin="anonymous">
+            <img id="bg-construction" src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=2070&auto=format&fit=crop" crossorigin="anonymous">
+            <img id="bg-nature" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop" crossorigin="anonymous">
+            <img id="bg-tech" src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop" crossorigin="anonymous">
         </a-assets>
 
-        <a-entity position="0 1.6 0">
-            <a-camera look-controls="touchEnabled: true; reverseMouseDrag: true">
-                </a-camera>
-        </a-entity>
+        <a-sky id="scene-bg" src="#bg-tech" rotation="0 -90 0" animation="property: rotation; to: 0 -50 0; dur: 200000; easing: linear; loop: true"></a-sky>
 
-        <a-entity id="environment" environment="preset: arches; lighting: point; skyType: atmosphere;"></a-entity>
+        <a-entity position="0 1.6 0">
+            <a-camera look-controls="touchEnabled: true; reverseMouseDrag: true"></a-camera>
+        </a-entity>
 
         <a-entity id="game-world"></a-entity>
 
     </a-scene>
 
     <script>
-        // --- 題庫資料 (嚴格依照您的要求設計) ---
-        const questions = [
-            {
-                id: 1,
-                title: "題目：地方立法機關（預算審查）",
-                envPreset: "arches", // 像議事廳的宏偉建築
-                desc: "你身處一個大型會議空間，這裡正在進行重要的民主程序。\n請找出【關鍵證據】證明這是立法機關。",
-                clues: [
-                    { text: "議員舉手\n表決", isCorrect: true, feedback: "【正確】\n表決預算是立法權的核心功能。", pos: "0 1.8 -4", rot: "0 0 0" },
-                    { text: "第X屆\n定期會", isCorrect: true, feedback: "【正確】\n定期開會審查是議會特徵。", pos: "3 1.8 2", rot: "0 -135 0" },
-                    { text: "市府官員\n簡報", isCorrect: false, feedback: "【錯誤判斷】\n官員雖然在場，但他們是來「被質詢」的。\n這裡是議會，不是市政府。", pos: "-3 1.5 -2", rot: "0 45 0" },
-                    { text: "預算編列\n說明", isCorrect: false, feedback: "【錯誤判斷】\n行政機關負責「編列」，立法機關負責「審查」。\n這裡正在審查，所以是議會。", pos: "2 1.5 3", rot: "0 -150 0" }
-                ],
-                mapStage: {
-                    title: "承上題，這是哪個層級？",
-                    options: [
-                        { text: "直轄市/縣議會", correct: true, feedback: "正確！這就是地方立法機關。" },
-                        { text: "市政府/縣政府", correct: false, feedback: "錯誤。那是行政機關，負責執行。" },
-                        { text: "鄉鎮市民代表會", correct: false, feedback: "錯誤。題目場景規模較大(預算書)，非基層層級。" }
-                    ]
-                }
-            },
-            {
-                id: 2,
-                title: "題目：地方行政機關（公共工程）",
-                envPreset: "yavapai", // 戶外或工地感
-                desc: "你身處一個工程簡報現場，文件顯示道路改善計畫。\n請找出【關鍵證據】證明這是行政機關。",
-                clues: [
-                    { text: "工程進度\n簡報", isCorrect: true, feedback: "【正確】\n實際執行工程、控管進度，\n屬於行政權的落實。", pos: "0 1.6 -3", rot: "0 0 0" },
-                    { text: "工務處\n識別證", isCorrect: true, feedback: "【正確】\n「處/局/科」通常是行政單位的編制。", pos: "-2 1.5 2", rot: "0 135 0" },
-                    { text: "議會質詢\n資料", isCorrect: false, feedback: "【錯誤判斷】\n議會監督工程，但不會負責「施工簡報」。\n這是行政部門的內部會議。", pos: "3 1.8 -1", rot: "0 -60 0" },
-                    { text: "多人旁聽\n座位", isCorrect: false, feedback: "【錯誤判斷】\n旁聽席常見於議會或法院。\n行政會議通常不設大規模旁聽席。", pos: "-3 1.5 -3", rot: "0 45 0" }
-                ],
-                mapStage: {
-                    title: "該機關位於哪裡？",
-                    options: [
-                        { text: "縣市政府", correct: true, feedback: "正確！負責執行的行政中樞。" },
-                        { text: "縣市議會", correct: false, feedback: "錯誤。議會負責監督，不執行工程。" },
-                        { text: "立法院", correct: false, feedback: "錯誤。這是中央立法機關，管不到地方路燈。" }
-                    ]
-                }
-            },
-            {
-                id: 3,
-                title: "題目：直轄市山地原住民區",
-                envPreset: "forest", // 山林自然感
-                desc: "這是一個戶外集會，充滿原住民族特色。\n請找出【關鍵證據】證明它的特殊地位。",
-                clues: [
-                    { text: "區長\n致詞", isCorrect: true, feedback: "【正確】\n關鍵字是「區長」且有圖騰，\n暗示是有自治權的山地原住民區。", pos: "0 1.6 -4", rot: "0 0 0" },
-                    { text: "部落祭儀\n圖騰", isCorrect: true, feedback: "【正確】\n顯示文化特徵，\n需配合制度判斷其自治性。", pos: "2 1.5 2", rot: "0 -135 0" },
-                    { text: "市政府\n公文", isCorrect: false, feedback: "【錯誤判斷】\n雖然受市府監督，但如果只看這張公文，\n會誤判為沒有自治權的一般行政區。", pos: "-2 1.6 -2", rot: "0 45 0" },
-                    { text: "區公所\n招牌", isCorrect: false, feedback: "【誘答陷阱】\n小心！一般區公所(如大安區)沒自治權。\n但「山地原住民區」是例外，不能只看招牌。", pos: "3 1.5 0", rot: "0 -90 0" }
-                ],
-                mapStage: {
-                    title: "下列何者屬於此類？",
-                    options: [
-                        { text: "烏來/和平/茂林", correct: true, feedback: "正確！這些是直轄市內的山地原住民區，有自治權。" },
-                        { text: "板橋/大安/鳳山", correct: false, feedback: "錯誤。這些是一般行政區，區長官派，無自治權。" },
-                        { text: "一般鄉鎮市", correct: false, feedback: "錯誤。雖然有自治權，但題目強調位於「直轄市」內。" }
-                    ]
-                }
-            }
-        ];
-
-        let currentQ = null;
-
-        // 輔助：文字轉圖片 (解決中文問題)
-        function createTextTexture(text, bgColor, borderColor) {
+        // 解決中文繪圖問題的 Canvas 輔助函式
+        function createHoloText(text, type = "normal") {
             const canvas = document.createElement('canvas');
             canvas.width = 512;
             canvas.height = 256;
             const ctx = canvas.getContext('2d');
             
-            // 圓角矩形背景
+            // 設定樣式
+            let bgColor = "rgba(0, 20, 40, 0.85)"; // 深藍黑底
+            let borderColor = "#00e5ff"; // 青色光邊
+            let textColor = "#ffffff";
+
+            if (type === "correct") {
+                bgColor = "rgba(20, 60, 20, 0.9)"; // 綠底
+                borderColor = "#00ff00";
+            } else if (type === "wrong") {
+                bgColor = "rgba(60, 20, 20, 0.9)"; // 紅底
+                borderColor = "#ff3333";
+            }
+
+            // 畫圓角矩形背景
+            const r = 20;
             ctx.fillStyle = bgColor;
-            ctx.beginPath();
-            ctx.roundRect(10, 10, 492, 236, 30);
-            ctx.fill();
-            
-            // 邊框
             ctx.strokeStyle = borderColor;
-            ctx.lineWidth = 15;
+            ctx.lineWidth = 8;
+            
+            ctx.beginPath();
+            ctx.moveTo(r, 0);
+            ctx.lineTo(canvas.width-r, 0);
+            ctx.quadraticCurveTo(canvas.width, 0, canvas.width, r);
+            ctx.lineTo(canvas.width, canvas.height-r);
+            ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width-r, canvas.height);
+            ctx.lineTo(r, canvas.height);
+            ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height-r);
+            ctx.lineTo(0, r);
+            ctx.quadraticCurveTo(0, 0, r, 0);
+            ctx.fill();
             ctx.stroke();
 
-            // 文字
-            ctx.fillStyle = (bgColor === "#D32F2F" || bgColor === "#388E3C") ? "white" : "black";
-            ctx.font = "bold 45px 'Microsoft JhengHei'";
+            // 畫文字
+            ctx.fillStyle = textColor;
+            ctx.font = "bold 40px 'Microsoft JhengHei'";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             
+            // 自動換行
             const lines = text.split('\n');
-            const lineHeight = 60;
+            const lineHeight = 55;
             const startY = 128 - ((lines.length - 1) * lineHeight) / 2;
 
             lines.forEach((line, i) => {
@@ -183,114 +141,175 @@
             return canvas.toDataURL();
         }
 
-        function gameStart() {
+        // 題目資料
+        const questions = [
+            {
+                id: 1,
+                title: "場景：大型會議空間",
+                bg: "#bg-parliament",
+                desc: "觀察四周，這是行政機關還是立法機關？",
+                clues: [
+                    { text: "議員\n舉手表決", feedback: "【正確】\n表決是立法權的核心。\n這證明此處是議會。", isCorrect: true, pos: "0 1.6 -4", rot: "0 0 0" },
+                    { text: "第X屆\n定期會", feedback: "【正確】\n行政機關不開定期會，\n這是議會運作特徵。", isCorrect: true, pos: "3.5 1.8 1", rot: "0 -110 0" },
+                    { text: "市府官員\n列席", feedback: "【誘答排除】\n官員在場是為了「備詢」，\n這裡是議會，不是市府。", isCorrect: false, pos: "-3 1.5 -2", rot: "0 45 0" },
+                    { text: "預算\n編列說明", feedback: "【誘答排除】\n行政機關「編列」，\n立法機關「審查」。\n正在審查所以是議會。", isCorrect: false, pos: "2 2 3", rot: "0 150 0" }
+                ],
+                map: {
+                    title: "承上題，此機關層級為何？",
+                    options: [
+                        { text: "直轄市/縣議會", correct: true },
+                        { text: "市政府/縣政府", correct: false },
+                        { text: "立法院", correct: false }
+                    ]
+                }
+            },
+            {
+                id: 2,
+                title: "場景：工程簡報現場",
+                bg: "#bg-construction", // 這裡使用抽象或示意圖
+                desc: "觀察這場會議，誰在負責實際執行？",
+                clues: [
+                    { text: "工程進度\n簡報", feedback: "【正確】\n執行工程、控管進度，\n屬於行政權的落實。", isCorrect: true, pos: "0 1.6 -3", rot: "0 0 0" },
+                    { text: "工務處\n識別證", feedback: "【正確】\n「處/局/科」是行政單位，\n負責實際業務。", isCorrect: true, pos: "-2 1.5 2", rot: "0 135 0" },
+                    { text: "議會質詢\n資料", feedback: "【誘答排除】\n議會監督但不執行。\n這是工務處內部會議。", isCorrect: false, pos: "3 1.8 -1", rot: "0 -60 0" },
+                    { text: "多人\n旁聽席", feedback: "【誘答排除】\n行政會議通常不開放旁聽，\n旁聽席多見於議會。", isCorrect: false, pos: "-3 1.2 -3", rot: "0 45 0" }
+                ],
+                map: {
+                    title: "該機關通常位於哪裡？",
+                    options: [
+                        { text: "縣市政府大樓", correct: true },
+                        { text: "縣市議會大樓", correct: false },
+                        { text: "地方法院", correct: false }
+                    ]
+                }
+            },
+            {
+                id: 3,
+                title: "場景：戶外部落集會",
+                bg: "#bg-nature",
+                desc: "這裡是特殊的原住民區域，它有什麼權力？",
+                clues: [
+                    { text: "區長\n上台致詞", feedback: "【正確】\n關鍵字「區長」且民選，\n顯示這是山地原住民區。", isCorrect: true, pos: "0 1.6 -4", rot: "0 0 0" },
+                    { text: "傳統祭儀\n圖騰", feedback: "【正確】\n文化特徵明顯，\n配合制度判斷其特殊性。", isCorrect: true, pos: "2 1.5 2", rot: "0 -135 0" },
+                    { text: "市政府\n核定公文", feedback: "【誘答排除】\n雖受市府監督，\n但它比一般區多了自治權。", isCorrect: false, pos: "-2 1.6 -2", rot: "0 45 0" },
+                    { text: "區公所\n招牌", feedback: "【誘答陷阱】\n一般區公所沒自治權，\n但「山地原住民區」例外！", isCorrect: false, pos: "3 1.5 0", rot: "0 -90 0" }
+                ],
+                map: {
+                    title: "下列何者屬於此類？",
+                    options: [
+                        { text: "烏來/和平/茂林", correct: true },
+                        { text: "板橋/中正/鳳山", correct: false },
+                        { text: "花蓮市/台東市", correct: false }
+                    ]
+                }
+            }
+        ];
+
+        let currentQ = null;
+
+        function startGame() {
             document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('task-display').style.display = 'block';
+            document.getElementById('hud').style.display = 'block';
             
-            // 隨機抽選題目
+            // 隨機選題
             currentQ = questions[Math.floor(Math.random() * questions.length)];
-            
-            // 設定環境氛圍
-            document.getElementById('environment').setAttribute('environment', `preset: ${currentQ.envPreset}`);
-
-            // 顯示題目文字
-            document.getElementById('task-title').innerText = currentQ.title;
-            document.getElementById('task-desc').innerText = currentQ.desc;
-
-            loadClues();
+            loadLevel1();
         }
 
-        function loadClues() {
-            const world = document.getElementById('game-world');
-            world.innerHTML = ''; // 清空
+        function loadLevel1() {
+            // 設定 HUD
+            document.getElementById('hud-title').innerText = currentQ.title;
+            document.getElementById('hud-desc').innerText = currentQ.desc;
 
-            currentQ.clues.forEach(clue => {
-                // 建立線索面板 (使用 Plane)
-                const panel = document.createElement('a-image');
-                panel.setAttribute('position', clue.pos);
-                panel.setAttribute('rotation', clue.rot);
-                panel.setAttribute('width', 2.5);
-                panel.setAttribute('height', 1.5);
-                panel.setAttribute('src', createTextTexture(clue.text, "rgba(255,255,255,0.9)", "#333"));
-                panel.setAttribute('class', 'clickable');
-                
-                // 加入浮動動畫 (增加精緻感)
-                panel.setAttribute('animation', "property: position; dir: alternate; dur: 2000; loop: true; to: " + clue.pos.replace(/([\d\.-]+) ([\d\.-]+) ([\d\.-]+)/, (m, x, y, z) => `${x} ${parseFloat(y)+0.1} ${z}`));
+            // 設定 360 背景
+            const sky = document.getElementById('scene-bg');
+            sky.setAttribute('src', currentQ.bg);
 
-                // 點擊事件
-                panel.addEventListener('click', function() {
-                    // 顯示回饋
-                    const color = clue.isCorrect ? "#388E3C" : "#D32F2F"; // 綠對 紅錯
-                    const feedbackTex = createTextTexture(clue.feedback, color, "#FFF");
-                    this.setAttribute('src', feedbackTex);
-                    
-                    // 只有答對才跳轉
-                    if(clue.isCorrect) {
-                        setTimeout(() => {
-                            startMapStage();
-                        }, 2500);
-                    } else {
-                        // 答錯，2秒後變回原狀讓學生重選
-                        setTimeout(() => {
-                            this.setAttribute('src', createTextTexture(clue.text, "rgba(255,255,255,0.9)", "#333"));
-                        }, 3500);
-                    }
-                });
-
-                world.appendChild(panel);
-            });
-        }
-
-        function startMapStage() {
-            const world = document.getElementById('game-world');
-            world.innerHTML = ''; 
-            
-            // 切換環境為更抽象的科技風/地圖風
-            document.getElementById('environment').setAttribute('environment', 'preset: tron');
-
-            document.getElementById('task-title').innerText = "第二階段：層級判斷";
-            document.getElementById('task-desc').innerText = currentQ.mapStage.title;
-
-            // 產生三個選項方塊
-            const options = currentQ.mapStage.options;
-            const positions = [
-                {x: -3, y: 1.5, z: -2},
-                {x: 0, y: 1.5, z: -2},
-                {x: 3, y: 1.5, z: -2}
-            ];
-
-            options.forEach((opt, i) => {
-                const box = document.createElement('a-image');
-                box.setAttribute('position', `${positions[i].x} ${positions[i].y} ${positions[i].z}`);
-                box.setAttribute('width', 2.5);
-                box.setAttribute('height', 1.5);
-                box.setAttribute('src', createTextTexture(opt.text, "rgba(255,255,255,0.9)", "#007BFF"));
-                box.setAttribute('class', 'clickable');
-
-                box.addEventListener('click', function() {
-                    const color = opt.correct ? "#388E3C" : "#D32F2F";
-                    this.setAttribute('src', createTextTexture(opt.feedback, color, "#FFF"));
-
-                    if(opt.correct) {
-                        setTimeout(() => {
-                            finishGame();
-                        }, 2000);
-                    }
-                });
-                world.appendChild(box);
-            });
-        }
-
-        function finishGame() {
+            // 清空世界
             const world = document.getElementById('game-world');
             world.innerHTML = '';
-            document.getElementById('task-display').style.display = 'none';
-            document.getElementById('start-screen').style.display = 'flex';
-            document.querySelector('#start-screen h1').innerText = "恭喜完成！";
-            document.querySelector('#start-screen p').innerText = "請將手機交給下一位同學";
-            document.querySelector('#start-screen .btn').innerText = "下一位";
+
+            // 產生線索
+            currentQ.clues.forEach(clue => {
+                const el = document.createElement('a-image');
+                el.setAttribute('position', clue.pos);
+                el.setAttribute('rotation', clue.rot);
+                el.setAttribute('width', 2.5);
+                el.setAttribute('height', 1.4);
+                el.setAttribute('src', createHoloText(clue.text));
+                el.setAttribute('class', 'clickable');
+                
+                // 浮動動畫 (增加科技感)
+                const anim = document.createElement('a-animation');
+                el.setAttribute('animation', `property: position; dir: alternate; dur: 2000; easing: easeInOutSine; loop: true; to: ${clue.pos.replace(/([\d.-]+) ([\d.-]+) ([\d.-]+)/, (m,x,y,z) => `${x} ${parseFloat(y)+0.1} ${z}`)}`);
+
+                // 點擊事件
+                el.addEventListener('click', function() {
+                    // 變色回饋
+                    const feedbackType = clue.isCorrect ? "correct" : "wrong";
+                    this.setAttribute('src', createHoloText(clue.feedback, feedbackType));
+
+                    // 放大效果
+                    this.setAttribute('scale', '1.2 1.2 1.2');
+                    
+                    if (clue.isCorrect) {
+                        setTimeout(() => loadLevel2(), 2500);
+                    } else {
+                        setTimeout(() => {
+                            this.setAttribute('src', createHoloText(clue.text));
+                            this.setAttribute('scale', '1 1 1');
+                        }, 3000);
+                    }
+                });
+
+                world.appendChild(el);
+            });
         }
 
+        function loadLevel2() {
+            // 切換到科技背景
+            document.getElementById('scene-bg').setAttribute('src', '#bg-tech');
+            
+            document.getElementById('hud-title').innerText = "第二階段：制度定位";
+            document.getElementById('hud-desc').innerText = currentQ.map.title;
+
+            const world = document.getElementById('game-world');
+            world.innerHTML = '';
+
+            const opts = currentQ.map.options;
+            // 放置三個選項 (左 中 右)
+            const positions = [
+                {x: -2.5, y: 1.6, z: -3},
+                {x: 0, y: 1.6, z: -3},
+                {x: 2.5, y: 1.6, z: -3}
+            ];
+
+            opts.forEach((opt, i) => {
+                const el = document.createElement('a-image');
+                el.setAttribute('position', `${positions[i].x} ${positions[i].y} ${positions[i].z}`);
+                el.setAttribute('width', 2.2);
+                el.setAttribute('height', 1.2);
+                el.setAttribute('src', createHoloText(opt.text));
+                el.setAttribute('class', 'clickable');
+
+                el.addEventListener('click', function() {
+                    if (opt.correct) {
+                        this.setAttribute('src', createHoloText("恭喜答對！", "correct"));
+                        setTimeout(() => {
+                            alert("恭喜完成任務！請換下一位同學。");
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        this.setAttribute('src', createHoloText("錯誤\n請再試一次", "wrong"));
+                        setTimeout(() => {
+                            this.setAttribute('src', createHoloText(opt.text));
+                        }, 1500);
+                    }
+                });
+
+                world.appendChild(el);
+            });
+        }
     </script>
 </body>
 </html>
