@@ -5,72 +5,154 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>儲值卡 vs 信用卡（流程體驗）</title>
 
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
   <style>
     body { margin:0; font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif; }
+
+    /* HUD（ui.js 會抓這三個 id） */
     #hud {
       position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: rgba(0,0,0,.65);
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
       color: #fff;
       padding: 10px;
       font-size: 14px;
-      z-index: 10;
+      z-index: 999;
     }
   </style>
 </head>
 
 <body>
+
+<!-- HUD：一定要存在 -->
 <div id="hud">
-  <div><b id="modePill">模式：未選擇</b></div>
-  <div>提示：<span id="hintText">請選擇流程</span></div>
-  <div>步驟：<span id="stepText">—</span></div>
+  <div id="modeText">流程：未選擇</div>
+  <div id="hudText">請選擇流程</div>
+  <div id="subText"></div>
 </div>
 
 <a-scene background="color:#0b0f1a">
+
+  <!-- 相機＋凝視 cursor -->
   <a-entity position="0 1.6 4">
     <a-camera wasd-controls-enabled="false">
-      <a-cursor fuse="true" fuseTimeout="1200"
-        raycaster="objects: .interactable"></a-cursor>
+      <a-cursor
+        fuse="true"
+        fuseTimeout="1200"
+        raycaster="objects: .interactable">
+      </a-cursor>
     </a-camera>
   </a-entity>
 
-  <!-- 入口 -->
-  <a-entity position="0 1.5 -1">
-    <a-box class="interactable"
-      data-action="chooseFlow" data-flow="prepaid"
-      position="-1.5 0 0" color="#2b7a78"></a-box>
-    <a-text value="儲值卡" position="-1.5 0.8 0"></a-text>
+  <!-- ===== 流程入口 ===== -->
+  <a-entity position="0 1.2 -1">
 
-    <a-box class="interactable"
-      data-action="chooseFlow" data-flow="credit"
-      position="1.5 0 0" color="#3b5bdb"></a-box>
-    <a-text value="信用卡" position="1.5 0.8 0"></a-text>
+    <!-- 儲值卡 -->
+    <a-box
+      id="prepaidGate"
+      class="interactable"
+      position="-1.5 0 0"
+      width="1.2" height="0.8" depth="0.2"
+      color="#2b7a78">
+    </a-box>
+    <a-text
+      value="儲值卡"
+      align="center"
+      color="#ffffff"
+      width="4"
+      position="-1.5 0.7 0">
+    </a-text>
+
+    <!-- 信用卡 -->
+    <a-box
+      id="creditGate"
+      class="interactable"
+      position="1.5 0 0"
+      width="1.2" height="0.8" depth="0.2"
+      color="#3b5bdb">
+    </a-box>
+    <a-text
+      value="信用卡"
+      align="center"
+      color="#ffffff"
+      width="4"
+      position="1.5 0.7 0">
+    </a-text>
+
   </a-entity>
 
-  <!-- 儲值卡站點 -->
-  <a-box class="interactable" data-action="station" data-flow="prepaid" data-step="1"
-    position="-3 1 -3" color="#2b7a78"></a-box>
-  <a-text value="儲值" position="-3 2 -3"></a-text>
+  <!-- ===== 儲值卡流程 ===== -->
+  <a-box
+    id="topup"
+    class="interactable"
+    position="-3 1 -4"
+    width="1.4" height="0.9" depth="0.4"
+    color="#2b7a78">
+  </a-box>
+  <a-text
+    value="儲值"
+    align="center"
+    color="#ffffff"
+    width="4"
+    position="-3 1.8 -4">
+  </a-text>
 
-  <a-box class="interactable" data-action="station" data-flow="prepaid" data-step="2"
-    position="-3 1 -6" color="#2b7a78"></a-box>
-  <a-text value="商店" position="-3 2 -6"></a-text>
+  <a-box
+    id="spend"
+    class="interactable"
+    position="0 1 -4"
+    width="1.4" height="0.9" depth="0.4"
+    color="#888888">
+  </a-box>
+  <a-text
+    value="消費 / 商店"
+    align="center"
+    color="#ffffff"
+    width="4"
+    position="0 1.8 -4">
+  </a-text>
 
-  <!-- 信用卡站點 -->
-  <a-box class="interactable" data-action="station" data-flow="credit" data-step="1"
-    position="3 1 -3" color="#3b5bdb"></a-box>
-  <a-text value="商店" position="3 2 -3"></a-text>
+  <!-- ===== 信用卡流程 ===== -->
+  <a-box
+    id="bankAdvance"
+    class="interactable"
+    position="3 1 -4"
+    width="1.4" height="0.9" depth="0.4"
+    color="#3b5bdb">
+  </a-box>
+  <a-text
+    value="銀行先墊款"
+    align="center"
+    color="#ffffff"
+    width="5"
+    position="3 1.8 -4">
+  </a-text>
 
-  <a-box class="interactable" data-action="station" data-flow="credit" data-step="2"
-    position="3 1 -6" color="#3b5bdb"></a-box>
-  <a-text value="銀行" position="3 2 -6"></a-text>
+  <a-box
+    id="payBill"
+    class="interactable"
+    position="0 1 -7"
+    width="1.4" height="0.9" depth="0.4"
+    color="#444444">
+  </a-box>
+  <a-text
+    value="繳帳單"
+    align="center"
+    color="#ffffff"
+    width="4"
+    position="0 1.8 -7">
+  </a-text>
 
   <a-sky color="#0b0f1a"></a-sky>
 
+  <!-- JS：順序很重要 -->
   <script src="./flow.js"></script>
   <script src="./ui.js"></script>
+
 </a-scene>
 </body>
 </html>
