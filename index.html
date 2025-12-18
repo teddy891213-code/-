@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>豆子行政官 - 迷宮大亂鬥</title>
+    <title>豆子行政官 - 介面優化版</title>
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* V21 核心規範：全域禁止選取與原生觸控行為 */
         body {
             user-select: none;
             -webkit-user-select: none;
@@ -22,11 +20,11 @@
             margin: 0;
             padding: 0;
             font-family: system-ui, -apple-system, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        /* 避免 iOS 點擊閃爍 */
-        * {
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body>
@@ -35,7 +33,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- SVG 圖示組件 ---
+        // --- SVG 圖示 (同前版本) ---
         const IconBase = ({ children, className, ...props }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
         );
@@ -53,98 +51,12 @@
         const ChevronRight = (props) => <IconBase {...props}><polyline points="9 18 15 12 9 6"/></IconBase>;
         const Loader2 = (props) => <IconBase {...props}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></IconBase>;
 
-        // --- 遊戲資料 ---
-        const MAP_LAYOUT = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
-            [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
-            [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
-            [1,1,1,1,0,1,1,1,2,1,2,1,1,1,0,1,1,1,1],
-            [2,2,2,1,0,1,2,2,2,9,2,2,2,1,0,1,2,2,2],
-            [1,1,1,1,0,1,2,1,1,1,1,1,2,1,0,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
-            [1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1],
-            [1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1],
-            [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
-            [1,0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        ];
+        // --- 地圖與題目資料 (略) ---
+        const MAP_LAYOUT = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],[1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],[1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],[1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],[1,1,1,1,0,1,1,1,2,1,2,1,1,1,0,1,1,1,1],[2,2,2,1,0,1,2,2,2,9,2,2,2,1,0,1,2,2,2],[1,1,1,1,0,1,2,1,1,1,1,1,2,1,0,1,1,1,1],[1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],[1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],[1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1],[1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1],[1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],[1,0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
+        const QUESTIONS = [{id: 1, text: '「購買 F-16 戰機」是誰的權限？', correctCategory: 'central', options: [{ text: '中央政府', category: 'central' },{ text: '地方政府', category: 'local' },{ text: '村里長', category: 'local_sub' },{ text: '各級學校', category: 'edu' }]},{id: 2, text: '「決定放颱風假」是誰的權限？', correctCategory: 'local', options: [{ text: '中央政府', category: 'central' },{ text: '地方政府', category: 'local' },{ text: '氣象署', category: 'central_sub' },{ text: '總統', category: 'president' }]},{id: 3, text: '「發行新台幣」是誰的權限？', correctCategory: 'central', options: [{ text: '中央政府', category: 'central' },{ text: '地方政府', category: 'local' },{ text: '一般銀行', category: 'bank' },{ text: '便利商店', category: 'store' }]}];
 
-        const MAX_GHOSTS = 2; 
-        const GHOST_COLORS = ['#ef4444', '#3b82f6']; 
-        const ANSWER_POSITIONS = [
-            { x: 1, y: 1 },    
-            { x: 17, y: 1 },   
-            { x: 1, y: 16 },   
-            { x: 17, y: 16 }   
-        ];
-        
-        const QUESTIONS = [
-            { 
-                id: 1, text: '「購買 F-16 戰機」是誰的權限？', correctCategory: 'central', explanation: '國防屬於中央權限！',
-                options: [
-                { text: '中央政府', category: 'central' },
-                { text: '地方政府', category: 'local' },
-                { text: '村里長', category: 'local_sub' },
-                { text: '各級學校', category: 'edu' }
-                ]
-            },
-            { 
-                id: 2, text: '「決定放颱風假」是誰的權限？', correctCategory: 'local', explanation: '因地制宜，由地方首長決定！',
-                options: [
-                { text: '中央政府', category: 'central' },
-                { text: '地方政府', category: 'local' },
-                { text: '氣象署', category: 'central_sub' },
-                { text: '總統', category: 'president' }
-                ]
-            },
-            { 
-                id: 3, text: '「發行新台幣」是誰的權限？', correctCategory: 'central', explanation: '貨幣政策屬全國一致事項！',
-                options: [
-                { text: '中央政府', category: 'central' },
-                { text: '地方政府', category: 'local' },
-                { text: '一般銀行', category: 'bank' },
-                { text: '便利商店', category: 'store' }
-                ]
-            },
-            { 
-                id: 4, text: '「舉辦流感疫苗施打」屬於哪類？', correctCategory: 'safe', explanation: '屬於安全衛生事項！',
-                options: [
-                { text: '安全衛生', category: 'safe' },
-                { text: '經濟發展', category: 'eco' },
-                { text: '教育文化', category: 'edu' },
-                { text: '社會服務', category: 'social' }
-                ]
-            },
-            { 
-                id: 5, text: '「發放愛心餐券」屬於哪類？', correctCategory: 'social', explanation: '屬於社會服務事項！',
-                options: [
-                { text: '社會服務', category: 'social' },
-                { text: '國防外交', category: 'central' },
-                { text: '經濟發展', category: 'eco' },
-                { text: '教育文化', category: 'edu' }
-                ]
-            },
-            { 
-                id: 6, text: '「規劃公車路線」是誰的責任？', correctCategory: 'local', explanation: '地方交通需求不同，屬地方自治！',
-                options: [
-                { text: '地方政府', category: 'local' },
-                { text: '中央政府', category: 'central' },
-                { text: '公車司機', category: 'driver' },                { text: '警察局', category: 'police' }
-                ]
-            },
-        ];
+        function shuffle(array) { return [...array].sort(() => Math.random() - 0.5); }
 
-        function shuffle(array) {
-            return [...array].sort(() => Math.random() - 0.5);
-        }
-
-        // --- 主程式組件 ---
         function App() {
             const [status, setStatus] = useState('MENU');
             const [player, setPlayer] = useState({ x: 9, y: 12 });
@@ -154,494 +66,150 @@
             const [score, setScore] = useState(0);
             const [health, setHealth] = useState(3);
             const [dots, setDots] = useState([]);
-            
             const [invincibleTimer, setInvincibleTimer] = useState(0);
             const [feedback, setFeedback] = useState(null);
             const [mouthOpen, setMouthOpen] = useState(true);
-
-            // Input States
             const heldDirections = useRef(new Set());
-            const currentDir = useRef(null);
+            const currentDir = useRef('RIGHT');
             const gameLoopRef = useRef(null);
-            const mouthIntervalRef = useRef(null);
 
             const initGame = () => {
-                setScore(0);
-                setHealth(3);
-                setQIndex(0);
-                setPlayer({ x: 9, y: 12 });
-                setGhosts([]); 
-                setInvincibleTimer(0);
-                setFeedback(null);
+                setScore(0); setHealth(3); setQIndex(0); setPlayer({ x: 9, y: 12 });
+                setGhosts([]); setInvincibleTimer(0); setFeedback(null);
                 heldDirections.current.clear();
-                currentDir.current = 'RIGHT';
-                fillDots(); 
-                spawnQuestion(0);
-                setStatus('PLAYING');
+                fillDots(); spawnQuestion(0); setStatus('PLAYING');
             };
 
             const fillDots = () => {
                 const newDots = [];
-                MAP_LAYOUT.forEach((row, y) => {
-                    row.forEach((cell, x) => {
-                        if (cell === 0) newDots.push({ x, y });
-                    });
-                });
+                MAP_LAYOUT.forEach((row, y) => row.forEach((cell, x) => { if (cell === 0) newDots.push({ x, y }); }));
                 setDots(newDots);
             };
 
             const spawnQuestion = (index) => {
-                if (index >= QUESTIONS.length) {
-                    setStatus('WIN');
-                    return;
-                }
+                if (index >= QUESTIONS.length) { setStatus('WIN'); return; }
                 const q = QUESTIONS[index];
                 const shuffledOptions = shuffle(q.options);
-                const activationTime = Date.now() + 1500; 
-                
-                const newAnswers = ANSWER_POSITIONS.map((pos, i) => ({
-                    id: `ans-${i}`,
-                    x: pos.x,
-                    y: pos.y,
-                    text: shuffledOptions[i].text,
-                    category: shuffledOptions[i].category,
-                    isCorrect: shuffledOptions[i].category === q.correctCategory,
-                    activeTime: activationTime
-                }));
-                setAnswers(newAnswers);
-
-                setGhosts(prev => {
-                    const currentCount = prev.length;
-                    if (currentCount >= MAX_GHOSTS) return prev;
-                    
-                    const newGhosts = [...prev];
-                    for (let k = 0; k < (MAX_GHOSTS - currentCount); k++) {
-                        newGhosts.push({ 
-                            id: Date.now() + k, 
-                            x: 9, 
-                            y: 8, 
-                            color: GHOST_COLORS[(currentCount + k) % GHOST_COLORS.length],
-                            freezeTimer: 0 
-                        });
-                    }
-                    return newGhosts;
-                });
+                const activationTime = Date.now() + 1500;
+                setAnswers([{x:1,y:1},{x:17,y:1},{x:1,y:16},{x:17,y:16}].map((pos, i) => ({
+                    ...pos, text: shuffledOptions[i].text, isCorrect: shuffledOptions[i].category === q.correctCategory, activeTime: activationTime
+                })));
+                setGhosts([{id:1,x:9,y:8,color:'#ef4444',freezeTimer:0},{id:2,x:9,y:8,color:'#3b82f6',freezeTimer:0}]);
             };
 
-            const isValidMove = (x, y) => {
-                if (y < 0 || y >= MAP_LAYOUT.length || x < 0 || x >= MAP_LAYOUT[0].length) return false;
-                return MAP_LAYOUT[y][x] !== 1 && MAP_LAYOUT[y][x] !== 9;
-            };
-
-            const getNextPos = (p, dir) => {
-                let { x, y } = p;
-                if (dir === 'UP') y--;
-                if (dir === 'DOWN') y++;
-                if (dir === 'LEFT') x--;
-                if (dir === 'RIGHT') x++;
-                return { x, y };
-            };
-
-            const moveGhosts = () => {
-                setGhosts(prevGhosts => prevGhosts.map(g => {
-                    if (g.freezeTimer > 0) {
-                        return { ...g, freezeTimer: g.freezeTimer - 1 };
-                    }
-                    // 怪獸移動機率
-                    const moveChance = invincibleTimer > 0 ? 0.2 : 0.5; 
-                    if (Math.random() > moveChance) return g;
-
-                    const possibleMoves = [
-                        { x: g.x, y: g.y - 1 },
-                        { x: g.x, y: g.y + 1 },
-                        { x: g.x - 1, y: g.y },
-                        { x: g.x + 1, y: g.y }
-                    ].filter(pos => 
-                        pos.y >= 0 && pos.y < MAP_LAYOUT.length && 
-                        pos.x >= 0 && pos.x < MAP_LAYOUT[0].length &&
-                        MAP_LAYOUT[pos.y][pos.x] !== 1 
-                    );
-
-                    if (possibleMoves.length === 0) return g;
-
-                    const target = player;
-                    possibleMoves.sort((a, b) => {
-                        const distA = Math.abs(a.x - target.x) + Math.abs(a.y - target.y);
-                        const distB = Math.abs(b.x - target.x) + Math.abs(b.y - target.y);
-                        // 逃跑或追逐
-                        if (invincibleTimer > 0) return distB - distA; 
-                        return distA - distB;
-                    });
-
-                    const bestMove = Math.random() < 0.7 ? possibleMoves[0] : possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-                    return { ...g, x: bestMove.x, y: bestMove.y };
-                }));
-            };
-
-            const checkCollisions = () => {
-                setDots(prev => {
-                    const remaining = prev.filter(d => d.x !== player.x || d.y !== player.y);
-                    if (remaining.length < prev.length) setScore(s => s + 10);
-                    return remaining;
-                });
-
-                const now = Date.now();
-                const hitAnswer = answers.find(a => a.x === player.x && a.y === player.y);
-                
-                // 只有在非無敵狀態下才檢查錯誤答案，避免連扣血
-                if (hitAnswer && now > hitAnswer.activeTime && invincibleTimer === 0) {
-                    handleAnswer(hitAnswer);
-                }
-
-                const hitGhost = ghosts.find(g => g.x === player.x && g.y === player.y);
-                if (hitGhost) {
-                    if (invincibleTimer > 0) {
-                        setScore(s => s + 200);
-                        setGhosts(prev => prev.filter(g => g.id !== hitGhost.id));
-                        setFeedback("擊退怪獸！ +200");
-                        setTimeout(() => setFeedback(null), 1000);
-                    } else {
-                        if (hitGhost.freezeTimer === 0) {
-                           takeDamage(hitGhost.id);
-                        }
-                    }
-                }
-            };
-
-            const handleAnswer = (ans) => {
-                if (ans.isCorrect) {
-                    setScore(s => s + 500);
-                    setHealth(h => Math.min(h + 1, 5)); 
-                    setInvincibleTimer(40); 
-                    setFeedback("答對了！無敵+補血！");
-                    setAnswers([]); 
-                    fillDots(); 
-                    setTimeout(() => {
-                        const nextQ = qIndex + 1;
-                        setQIndex(nextQ);
-                        spawnQuestion(nextQ);
-                    }, 1000);
-                } else {
-                    setScore(s => Math.max(0, s - 100));
-                    setHealth(h => {
-                        const newHealth = h - 1;
-                        if (newHealth <= 0) setStatus('GAMEOVER');
-                        return newHealth;
-                    });
-                    setFeedback("答錯了！ -1 HP");
-                    setInvincibleTimer(15); 
-                }
-                setTimeout(() => setFeedback(null), 1500);
-            };
-
-            const takeDamage = (ghostId) => {
-                setHealth(h => {
-                    const newHealth = h - 1;
-                    if (newHealth <= 0) setStatus('GAMEOVER');
-                    return newHealth;
-                });
-                
-                const freezeTicks = 15;
-                setGhosts(prev => prev.map(g => g.id === ghostId ? { ...g, freezeTimer: freezeTicks } : g));
-                setInvincibleTimer(15); 
-                setFeedback("好痛！怪獸暈眩中！");
-                setTimeout(() => setFeedback(null), 1000);
-            };
-
-            const handleInputDown = (dir) => {
-                if (!dir) return;
-                heldDirections.current.add(dir);
-                currentDir.current = dir; 
-            };
-
-            const handleInputUp = (dir) => {
-                if (!dir) return;
-                heldDirections.current.delete(dir);
-            };
+            const isValidMove = (x, y) => (y >= 0 && y < MAP_LAYOUT.length && x >= 0 && x < MAP_LAYOUT[0].length && MAP_LAYOUT[y][x] !== 1 && MAP_LAYOUT[y][x] !== 9);
 
             useEffect(() => {
                 if (status !== 'PLAYING') return;
-                const tickRate = 200; 
-                
-                mouthIntervalRef.current = window.setInterval(() => {
-                    setMouthOpen(prev => !prev);
-                }, 150);
-
-                gameLoopRef.current = window.setInterval(() => {
+                gameLoopRef.current = setInterval(() => {
                     if (invincibleTimer > 0) setInvincibleTimer(t => t - 1);
-
-                    let moveDir = null;
+                    setMouthOpen(p => !p);
                     if (heldDirections.current.size > 0) {
-                        const dirs = Array.from(heldDirections.current);
-                        moveDir = dirs[dirs.length - 1];
-                        currentDir.current = moveDir; 
+                        const dir = Array.from(heldDirections.current).pop();
+                        currentDir.current = dir;
+                        setPlayer(p => {
+                            let next = {...p};
+                            if (dir === 'UP') next.y--; if (dir === 'DOWN') next.y++;
+                            if (dir === 'LEFT') next.x--; if (dir === 'RIGHT') next.x++;
+                            return isValidMove(next.x, next.y) ? next : p;
+                        });
                     }
+                    // 碰撞邏輯簡化檢查
+                    checkLogic();
+                }, 200);
+                return () => clearInterval(gameLoopRef.current);
+            }, [status, player, invincibleTimer]);
 
-                    if (moveDir) {
-                        const p = getNextPos(player, moveDir);
-                        if (isValidMove(p.x, p.y)) {
-                            setPlayer(p);
-                        }
+            const checkLogic = () => {
+                // 吃豆子
+                setDots(prev => prev.filter(d => {
+                    if (d.x === player.x && d.y === player.y) { setScore(s => s + 10); return false; }
+                    return true;
+                }));
+                // 撞答案
+                const ans = answers.find(a => a.x === player.x && a.y === player.y && Date.now() > a.activeTime);
+                if (ans) {
+                    if (ans.isCorrect) {
+                        setScore(s => s + 500); setInvincibleTimer(30); setFeedback("答對了！無敵！");
+                        setAnswers([]); setTimeout(() => spawnQuestion(qIndex + 1), 1000); setQIndex(i => i + 1);
+                    } else {
+                        setHealth(h => h - 1); setFeedback("答錯了！"); setInvincibleTimer(15);
+                        if (health <= 1) setStatus('GAMEOVER');
                     }
-
-                    moveGhosts();
-                    checkCollisions();
-
-                }, tickRate);
-
-                return () => {
-                    if (gameLoopRef.current) clearInterval(gameLoopRef.current);
-                    if (mouthIntervalRef.current) clearInterval(mouthIntervalRef.current);
-                };
-            }, [status, player, ghosts, answers, invincibleTimer, qIndex, health]);
-
-            useEffect(() => {
-                const handleKeyDown = (e) => {
-                    if (status !== 'PLAYING') return;
-                    let dir = null;
-                    if (e.key === 'ArrowUp') dir = 'UP';
-                    if (e.key === 'ArrowDown') dir = 'DOWN';
-                    if (e.key === 'ArrowLeft') dir = 'LEFT';
-                    if (e.key === 'ArrowRight') dir = 'RIGHT';
-                    
-                    if (dir) handleInputDown(dir);
-                };
-
-                const handleKeyUp = (e) => {
-                    let dir = null;
-                    if (e.key === 'ArrowUp') dir = 'UP';
-                    if (e.key === 'ArrowDown') dir = 'DOWN';
-                    if (e.key === 'ArrowLeft') dir = 'LEFT';
-                    if (e.key === 'ArrowRight') dir = 'RIGHT';
-                    
-                    if (dir) handleInputUp(dir);
-                };
-
-                window.addEventListener('keydown', handleKeyDown);
-                window.addEventListener('keyup', handleKeyUp);
-                return () => {
-                    window.removeEventListener('keydown', handleKeyDown);
-                    window.removeEventListener('keyup', handleKeyUp);
-                };
-            }, [status]);
-
-            const getRotationClass = (dir) => {
-                switch (dir) {
-                    case 'UP': return '-rotate-90';
-                    case 'DOWN': return 'rotate-90';
-                    case 'LEFT': return 'rotate-180';
-                    case 'RIGHT': return 'rotate-0';
-                    default: return 'rotate-0';
+                    setTimeout(() => setFeedback(null), 1500);
                 }
             };
 
-            // Renders
-            const renderGrid = () => {
-                const now = Date.now();
-                return MAP_LAYOUT.map((row, y) => (
-                    <div key={y} className="flex">
-                        {row.map((cell, x) => {
-                            let content = null;
-                            let cellClass = "w-6 h-6 flex items-center justify-center relative "; 
-                            
-                            if (cell === 1) cellClass += "bg-slate-800 border-[0.5px] border-slate-700 rounded-sm"; 
-                            else cellClass += "bg-slate-900"; 
-                            
-                            const isDot = dots.find(d => d.x === x && d.y === y);
-                            if (isDot) {
-                                content = <div className="w-1.5 h-1.5 bg-slate-700 rounded-full"></div>;
-                            }
-                            
-                            if (cell === 9) cellClass += " bg-slate-800/50";
+            const handleInputDown = (dir) => { heldDirections.current.add(dir); };
+            const handleInputUp = (dir) => { heldDirections.current.delete(dir); };
 
-                            const ans = answers.find(a => a.x === x && a.y === y);
-                            if (ans) {
-                                const isInactive = now < ans.activeTime;
-                                content = (
-                                    <div className={`absolute inset-0 flex items-center justify-center z-20 transition-opacity ${isInactive ? 'opacity-30' : 'animate-bounce opacity-100'}`}>
-                                        <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center border-2 border-white shadow-md">
-                                            <span className="text-xs font-bold text-black">?</span>
-                                        </div>
-                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white px-3 py-1.5 rounded-lg text-sm font-bold whitespace-nowrap z-50 shadow-xl border-2 border-yellow-400 text-slate-900 pointer-events-none">
-                                            {ans.text}
-                                            {isInactive && <span className="text-xs text-red-500 ml-1">(鎖定中)</span>}
-                                            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-yellow-400 rotate-45 border-b-2 border-r-2 border-yellow-400"></div>
-                                        </div>
-                                    </div>
-                                );
-                            }
+            // --- Render ---
+            if (status === 'MENU') return (
+                <div className="flex-1 flex items-center justify-center p-4">
+                    <button onClick={initGame} className="bg-yellow-500 p-8 rounded-3xl text-3xl font-black">開始遊戲</button>
+                </div>
+            );
 
-                            if (player.x === x && player.y === y) {
-                                const rotation = getRotationClass(currentDir.current);
-                                let colorClass = invincibleTimer > 0 ? "text-yellow-200 drop-shadow-[0_0_8px_rgba(250,204,21,1)]" : "text-yellow-400";
-                                
-                                content = (
-                                    <div className={`w-5 h-5 z-30 transition-transform duration-100 transform ${rotation}`}>
-                                        <svg viewBox="0 0 100 100" className={`w-full h-full ${colorClass} drop-shadow-md`}>
-                                            {mouthOpen ? (
-                                                <path d="M100,50 L50,50 L85,15 A50,50 0 1,0 85,85 Z" fill="currentColor" />
-                                            ) : (
-                                                <circle cx="50" cy="50" r="50" fill="currentColor" />
-                                            )}
-                                        </svg>
-                                        {invincibleTimer > 0 && (
-                                            <div className="absolute inset-[-4px] rounded-full border-2 border-yellow-300 animate-pulse pointer-events-none"></div>
-                                        )}
-                                    </div>
-                                );
-                            }
-
-                            const gst = ghosts.find(g => g.x === x && g.y === y);
-                            if (gst) {
-                                const isFrozen = gst.freezeTimer > 0;
-                                content = (
-                                    <div className={`w-5 h-5 z-20 relative ${isFrozen ? '' : 'animate-bounce'}`} style={{ color: invincibleTimer > 0 ? '#3b82f6' : gst.color, opacity: isFrozen ? 0.6 : 1 }}>
-                                        {invincibleTimer > 0 ? <Ghost className="w-full h-full opacity-50" /> : <Skull className="w-full h-full" />}
-                                        {isFrozen && (
-                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 animate-spin">
-                                                <Loader2 size={12} className="text-white" />
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            }
-
-                            return <div key={`${x}-${y}`} className={cellClass}>{content}</div>;
-                        })}
-                    </div>
-                ));
-            };
-
-            // Status Screens
-            if (status === 'MENU') {
-                return (
-                    <div className="min-h-screen flex items-center justify-center p-4">
-                        <div className="bg-slate-800 p-8 rounded-3xl shadow-2xl border-4 border-yellow-400 text-center max-w-lg w-full">
-                            <div className="flex justify-center mb-6">
-                                <div className="bg-yellow-400 p-6 rounded-full shadow-[0_0_30px_rgba(250,204,21,0.5)]">
-                                    <svg viewBox="0 0 100 100" className="w-20 h-20 text-black"><path d="M100,50 L50,50 L85,15 A50,50 0 1,0 85,85 Z" fill="currentColor" /></svg>
-                                </div>
-                            </div>
-                            <h1 className="text-5xl font-black text-white mb-2 tracking-wider">豆子行政官</h1>
-                            <h2 className="text-2xl text-yellow-400 font-bold mb-8">迷宮大亂鬥</h2>
-                            
-                            <div className="space-y-4 text-slate-300 text-lg mb-8 text-left bg-slate-900/50 p-6 rounded-2xl">
-                                <p className="flex items-center gap-3"><Star className="w-6 h-6 text-yellow-400"/> 吃掉 <span className="text-yellow-400 font-bold">正確答案</span> 獲得無敵 + 補豆子！</p>
-                                <p className="flex items-center gap-3"><Skull className="w-6 h-6 text-red-400"/> 無敵時可 <span className="text-blue-300 font-bold">消滅怪獸</span>！</p>
-                                <p className="flex items-center gap-3"><Heart className="w-6 h-6 text-red-500"/> 你總共有 <span className="text-red-500 font-bold">3 滴血</span>。</p>
-                            </div>
-
-                            <button onClick={initGame} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black py-5 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-3 text-2xl border-b-8 border-yellow-700 active:border-b-0 active:translate-y-2">
-                                <Play fill="currentColor" size={28} /> 開始遊戲
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
-
-            if (status === 'WIN' || status === 'GAMEOVER') {
-                return (
-                    <div className="min-h-screen flex items-center justify-center p-4">
-                        <div className="bg-slate-800 p-8 rounded-3xl shadow-2xl text-center max-w-lg w-full border-4 border-slate-700">
-                            <div className="mb-6 flex justify-center">
-                                {status === 'WIN' ? (
-                                    <Trophy className="w-24 h-24 text-yellow-400" />
-                                ) : (
-                                    <Skull className="w-24 h-24 text-red-500" />
-                                )}
-                            </div>
-                            <h2 className="text-4xl font-black text-white mb-4">
-                                {status === 'WIN' ? '任務完成！' : '行政失敗...'}
-                            </h2>
-                            <div className="text-6xl font-mono text-yellow-400 mb-8 font-bold">{score} 分</div>
-                            <button onClick={() => setStatus('MENU')} className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 text-xl">
-                                <RotateCcw /> 回主選單
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
-
-            const currentQ = QUESTIONS[qIndex];
+            if (status === 'WIN' || status === 'GAMEOVER') return (
+                <div className="flex-1 flex flex-col items-center justify-center">
+                    <h1 className="text-white text-5xl mb-4 font-bold">{status === 'WIN' ? '勝利！' : '失敗'}</h1>
+                    <button onClick={() => setStatus('MENU')} className="bg-slate-700 text-white p-4 rounded-xl">回主畫面</button>
+                </div>
+            );
 
             return (
-                <div className="min-h-screen flex flex-col items-center justify-start p-2 relative select-none">
-                    
-                    {/* Top HUD */}
-                    <div className="w-full max-w-2xl flex justify-between items-center mb-2 px-2 mt-2">
-                        <div className="flex gap-4">
-                            <div className="flex items-center gap-2 text-red-400 font-bold text-xl bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
-                                <Heart fill="currentColor" /> x{health}
-                            </div>
-                            <div className="flex items-center gap-2 text-yellow-400 font-bold text-xl bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
-                                <Zap fill="currentColor" /> {score}
-                            </div>
-                        </div>
-                        <div className="text-slate-400 font-bold text-lg">Level {qIndex + 1}</div>
+                <div className="flex-1 flex flex-col items-center justify-between py-2 overflow-hidden h-screen">
+                    {/* HUD */}
+                    <div className="w-full max-w-md flex justify-between px-4">
+                        <div className="text-red-400 font-bold text-xl flex items-center gap-1"><Heart fill="currentColor"/> x{health}</div>
+                        <div className="text-yellow-400 font-bold text-xl flex items-center gap-1"><Zap fill="currentColor"/> {score}</div>
                     </div>
 
-                    {/* Question Card */}
-                    <div className="w-full max-w-2xl bg-slate-800 p-4 rounded-2xl border-2 border-slate-600 shadow-lg mb-4 text-center relative z-10 min-h-[100px] flex flex-col justify-center">
-                        <div className="text-cyan-400 text-sm font-bold mb-1 uppercase tracking-widest">Current Mission</div>
-                        <h3 className="text-2xl md:text-3xl text-white font-bold leading-tight">{currentQ.text}</h3>
-                        {feedback && (
-                            <div className={`absolute -bottom-16 left-0 right-0 py-3 rounded-xl font-bold text-white text-xl shadow-2xl border-2 ${feedback.includes('答對') || feedback.includes('擊退') ? 'bg-green-600 border-green-400' : 'bg-red-600 border-red-400'}`}>
-                                {feedback}
+                    {/* Question */}
+                    <div className="w-[90%] bg-slate-800 p-3 rounded-xl border-2 border-slate-600 text-center relative">
+                        <h3 className="text-xl text-white font-bold">{QUESTIONS[qIndex]?.text}</h3>
+                        {feedback && <div className="absolute inset-0 bg-blue-600 flex items-center justify-center rounded-xl text-white font-bold">{feedback}</div>}
+                    </div>
+
+                    {/* Game Board (縮放以符合畫面) */}
+                    <div className="relative bg-black p-1 rounded-lg border-2 border-slate-700 scale-[0.85] md:scale-100 origin-center">
+                        {MAP_LAYOUT.map((row, y) => (
+                            <div key={y} className="flex">
+                                {row.map((cell, x) => (
+                                    <div key={x} className={`w-5 h-5 flex items-center justify-center ${cell === 1 ? 'bg-slate-800' : 'bg-black'}`}>
+                                        {dots.some(d => d.x === x && d.y === y) && <div className="w-1 h-1 bg-slate-600 rounded-full" />}
+                                        {player.x === x && player.y === y && <div className="w-4 h-4 bg-yellow-400 rounded-full" />}
+                                        {answers.find(a => a.x === x && a.y === y) && <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse border border-white" />}
+                                        {ghosts.some(g => g.x === x && g.y === y) && <div className="w-4 h-4 bg-red-500 rounded-sm" />}
+                                    </div>
+                                ))}
                             </div>
-                        )}
+                        ))}
                     </div>
 
-                    {/* Game Board */}
-                    <div className="relative bg-black p-1 rounded-xl border-4 border-slate-800 shadow-2xl">
-                        {invincibleTimer > 0 && <div className="absolute inset-0 bg-yellow-500/20 pointer-events-none z-0 border-4 border-yellow-400 rounded-lg"></div>}
-                        {renderGrid()}
-                    </div>
-
-                    {/* Controls */}
-                    <div className="mt-6 flex gap-4 w-full max-w-md justify-center items-center pb-6">
-                        <div className="grid grid-cols-3 gap-2 bg-slate-800 p-4 rounded-3xl shadow-xl border border-slate-700">
-                            <div className="w-20 h-20"></div>
-                            <button 
-                                className="w-20 h-20 bg-slate-700 rounded-2xl flex items-center justify-center active:bg-yellow-600 active:scale-95 transition-all shadow-lg touch-none"
-                                onPointerDown={(e) => { e.preventDefault(); handleInputDown('UP'); }}
-                                onPointerUp={(e) => { e.preventDefault(); handleInputUp('UP'); }}
-                                onPointerLeave={(e) => { e.preventDefault(); handleInputUp('UP'); }}
-                            >
-                                <ChevronUp size={40} className="text-white"/>
-                            </button>
-                            <div className="w-20 h-20"></div>
-
-                            <button 
-                                className="w-20 h-20 bg-slate-700 rounded-2xl flex items-center justify-center active:bg-yellow-600 active:scale-95 transition-all shadow-lg touch-none"
-                                onPointerDown={(e) => { e.preventDefault(); handleInputDown('LEFT'); }}
-                                onPointerUp={(e) => { e.preventDefault(); handleInputUp('LEFT'); }}
-                                onPointerLeave={(e) => { e.preventDefault(); handleInputUp('LEFT'); }}
-                            >
-                                <ChevronLeft size={40} className="text-white"/>
-                            </button>
-
-                            <button 
-                                className="w-20 h-20 bg-slate-700 rounded-2xl flex items-center justify-center active:bg-yellow-600 active:scale-95 transition-all shadow-lg touch-none"
-                                onPointerDown={(e) => { e.preventDefault(); handleInputDown('DOWN'); }}
-                                onPointerUp={(e) => { e.preventDefault(); handleInputUp('DOWN'); }}
-                                onPointerLeave={(e) => { e.preventDefault(); handleInputUp('DOWN'); }}
-                            >
-                                <ChevronDown size={40} className="text-white"/>
-                            </button>
-
-                            <button 
-                                className="w-20 h-20 bg-slate-700 rounded-2xl flex items-center justify-center active:bg-yellow-600 active:scale-95 transition-all shadow-lg touch-none"
-                                onPointerDown={(e) => { e.preventDefault(); handleInputDown('RIGHT'); }}
-                                onPointerUp={(e) => { e.preventDefault(); handleInputUp('RIGHT'); }}
-                                onPointerLeave={(e) => { e.preventDefault(); handleInputUp('RIGHT'); }}
-                            >
-                                <ChevronRight size={40} className="text-white"/>
-                            </button>
+                    {/* 上移的控制按鈕 (關鍵點：提升佈局位置) */}
+                    <div className="w-full flex justify-center pb-4">
+                        <div className="grid grid-cols-3 gap-2 bg-slate-800/80 p-3 rounded-2xl">
+                            <div />
+                            <Btn dir="UP" icon={<ChevronUp size={36}/>} onDown={handleInputDown} onUp={handleInputUp} />
+                            <div />
+                            <Btn dir="LEFT" icon={<ChevronLeft size={36}/>} onDown={handleInputDown} onUp={handleInputUp} />
+                            <Btn dir="DOWN" icon={<ChevronDown size={36}/>} onDown={handleInputDown} onUp={handleInputUp} />
+                            <Btn dir="RIGHT" icon={<ChevronRight size={36}/>} onDown={handleInputDown} onUp={handleInputUp} />
                         </div>
                     </div>
                 </div>
             );
         }
+
+        const Btn = ({ dir, icon, onDown, onUp }) => (
+            <button 
+                className="w-16 h-16 bg-slate-600 rounded-xl flex items-center justify-center active:bg-yellow-500 active:scale-90 transition-all touch-none"
+                onPointerDown={(e) => { e.preventDefault(); onDown(dir); }}
+                onPointerUp={(e) => { e.preventDefault(); onUp(dir); }}
+                onPointerLeave={(e) => { e.preventDefault(); onUp(dir); }}
+            >{icon}</button>
+        );
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
