@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>豆子行政官 - 零延遲靈敏版</title>
+    <title>豆子行政官 - 手機操控優化版</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -50,7 +50,7 @@
             
             const heldDirections = useRef(new Set());
             const currentDir = useRef('RIGHT');
-            const lastMoveTime = useRef(0); // 用於冷卻時間
+            const lastMoveTime = useRef(0);
 
             const initGame = () => {
                 setScore(0); setHealth(3); setQIndex(0); setPlayer({ x: 9, y: 12 }); setInvincible(0);
@@ -81,12 +81,9 @@
                 setGhosts(newGhosts);
             };
 
-            // --- 核心移動邏輯 (抽出成獨立函數) ---
             const attemptMove = (dir) => {
                 const now = Date.now();
-                // 限制移動頻率：如果距離上次移動小於 100ms，則忽略（防爆衝）
                 if (now - lastMoveTime.current < 100) return;
-                
                 lastMoveTime.current = now;
                 currentDir.current = dir;
 
@@ -95,14 +92,12 @@
                     if (dir==='UP') n.y--; if (dir==='DOWN') n.y++; if (dir==='LEFT') n.x--; if (dir==='RIGHT') n.x++;
                     if (n.y>=0 && n.y<MAP_LAYOUT.length && n.x>=0 && n.x<MAP_LAYOUT[0].length && MAP_LAYOUT[n.y][n.x]!==1) {
                         
-                        // 吃豆 +10分
                         setDots(prev => {
                             const remaining = prev.filter(d => !(d.x === n.x && d.y === n.y));
                             if (remaining.length < prev.length) setScore(s => s + 10);
                             return remaining;
                         });
 
-                        // 撞答案
                         const hit = answers.find(a => a.x === n.x && a.y === n.y && Date.now() > a.t);
                         if (hit) {
                             if (hit.isCorrect) {
@@ -120,15 +115,8 @@
                 });
             };
 
-            // --- 點擊按鈕處理 (立即觸發) ---
-            const handleBtnDown = (dir) => {
-                heldDirections.current.add(dir);
-                attemptMove(dir); // ★ 關鍵：一按下去立刻嘗試移動，不用等 Loop
-            };
-
-            const handleBtnUp = (dir) => {
-                heldDirections.current.delete(dir);
-            };
+            const handleBtnDown = (dir) => { heldDirections.current.add(dir); attemptMove(dir); };
+            const handleBtnUp = (dir) => { heldDirections.current.delete(dir); };
 
             useEffect(() => {
                 if (status !== 'PLAYING') return;
@@ -136,24 +124,19 @@
                     setMouthOpen(m => !m);
                     if (invincible > 0) setInvincible(t => t - 1);
 
-                    // --- 連續移動檢查 ---
                     if (heldDirections.current.size > 0) {
                         const dir = Array.from(heldDirections.current).pop();
-                        attemptMove(dir); // 長按時由這裡觸發
+                        attemptMove(dir);
                     }
 
-                    // --- 鬼的 AI ---
                     setGhosts(prev => prev.map(g => {
                         if (Math.random() > 0.4) { 
                             const dx = player.x - g.x; const dy = player.y - g.y;
                             let targetX = dx > 0 ? 1 : -1; let targetY = dy > 0 ? 1 : -1;
-
-                            if (invincible > 0) { targetX *= -1; targetY *= -1; } // 躲避
-
+                            if (invincible > 0) { targetX *= -1; targetY *= -1; }
                             let nx = g.x, ny = g.y;
                             if (Math.abs(dx) > Math.abs(dy)) nx += targetX; else ny += targetY;
                             
-                            // 防卡牆
                             if (MAP_LAYOUT[ny][nx] === 1) {
                                 const moves = [{x:0,y:1},{x:0,y:-1},{x:1,y:0},{x:-1,y:0}].filter(m => {
                                     const mx = g.x+m.x, my = g.y+m.y;
@@ -169,7 +152,6 @@
                         return g;
                     }));
 
-                    // --- 碰撞檢測 ---
                     setGhosts(gs => {
                         const hit = gs.find(g => g.x === player.x && g.y === player.y);
                         if (hit) {
@@ -190,12 +172,10 @@
                         }
                         return gs;
                     });
-
                 }, 200); 
                 return () => clearInterval(loop);
             }, [status, player, answers, invincible, health, qIndex]);
 
-            // ... (樣式函數同前) ...
             const getLabelStyle = (alignX, alignY) => {
                 let cls = "absolute bg-white text-black text-sm md:text-base font-black px-3 py-1.5 rounded-lg shadow-xl label-text border-2 border-blue-600 z-50 ";
                 if (alignY === 'top') cls += "-top-10 "; else cls += "-bottom-10 "; 
@@ -232,18 +212,14 @@
                                         {row.map((cell, x) => (
                                             <div key={x} className={`w-5 h-5 md:w-6 md:h-6 flex items-center justify-center relative ${cell===1?'bg-slate-800 border-[0.5px] border-slate-900':'bg-black'}`}>
                                                 {dots.some(d=>d.x===x && d.y===y) && <div className="w-1.5 h-1.5 bg-slate-600 rounded-full" />}
-                                                
-                                                {/* 玩家 */}
                                                 {player.x===x && player.y===y && (
                                                     <div className={`w-4 h-4 md:w-5 md:h-5 ${invincible>0?'text-white drop-shadow-[0_0_10px_white]':'text-yellow-400 drop-shadow-[0_0_5px_yellow]'} transition-transform duration-100 z-20 ${{UP:'-rotate-90',DOWN:'rotate-90',LEFT:'rotate-180',RIGHT:'rotate-0'}[currentDir.current]}`}>
                                                         <svg viewBox="0 0 100 100" fill="currentColor">{mouthOpen?<path d="M100,50 L50,50 L85,15 A50,50 0 1,0 85,85 Z"/>:<circle cx="50" cy="50" r="50"/>}</svg>
                                                     </div>
                                                 )}
-                                                {/* 鬼魂 */}
                                                 {ghosts.some(g=>g.x===x && g.y===y) && (
                                                     <div className="z-10 animate-pulse"><Skull color={invincible>0?'#fff':ghosts.find(g=>g.x===x&&g.y===y).color}/></div>
                                                 )}
-                                                {/* 標籤 */}
                                                 {answers.find(a=>a.x===x && a.y===y) && (
                                                     <div className="absolute inset-0 flex items-center justify-center z-50">
                                                         <div className="w-4 h-4 md:w-5 md:h-5 bg-blue-500 rounded-full border-2 border-white animate-ping opacity-50 absolute" />
@@ -259,7 +235,11 @@
                                 ))}
                             </div>
 
-                            <div className="mt-6 grid grid-cols-3 gap-3 bg-slate-800 p-4 rounded-3xl shadow-xl border border-slate-600">
+                            {/* 關鍵修改：
+                                1. mb-16: 底部留白大幅增加，把按鈕往上頂
+                                2. touch-action: none: 禁止瀏覽器預設的縮放和滾動
+                            */}
+                            <div className="mt-6 mb-16 grid grid-cols-3 gap-3 bg-slate-800 p-4 rounded-3xl shadow-xl border border-slate-600 touch-none">
                                 <div/><Btn d="UP" onD={()=>handleBtnDown('UP')} onU={()=>handleBtnUp('UP')} icon="▲"/><div/>
                                 <Btn d="LEFT" onD={()=>handleBtnDown('LEFT')} onU={()=>handleBtnUp('LEFT')} icon="◀"/>
                                 <Btn d="DOWN" onD={()=>handleBtnDown('DOWN')} onU={()=>handleBtnUp('DOWN')} icon="▼"/>
