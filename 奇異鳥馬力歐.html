@@ -286,7 +286,8 @@
                 { x: 900, w: 100, type: 'lava' }, 
                 { x: 1300, w: 150, type: 'ice' },
                 { x: 1600, w: 50, h: 90, type: 'pipe', id: 2, dest: 1 },
-                { x: 1800, w: 150, type: 'lava' }
+                { x: 1800, w: 150, type: 'lava' },
+                { x: 1100, y: 350, type: 'heart', active: true } // 心心 1 (降低高度)
             ],
             platforms: [
                 { x: 650, y: 360, w: 60 },
@@ -355,7 +356,8 @@
                 { x: 700, w: 150, type: 'lava' }, 
                 { x: 1100, w: 300, type: 'ice' }, 
                 { x: 1550, w: 200, type: 'lava' }, 
-                { x: 1800, w: 50, h: 80, type: 'pipe', id: 4, dest: 3 }
+                { x: 1800, w: 50, h: 80, type: 'pipe', id: 4, dest: 3 },
+                { x: 1400, y: 340, type: 'heart', active: true } // 心心 2 (降低高度)
             ],
             platforms: [
                 { x: 720, y: 350, w: 100 }, 
@@ -423,7 +425,8 @@
                 { x: 500, w: 50, h: 50, type: 'pipe', id: 5, dest: 6 },
                 { x: 800, w: 150, type: 'lava' }, 
                 { x: 1300, w: 50, h: 80, type: 'pipe', id: 6, dest: 5 },
-                { x: 1500, w: 200, type: 'lava' } 
+                { x: 1500, w: 200, type: 'lava' },
+                { x: 1200, y: 340, type: 'heart', active: true } // 心心 3 (降低高度)
             ],
             platforms: [
                 { x: 850, y: 350, w: 80 }, 
@@ -862,6 +865,18 @@
                 }
             }
             
+            // 愛心收集
+            if (obj.type === 'heart' && obj.active) {
+                if (checkRectCollide(kiwi, {x: obj.x, y: obj.y, w: 20, h: 20})) {
+                    obj.active = false;
+                    if (kiwi.hp < 3) {
+                        kiwi.hp++;
+                        document.getElementById('hp-display').innerText = kiwi.hp;
+                        // 可以加個特效
+                    }
+                }
+            }
+            
             if (obj.type === 'lava') {
                  if (checkRectCollide(kiwi, {x: obj.x + 10, y: GROUND_Y-10, w: obj.w - 20, h: 40})) {
                     kiwi.hurt(-8); 
@@ -889,7 +904,9 @@
         }
 
         level.spikes.forEach(s => {
-            if (kiwi.x + kiwi.w > s.x + 5 && kiwi.x < s.x + 25 && kiwi.y + kiwi.h > s.y + 5) {
+            // 修正尖刺判定高度: 地面是 GROUND_Y, 尖刺頂部是 GROUND_Y - 20
+            // 原判定 kiwi.y + kiwi.h > s.y + 5 (地下)，現在改為 s.y - 10
+            if (kiwi.x + kiwi.w > s.x + 5 && kiwi.x < s.x + 25 && kiwi.y + kiwi.h > s.y - 10) {
                 kiwi.hurt(-10);
             }
         });
@@ -1009,6 +1026,24 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(obj.x, pY, obj.w, 20);
                 ctx.strokeRect(obj.x + 2, pY + 20, obj.w - 4, obj.h - 20);
+            } else if (obj.type === 'heart' && obj.active) {
+                // 愛心繪製
+                let hx = obj.x + 10; // 中心X
+                let hy = obj.y + 10 + Math.sin(Date.now() / 300) * 5; // 漂浮Y
+                ctx.fillStyle = "#e74c3c";
+                ctx.beginPath();
+                ctx.moveTo(hx, hy + 5);
+                ctx.bezierCurveTo(hx, hy, hx - 10, hy - 10, hx - 10, hy - 5);
+                ctx.bezierCurveTo(hx - 10, hy + 5, hx, hy + 10, hx, hy + 15);
+                ctx.bezierCurveTo(hx, hy + 10, hx + 10, hy + 5, hx + 10, hy - 5);
+                ctx.bezierCurveTo(hx + 10, hy - 10, hx, hy, hx, hy + 5);
+                ctx.fill();
+                // 為了明顯，畫大一點
+                ctx.beginPath();
+                ctx.arc(hx - 5, hy - 5, 5, 0, Math.PI, true);
+                ctx.arc(hx + 5, hy - 5, 5, 0, Math.PI, true);
+                ctx.lineTo(hx, hy + 8);
+                ctx.fill();
             }
         });
 
