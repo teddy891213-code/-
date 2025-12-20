@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>奇異鳥：西蘭蒂亞冒險記 - 最終完成版</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #2c3e50;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            background: #87CEEB;
+            border: 4px solid #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+        canvas {
+            display: block;
+        }
+        /* 震動動畫 */
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-5px, -5px) rotate(-3deg) scale(1.05); }
+            20% { transform: translate(-8px, 0px) rotate(3deg); }
+            30% { transform: translate(8px, 5px) rotate(0deg); }
+            40% { transform: translate(5px, -5px) rotate(3deg); }
+            50% { transform: translate(-5px, 5px) rotate(-3deg); }
+            60% { transform: translate(-8px, 2px) rotate(0deg); }
+            70% { transform: translate(8px, 2px) rotate(-3deg); }
+            80% { transform: translate(-5px, -5px) rotate(3deg); }
+            90% { transform: translate(5px, 5px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        }
+        .shake-effect {
+            animation: shake 0.8s;
+            animation-iteration-count: 1;
+        }
+        /* 受傷紅光 */
+        #damage-flash {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 50;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 800;
+            text-shadow: 2px 2px 0px rgba(255,255,255,0.9);
+        }
+        #question-panel {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 10px 20px;
+            text-align: center;
+            border: 3px solid #f39c12;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 20;
+        }
+        #q-text {
+            font-size: 20px;
+            color: #d35400;
+            margin: 0;
+            line-height: 1.4;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 30;
+        }
+        .control-group {
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        .btn-touch {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255,255,255,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            user-select: none;
+            backdrop-filter: blur(2px);
+        }
+        .btn-touch:active {
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0.95);
+        }
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 100;
+            text-align: center;
+        }
+        .big-btn {
+            margin-top: 30px;
+            padding: 10px 40px;
+            font-size: 22px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #219150;
+            font-weight: bold;
+        }
+        .big-btn:active { transform: translateY(5px); box-shadow: none; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    
+    <div id="damage-flash"></div>
+
+    <div id="ui-layer">
+        <div>❤️ x <span id="hp-display">3</span></div>
+        <div id="level-display" style="color:#fff; text-shadow:2px 2px 0 #000;">WORLD 1-1</div>
+        <div id="status-display" style="color:#fff; text-shadow:2px 2px 0 #000;">READY</div>
+    </div>
+
+    <div id="question-panel">
+        <h3 id="q-text">題目載入中...</h3>
+        <p style="font-size:12px; color:#7f8c8d; margin-top:5px;">(跳起來撞擊選項磚塊！)</p>
+    </div>
+
+    <div id="controls">
+        <div class="control-group">
+            <div class="btn-touch" id="btn-left">◀</div>
+            <div class="btn-touch" id="btn-down">▼</div>
+            <div class="btn-touch" id="btn-right">▶</div>
+        </div>
+        <div class="control-group">
+            <div class="btn-touch" id="btn-jump" style="width:80px; height:80px; border-radius:25px;">⇪</div>
+        </div>
+    </div>
+
+    <div id="start-screen" class="overlay">
+        <h1 style="font-size:40px; color:#f1c40f; margin-bottom:10px;">奇異鳥大冒險</h1>
+        <p style="font-size:18px;">尋找西蘭蒂亞！<br>WASD 或 方向鍵 移動<br>按「▼」可以鑽進水管！</p>
+        <button class="big-btn" onclick="startGame()">START</button>
+    </div>
+
+    <div id="game-over" class="overlay" style="display:none;">
+        <h1 style="color:#e74c3c;">GAME OVER</h1>
+        <button class="big-btn" onclick="location.reload()">TRY AGAIN</button>
+    </div>
+
+    <div id="win-screen" class="overlay" style="display:none;">
+        <h1 style="color:#f1c40f;">COURSE CLEAR!</h1>
+        <p>太棒了！你找到了消失的大陸！</p>
+        <button class="big-btn" onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+    const damageFlash = document.getElementById('damage-flash');
+    
+    // 物理參數 (手感優化版)
+    const GRAVITY = 0.4; 
+    const JUMP_FORCE = -9.5; 
+    const SPEED = 3; 
+    const ICE_ACCEL = 0.15; 
+    const ICE_FRICTION = 0.985; 
+    const GROUND_Y = 440; 
+    
+    let gameState = 'START'; 
+    let currentLevel = 0;
+    let cameraX = 0;
+    let targetCameraX = 0;
+    
+    let keys = { 
+        ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false,
+        KeyA: false, KeyD: false, KeyW: false, KeyS: false
+    };
+
+    // 關卡資料 - 題目已嚴格校對
+    const levels = [
+        {
+            name: "WORLD 1-1: 冰火地形",
+            bg: "#87CEEB", // 藍天
+            groundColor: "#27ae60", // 綠地
+            bossType: "rock", // 岩石巨人
+            bossX: 2000, 
+            flagX: 2500,
+            questions: [
+                {
+                    q: "紐西蘭地形景觀豐富，地震頻繁，主要是因為位於哪裡？",
+                    options: [
+                        { text: "板塊內部", correct: false },
+                        { text: "環太平洋帶", correct: true }, // 校對正確：環太平洋火山地震帶
+                        { text: "古地盾上", correct: false },
+                        { text: "大西洋中脊", correct: false }
+                    ]
+                },
+                {
+                    q: "想看「哈比村」與「火山地熱」，該去哪個島？",
+                    options: [
+                        { text: "南島", correct: false },
+                        { text: "北島", correct: true }, // 校對正確：北島多火山
+                        { text: "史都華島", correct: false },
+                        { text: "塔斯馬尼亞", correct: false }
+                    ]
+                },
+                {
+                    q: "南島擁有壯麗的冰河與峽灣，主要原因除了緯度高，還有？",
+                    options: [
+                        { text: "冰河侵蝕", correct: true }, // 校對正確：冰河地形發達
+                        { text: "火山爆發", correct: false },
+                        { text: "河流沖刷", correct: false },
+                        { text: "風力堆積", correct: false }
+                    ]
+                },
+                {
+                    q: "根據課本，紐西蘭的地形主體以什麼為主？",
+                    options: [
+                        { text: "平原", correct: false },
+                        { text: "盆地", correct: false },
+                        { text: "山地丘陵", correct: true }, // 校對正確：多山地丘陵
+                        { text: "沙漠", correct: false }
+                    ]
+                },
+                {
+                    q: "北島著名的陶波湖與間歇泉，反映了哪種地質作用？",
+                    options: [
+                        { text: "冰河作用", correct: false },
+                        { text: "火山作用", correct: true }, // 校對正確：火山地熱
+                        { text: "風化作用", correct: false },
+                        { text: "溶蝕作用", correct: false }
+                    ]
+                }
+            ],
+            mapObjects: [
+                { x: 600, w: 50, h: 60, type: 'pipe', id: 1, dest: 2 },
+                { x: 900, w: 100, type: 'lava' }, 
+                { x: 1300, w: 150, type: 'ice' },
+                { x: 1600, w: 50, h: 90, type: 'pipe', id: 2, dest: 1 },
+                { x: 1800, w: 150, type: 'lava' }
+            ],
+            platforms: [
+                { x: 650, y: 360, w: 60 },
+                { x: 920, y: 350, w: 80 }, 
+                { x: 1550, y: 340, w: 60 },
+                { x: 1820, y: 350, w: 100 }
+            ],
+            spikes: [{x: 1100, y: GROUND_Y}]
+        },
+        {
+            name: "WORLD 1-2: 西風與氣候",
+            bg: "#34495e", // 深灰暴風雨
+            groundColor: "#2c3e50", 
+            bossType: "storm", // 風暴領主
+            bossX: 2000,
+            flagX: 2500,
+            questions: [
+                {
+                    q: "南島「西側」迎風坡雨量多，是因為盛行什麼風？",
+                    options: [
+                        { text: "東北信風", correct: false },
+                        { text: "極地東風", correct: false },
+                        { text: "西風", correct: true }, // 校對正確：盛行西風
+                        { text: "季風", correct: false }
+                    ]
+                },
+                {
+                    q: "紐西蘭全年「溫和濕潤」，屬於哪種氣候類型？",
+                    options: [
+                        { text: "溫帶海洋性", correct: true }, // 校對正確
+                        { text: "地中海型", correct: false },
+                        { text: "副熱帶季風", correct: false },
+                        { text: "溫帶大陸性", correct: false }
+                    ]
+                },
+                {
+                    q: "北島的奧克蘭氣溫比南島基督城高，最核心的原因是什麼？",
+                    options: [
+                        { text: "距海遠近", correct: false },
+                        { text: "緯度較低", correct: true }, // 校對正確：越往北越靠近赤道(南半球)
+                        { text: "地勢較高", correct: false },
+                        { text: "洋流影響", correct: false }
+                    ]
+                },
+                {
+                    q: "南島東側為背風坡，降雨量相對較少，適合發展？",
+                    options: [
+                        { text: "熱帶栽培業", correct: false },
+                        { text: "水稻種植", correct: false },
+                        { text: "畜牧業", correct: true }, // 校對正確：適合牧草生長
+                        { text: "漁業", correct: false }
+                    ]
+                },
+                {
+                    q: "紐西蘭的氣候深受哪片海洋的調節影響？",
+                    options: [
+                        { text: "大西洋", correct: false },
+                        { text: "印度洋", correct: false },
+                        { text: "太平洋", correct: true }, // 校對正確
+                        { text: "北冰洋", correct: false }
+                    ]
+                }
+            ],
+            mapObjects: [
+                { x: 400, w: 50, h: 60, type: 'pipe', id: 3, dest: 4 },
+                { x: 700, w: 150, type: 'lava' }, 
+                { x: 1100, w: 300, type: 'ice' }, 
+                { x: 1550, w: 200, type: 'lava' }, 
+                { x: 1800, w: 50, h: 80, type: 'pipe', id: 4, dest: 3 }
+            ],
+            platforms: [
+                { x: 720, y: 350, w: 100 }, 
+                { x: 1000, y: 280, w: 60 },
+                { x: 1600, y: 350, w: 100 },
+                { x: 1850, y: 300, w: 60 }
+            ],
+            spikes: [{x: 1200, y: GROUND_Y}, {x: 1300, y: GROUND_Y}]
+        },
+        {
+            name: "WORLD 1-3: 經濟與產季",
+            bg: "#f39c12", // 豐收金黃
+            groundColor: "#d35400", 
+            bossType: "coin", // 貿易大亨
+            bossX: 2000,
+            flagX: 2500,
+            questions: [
+                {
+                    q: "根據課本圓餅圖，紐西蘭出口產值「最高」的產品是？",
+                    options: [
+                        { text: "奇異果", correct: false },
+                        { text: "林木產品", correct: false },
+                        { text: "肉類", correct: false },
+                        { text: "乳製品", correct: true } // 校對正確：29%
+                    ]
+                },
+                {
+                    q: "台灣放暑假(7月)時，紐西蘭正值什麼季節？",
+                    options: [
+                        { text: "春季", correct: false },
+                        { text: "夏季", correct: false },
+                        { text: "秋季", correct: false },
+                        { text: "冬季", correct: true } // 校對正確：南北半球季節相反
+                    ]
+                },
+                {
+                    q: "澳洲葡萄產區(地中海型氣候)在「夏季」的天氣特徵是？",
+                    options: [
+                        { text: "炎熱乾燥", correct: true }, // 校對正確：夏乾冬雨
+                        { text: "溫暖多雨", correct: false },
+                        { text: "寒冷乾燥", correct: false },
+                        { text: "全年有雨", correct: false }
+                    ]
+                },
+                {
+                    q: "紐西蘭大量出口奇異果到北半球，主要利用什麼優勢？",
+                    options: [
+                        { text: "季節相反", correct: true }, // 校對正確：產季調節
+                        { text: "距離很近", correct: false },
+                        { text: "同文同種", correct: false },
+                        { text: "免關稅", correct: false }
+                    ]
+                },
+                {
+                    q: "澳洲與紐西蘭的畜牧業型態多屬於哪一種？",
+                    options: [
+                        { text: "欄牧", correct: false },
+                        { text: "放牧", correct: true }, // 校對正確：粗放畜牧
+                        { text: "游牧", correct: false },
+                        { text: "山牧季移", correct: false }
+                    ]
+                }
+            ],
+            mapObjects: [
+                { x: 500, w: 50, h: 50, type: 'pipe', id: 5, dest: 6 },
+                { x: 800, w: 150, type: 'lava' }, 
+                { x: 1300, w: 50, h: 80, type: 'pipe', id: 6, dest: 5 },
+                { x: 1500, w: 200, type: 'lava' } 
+            ],
+            platforms: [
+                { x: 850, y: 350, w: 80 }, 
+                { x: 1100, y: 280, w: 60 },
+                { x: 1550, y: 350, w: 80 },
+                { x: 1750, y: 320, w: 80 }
+            ],
+            spikes: [{x: 700, y: GROUND_Y}, {x: 1200, y: GROUND_Y}]
+        }
+    ];
+
+    // 投射物
+    let projectiles = [];
+    class Projectile {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.type = type;
+            this.vx = -3; 
+            this.vy = (Math.random() - 0.5) * 2;
+            this.active = true;
+            this.rotation = 0;
+            this.size = 25; 
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.rotation += 0.1;
+            if (this.x < cameraX - 100) this.active = false;
+        }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            if (this.type === 'rock') {
+                ctx.fillStyle = '#7f8c8d';
+                ctx.beginPath();
+                ctx.arc(0, 0, 20, 0, Math.PI*2);
+                ctx.fill();
+            } else if (this.type === 'storm') {
+                ctx.fillStyle = '#f1c40f'; 
+                ctx.beginPath();
+                ctx.moveTo(0, -20);
+                ctx.lineTo(15, 0);
+                ctx.lineTo(0, 20);
+                ctx.lineTo(-15, 0);
+                ctx.fill();
+            } else if (this.type === 'coin') {
+                ctx.fillStyle = '#f39c12';
+                ctx.beginPath();
+                ctx.arc(0, 0, 20, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.fillText('$', -6, 8);
+            }
+            ctx.restore();
+        }
+    }
+
+    // 主角
+    const kiwi = {
+        x: 100, y: 300, w: 32, h: 32,
+        vx: 0, vy: 0,
+        onGround: false,
+        onIce: false, 
+        hp: 3,
+        invincibleTimer: 0,
+        state: 'normal',
+        angle: 0, 
+        pipeTimer: 0, 
+
+        update() {
+            if (gameState === 'PLAYING' || gameState === 'BOSS') {
+                if (this.state === 'pipe_in') {
+                    this.y += 2;
+                    this.pipeTimer--;
+                    if (this.pipeTimer <= 0) {
+                        this.teleport();
+                    }
+                    return; 
+                }
+                if (this.state === 'pipe_out') {
+                    this.y -= 2;
+                    this.pipeTimer--;
+                    if (this.pipeTimer <= 0) {
+                        this.state = 'normal';
+                        this.vx = 0;
+                    }
+                    return;
+                }
+
+                if (keys.ArrowLeft || keys.KeyA) {
+                    if (this.onIce) this.vx -= ICE_ACCEL;
+                    else this.vx = -SPEED;
+                } else if (keys.ArrowRight || keys.KeyD) {
+                    if (this.onIce) this.vx += ICE_ACCEL;
+                    else this.vx = SPEED;
+                } else {
+                    if (this.onIce) this.vx *= ICE_FRICTION; 
+                    else this.vx = 0;
+                }
+
+                if (this.onIce) {
+                    if (this.vx > SPEED + 1) this.vx = SPEED + 1;
+                    if (this.vx < -(SPEED + 1)) this.vx = -(SPEED + 1);
+                    if (Math.abs(this.vx) < 0.1) this.vx = 0;
+                }
+
+                if ((keys.ArrowUp || keys.KeyW) && this.onGround) {
+                    this.vy = JUMP_FORCE;
+                    this.onGround = false;
+                }
+
+                if ((keys.ArrowDown || keys.KeyS) && this.onGround && Math.abs(this.vx) < 1) {
+                    checkPipeEntry();
+                }
+
+            } else if (gameState === 'LEVEL_CLEAR_ANIM') {
+                if (this.y < GROUND_Y - this.h) {
+                    this.vy = 2; 
+                    this.angle += 0.5; 
+                } else {
+                    this.vy = 0;
+                    this.angle = 0;
+                    this.vx = 2; 
+                    this.state = 'walking_out';
+                }
+            }
+
+            this.vy += GRAVITY;
+            this.x += this.vx;
+            this.y += this.vy;
+
+            if (this.y + this.h > GROUND_Y) {
+                this.y = GROUND_Y - this.h;
+                this.vy = 0;
+                this.onGround = true;
+                if (!checkIce(this.x, this.w)) this.onIce = false; 
+            }
+
+            if (this.invincibleTimer > 0) this.invincibleTimer--;
+            if (this.x < cameraX) this.x = cameraX;
+        },
+
+        teleport() {
+            let level = levels[currentLevel];
+            let targetPipe = level.mapObjects.find(obj => obj.id === this.targetPipeId);
+            if (targetPipe) {
+                this.x = targetPipe.x + (targetPipe.w - this.w)/2;
+                this.y = GROUND_Y - targetPipe.h + 32; 
+                this.state = 'pipe_out';
+                this.pipeTimer = 30;
+                cameraX = this.x - 400;
+                if (cameraX < 0) cameraX = 0;
+            } else {
+                this.state = 'normal'; 
+            }
+        },
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + this.w/2, this.y + this.h/2);
+            if (this.angle !== 0) ctx.rotate(this.angle); 
+            
+            if (this.onIce && Math.abs(this.vx) > 0.5) {
+                ctx.rotate(this.vx * 0.1); 
+            }
+
+            ctx.translate(-this.w/2, -this.h/2);
+
+            if (this.invincibleTimer > 0 && Math.floor(Date.now() / 50) % 2 === 0) {
+                ctx.globalAlpha = 0.5;
+            }
+
+            ctx.fillStyle = "#8d6e63";
+            ctx.beginPath();
+            ctx.ellipse(this.w/2, this.h/2, this.w/2, this.h/2, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.fillStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.moveTo(this.w*0.8, this.h*0.4);
+            ctx.lineTo(this.w*1.3, this.h*0.6);
+            ctx.lineTo(this.w*0.7, this.h*0.7);
+            ctx.fill();
+
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(this.w*0.7, this.h*0.3, 3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(this.w*0.72, this.h*0.28, 1, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.strokeStyle = "#3e2723";
+            ctx.lineWidth = 2;
+            
+            if (this.onIce && Math.abs(this.vx) > 0.1) {
+                 ctx.beginPath();
+                 ctx.moveTo(this.w*0.3, this.h*0.9);
+                 ctx.lineTo(this.w*0.1, this.h + 4);
+                 ctx.moveTo(this.w*0.7, this.h*0.9);
+                 ctx.lineTo(this.w*0.9, this.h + 4);
+                 ctx.stroke();
+            } else if (Math.abs(this.vx) > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
+                ctx.beginPath();
+                ctx.moveTo(this.w*0.4, this.h*0.9);
+                ctx.lineTo(this.w*0.2, this.h + 4);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(this.w*0.5, this.h*0.9);
+                ctx.lineTo(this.w*0.5, this.h + 4);
+                ctx.stroke();
+            }
+            ctx.restore();
+        },
+
+        hurt(pushBackX) {
+            if (this.invincibleTimer > 0 || gameState !== 'PLAYING' && gameState !== 'BOSS') return;
+            
+            triggerDamageEffect();
+
+            this.hp--;
+            document.getElementById('hp-display').innerText = this.hp;
+            this.invincibleTimer = 120; 
+            this.vy = -10; 
+            this.vx = pushBackX ? pushBackX : (Math.random() > 0.5 ? 4 : -4); 
+            
+            if (this.hp <= 0) {
+                gameState = 'GAMEOVER';
+                document.getElementById('game-over').style.display = 'flex';
+                document.getElementById('question-panel').style.display = 'none';
+            }
+        }
+    };
+
+    function triggerDamageEffect() {
+        container.classList.remove('shake-effect');
+        void container.offsetWidth;
+        container.classList.add('shake-effect');
+        
+        damageFlash.style.opacity = 0.6;
+        setTimeout(() => damageFlash.style.opacity = 0, 300);
+    }
+
+    // 魔王 (多型態)
+    const boss = {
+        x: 0, y: 280, w: 80, h: 100,
+        floatOffset: 0,
+        active: false,
+        qIndex: 0,
+        reactionTimer: 0,
+        reactionType: 'normal',
+        scale: 1, 
+        
+        update() {
+            if (!this.active) return;
+            
+            if (this.reactionTimer > 0) {
+                this.reactionTimer--;
+                if (this.reactionType === 'happy') {
+                    this.floatOffset = Math.sin(Date.now() / 100) * 15 - 5; 
+                    this.scale = 1;
+                } else if (this.reactionType === 'angry') {
+                    this.scale = 1.3 + Math.sin(Date.now() / 50) * 0.1; 
+                    this.x += (Math.random() - 0.5) * 8; 
+                }
+            } else {
+                this.floatOffset = Math.sin(Date.now() / 300) * 10;
+                this.reactionType = 'normal';
+                this.scale = 1;
+                let targetX = levels[currentLevel].bossX + 200;
+                if (Math.abs(this.x - targetX) > 2) this.x += (targetX - this.x) * 0.05;
+            }
+        },
+
+        draw() {
+            if (!this.active) return;
+            let by = this.y + this.floatOffset;
+            let type = levels[currentLevel].bossType;
+            
+            ctx.save();
+            ctx.translate(this.x + this.w/2, by + this.h/2);
+            ctx.scale(this.scale, this.scale);
+            ctx.translate(-(this.x + this.w/2), -(by + this.h/2));
+
+            if (type === 'rock') {
+                // 岩石巨人：灰色方形，有裂痕
+                ctx.fillStyle = "#7f8c8d";
+                ctx.fillRect(this.x, by, this.w, this.h);
+                ctx.strokeStyle = "#34495e";
+                ctx.lineWidth = 4;
+                ctx.strokeRect(this.x, by, this.w, this.h);
+                // 裂痕
+                ctx.beginPath();
+                ctx.moveTo(this.x+20, by);
+                ctx.lineTo(this.x+40, by+30);
+                ctx.lineTo(this.x+30, by+50);
+                ctx.stroke();
+            } else if (type === 'storm') {
+                // 風暴領主：圓形雲朵組成
+                ctx.fillStyle = "#2c3e50";
+                ctx.beginPath();
+                ctx.arc(this.x + 40, by + 50, 50, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = "#ecf0f1"; // 雲邊
+                ctx.beginPath();
+                ctx.arc(this.x + 20, by + 30, 20, 0, Math.PI*2);
+                ctx.arc(this.x + 60, by + 30, 20, 0, Math.PI*2);
+                ctx.arc(this.x + 40, by + 20, 25, 0, Math.PI*2);
+                ctx.fill();
+            } else if (type === 'coin') {
+                // 貿易大亨：金色圓形+西裝
+                ctx.fillStyle = "#f1c40f"; // 頭
+                ctx.beginPath();
+                ctx.arc(this.x + 40, by + 30, 30, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = "#2c3e50"; // 西裝身體
+                ctx.fillRect(this.x + 10, by + 60, 60, 40);
+                ctx.fillStyle = "#c0392b"; // 領帶
+                ctx.beginPath();
+                ctx.moveTo(this.x+40, by+60);
+                ctx.lineTo(this.x+35, by+80);
+                ctx.lineTo(this.x+40, by+90);
+                ctx.lineTo(this.x+45, by+80);
+                ctx.fill();
+            }
+
+            // 表情反應
+            if (this.reactionType === 'angry') {
+                ctx.fillStyle = "red"; // 生氣眼
+                ctx.fillRect(this.x + 20, by + 25, 10, 10);
+                ctx.fillRect(this.x + 50, by + 25, 10, 10);
+            } else {
+                ctx.fillStyle = "white";
+                if (type === 'storm') ctx.fillStyle = "black";
+                ctx.fillRect(this.x + 20, by + 25, 10, 10);
+                ctx.fillRect(this.x + 50, by + 25, 10, 10);
+            }
+
+            ctx.restore();
+        },
+
+        react(type) {
+            this.reactionType = type;
+            this.reactionTimer = 90; 
+        },
+
+        attack() {
+            this.react('angry');
+            let type = levels[currentLevel].bossType;
+            setTimeout(() => {
+                projectiles.push(new Projectile(this.x, this.y + 50, type));
+            }, 500);
+        }
+    };
+
+    let bricks = [];
+    
+    // 旗桿
+    const flag = {
+        h: 200,
+        draw(x) {
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(x, GROUND_Y - this.h, 5, this.h);
+            ctx.fillStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.arc(x + 2.5, GROUND_Y - this.h, 8, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#e74c3c";
+            ctx.beginPath();
+            ctx.moveTo(x + 5, GROUND_Y - this.h + 10);
+            ctx.lineTo(x + 60, GROUND_Y - this.h + 30);
+            ctx.lineTo(x + 5, GROUND_Y - this.h + 50);
+            ctx.fill();
+        }
+    };
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        gameState = 'PLAYING';
+        loop();
+    }
+
+    function loop() {
+        if (gameState === 'GAMEOVER' || gameState === 'WIN') return;
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    function update() {
+        kiwi.update();
+        boss.update();
+
+        projectiles.forEach(p => p.update());
+        projectiles = projectiles.filter(p => p.active);
+        projectiles.forEach(p => {
+            if (checkRectCollide(kiwi, {x: p.x-5, y: p.y-5, w: 10, h: 10})) {
+                kiwi.hurt(-8); 
+                p.active = false;
+            }
+        });
+
+        if (gameState !== 'LEVEL_CLEAR_ANIM') {
+            targetCameraX = kiwi.x - 200; 
+            if (targetCameraX < 0) targetCameraX = 0;
+            let maxCam = levels[currentLevel].flagX - 400;
+            if (targetCameraX > maxCam) targetCameraX = maxCam;
+            cameraX += (targetCameraX - cameraX) * 0.1;
+        }
+
+        let level = levels[currentLevel];
+        
+        // 冰塊檢測
+        let onAnyIce = false;
+        level.mapObjects.forEach(obj => {
+            if (obj.type === 'pipe') {
+                let pRect = {x: obj.x, y: GROUND_Y - obj.h, w: obj.w, h: obj.h};
+                if (checkRectCollide(kiwi, pRect)) {
+                    if (kiwi.vx > 0 && kiwi.x + kiwi.w < obj.x + 20) {
+                        kiwi.x = obj.x - kiwi.w;
+                    } else if (kiwi.vx < 0 && kiwi.x > obj.x + obj.w - 20) {
+                        kiwi.x = obj.x + obj.w;
+                    }
+                    if (kiwi.vy >= 0 && 
+                        kiwi.x + kiwi.w > obj.x && kiwi.x < obj.x + obj.w &&
+                        kiwi.y + kiwi.h >= GROUND_Y - obj.h && kiwi.y + kiwi.h <= GROUND_Y - obj.h + 10) {
+                        kiwi.y = GROUND_Y - obj.h - kiwi.h;
+                        kiwi.vy = 0;
+                        kiwi.onGround = true;
+                    }
+                }
+            }
+            
+            if (obj.type === 'lava') {
+                 if (checkRectCollide(kiwi, {x: obj.x + 10, y: GROUND_Y-10, w: obj.w - 20, h: 40})) {
+                    kiwi.hurt(-8); 
+                }
+            } else if (obj.type === 'ice') {
+                 if (checkRectCollide(kiwi, {x: obj.x, y: GROUND_Y-10, w: obj.w, h: 40})) {
+                     if (kiwi.onGround) onAnyIce = true;
+                 }
+            }
+        });
+        
+        kiwi.onIce = onAnyIce;
+
+        if (level.platforms) {
+            level.platforms.forEach(p => {
+                if (kiwi.vy >= 0 && 
+                    kiwi.x + kiwi.w > p.x && kiwi.x < p.x + p.w &&
+                    kiwi.y + kiwi.h >= p.y && kiwi.y + kiwi.h <= p.y + 15) { 
+                    
+                    kiwi.y = p.y - kiwi.h;
+                    kiwi.vy = 0;
+                    kiwi.onGround = true;
+                }
+            });
+        }
+
+        level.spikes.forEach(s => {
+            if (kiwi.x + kiwi.w > s.x + 5 && kiwi.x < s.x + 25 && kiwi.y + kiwi.h > s.y + 5) {
+                kiwi.hurt(-10);
+            }
+        });
+
+        if (!boss.active && kiwi.x > level.bossX - 100 && gameState === 'PLAYING') {
+            startBossBattle();
+        }
+
+        if (!boss.active && kiwi.x > level.flagX && gameState === 'PLAYING') {
+            levelClear();
+        }
+        
+        if (gameState === 'LEVEL_CLEAR_ANIM' && kiwi.x > level.flagX + 200) {
+            nextLevel();
+        }
+
+        bricks.forEach(b => {
+            if (kiwi.x + kiwi.w > b.x && kiwi.x < b.x + b.w &&
+                kiwi.y < b.y + b.h && kiwi.y > b.y && kiwi.vy < 0) {
+                checkAnswer(b);
+                kiwi.vy = 4; 
+            }
+        });
+    }
+
+    function checkIce(x, w) {
+        return false;
+    }
+
+    function checkPipeEntry() {
+        let level = levels[currentLevel];
+        let pipe = level.mapObjects.find(obj => {
+            return obj.type === 'pipe' && 
+                   kiwi.x + kiwi.w/2 > obj.x && 
+                   kiwi.x + kiwi.w/2 < obj.x + obj.w &&
+                   kiwi.y + kiwi.h >= GROUND_Y - obj.h; 
+        });
+
+        if (pipe && pipe.dest) {
+            kiwi.state = 'pipe_in';
+            kiwi.targetPipeId = pipe.dest;
+            kiwi.pipeTimer = 30;
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = levels[currentLevel].bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.translate(-cameraX, 0);
+
+        ctx.fillStyle = levels[currentLevel].groundColor;
+        ctx.fillRect(cameraX, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+        let level = levels[currentLevel];
+        ctx.fillRect(level.bossX - 100, GROUND_Y, 1500, canvas.height - GROUND_Y);
+
+        if (level.platforms) {
+            ctx.fillStyle = "#e67e22"; 
+            level.platforms.forEach(p => {
+                ctx.fillRect(p.x, p.y, p.w, 15);
+                ctx.strokeStyle = "#d35400";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(p.x, p.y, p.w, 15);
+                ctx.fillStyle = "black";
+                ctx.fillRect(p.x+2, p.y+2, 2, 2);
+                ctx.fillRect(p.x+p.w-4, p.y+2, 2, 2);
+                ctx.fillStyle = "#e67e22";
+            });
+        }
+        
+        level.mapObjects.forEach(obj => {
+            if (obj.x > level.bossX - 50 && (obj.type === 'lava')) return;
+
+            if (obj.type === 'lava') {
+                let time = Date.now() / 200;
+                let gradient = ctx.createLinearGradient(obj.x, GROUND_Y, obj.x, GROUND_Y+20);
+                gradient.addColorStop(0, '#e74c3c');
+                gradient.addColorStop(1, '#c0392b');
+                ctx.fillStyle = gradient;
+                
+                ctx.beginPath();
+                ctx.moveTo(obj.x, GROUND_Y);
+                for(let i=0; i<=obj.w; i+=10) {
+                    ctx.lineTo(obj.x + i, GROUND_Y + Math.sin(time + i/20)*3);
+                }
+                ctx.lineTo(obj.x + obj.w, GROUND_Y + 20);
+                ctx.lineTo(obj.x, GROUND_Y + 20);
+                ctx.fill();
+            } else if (obj.type === 'ice') {
+                ctx.fillStyle = "rgba(180, 230, 255, 0.7)";
+                ctx.fillRect(obj.x, GROUND_Y-5, obj.w, 25);
+                let shine = (Date.now() / 5) % (obj.w + 40) - 20;
+                ctx.fillStyle = "rgba(255,255,255,0.8)";
+                ctx.beginPath();
+                ctx.moveTo(obj.x + shine, GROUND_Y-5);
+                ctx.lineTo(obj.x + shine + 10, GROUND_Y-5);
+                ctx.lineTo(obj.x + shine - 10, GROUND_Y+20);
+                ctx.lineTo(obj.x + shine - 20, GROUND_Y+20);
+                ctx.fill();
+
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obj.x, GROUND_Y-5, obj.w, 25);
+            } else if (obj.type === 'pipe') {
+                let pY = GROUND_Y - obj.h;
+                let grad = ctx.createLinearGradient(obj.x, pY, obj.x + obj.w, pY);
+                grad.addColorStop(0, '#2ecc71');
+                grad.addColorStop(0.5, '#a9dfbf');
+                grad.addColorStop(1, '#27ae60');
+                ctx.fillStyle = grad;
+                
+                ctx.fillRect(obj.x + 2, pY + 20, obj.w - 4, obj.h - 20);
+                ctx.fillRect(obj.x, pY, obj.w, 20);
+                
+                ctx.strokeStyle = "#1e8449";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obj.x, pY, obj.w, 20);
+                ctx.strokeRect(obj.x + 2, pY + 20, obj.w - 4, obj.h - 20);
+            }
+        });
+
+        ctx.fillStyle = "#7f8c8d";
+        level.spikes.forEach(s => {
+            ctx.beginPath();
+            ctx.moveTo(s.x, s.y);
+            ctx.lineTo(s.x + 10, s.y - 20);
+            ctx.lineTo(s.x + 20, s.y);
+            ctx.fill();
+        });
+
+        flag.draw(level.flagX);
+
+        let castleX = level.flagX + 250;
+        ctx.fillStyle = "#ecf0f1";
+        ctx.fillRect(castleX, GROUND_Y - 80, 80, 80);
+        ctx.fillStyle = "#34495e"; 
+        ctx.beginPath();
+        ctx.arc(castleX + 40, GROUND_Y, 20, Math.PI, 0);
+        ctx.fill();
+        ctx.fillStyle = "#e74c3c";
+        ctx.beginPath();
+        ctx.moveTo(castleX, GROUND_Y - 80);
+        ctx.lineTo(castleX + 40, GROUND_Y - 120);
+        ctx.lineTo(castleX + 80, GROUND_Y - 80);
+        ctx.fill();
+
+
+        boss.draw();
+        projectiles.forEach(p => p.draw());
+        kiwi.draw();
+
+        bricks.forEach(b => {
+            ctx.fillStyle = "#f39c12"; 
+            ctx.fillRect(b.x, b.y, b.w, b.h);
+            
+            ctx.fillStyle = "#e67e22";
+            ctx.fillRect(b.x + 2, b.y + 2, b.w - 4, b.h - 4);
+
+            ctx.fillStyle = "#2c3e50";
+            ctx.font = "bold 14px Arial"; 
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            
+            let text = b.text;
+            if (text.length > 5) ctx.font = "bold 12px Arial"; 
+            ctx.fillText(text, b.x + b.w/2, b.y + b.h/2);
+            
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(b.x, b.y, 4, 4);
+            ctx.fillRect(b.x + b.w - 4, b.y, 4, 4);
+            ctx.fillRect(b.x, b.y + b.h - 4, 4, 4);
+            ctx.fillRect(b.x + b.w - 4, b.y + b.h - 4, 4, 4);
+        });
+
+        ctx.restore();
+    }
+
+    function checkRectCollide(r1, r2) {
+        return (r1.x < r2.x + r2.w && r1.x + r1.w > r2.x &&
+                r1.y < r2.y + r2.h && r1.y + r1.h > r2.y);
+    }
+
+    function startBossBattle() {
+        boss.active = true;
+        boss.x = levels[currentLevel].bossX + 200; 
+        gameState = 'BOSS';
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        let qData = levels[currentLevel].questions[boss.qIndex];
+        if (!qData) {
+            bossDefeated();
+            return;
+        }
+
+        document.getElementById('question-panel').style.display = 'block';
+        document.getElementById('q-text').innerText = qData.q;
+
+        bricks = [];
+        let centerX = levels[currentLevel].bossX;
+        let startY = 320; 
+        
+        qData.options.forEach((opt, index) => {
+            bricks.push({
+                x: centerX + 50 + (index * 110), 
+                y: startY,
+                w: 100,
+                h: 40,
+                text: opt.text,
+                correct: opt.correct
+            });
+        });
+    }
+
+    function checkAnswer(brick) {
+        if (brick.correct) {
+            kiwi.state = 'big';
+            document.getElementById('status-display').innerText = "CORRECT!";
+            boss.react('happy');
+            
+            bricks = [];
+            boss.qIndex++;
+            setTimeout(() => {
+                if (gameState !== 'GAMEOVER') loadQuestion();
+            }, 2000); 
+
+        } else {
+            document.getElementById('status-display').innerText = "WRONG!";
+            boss.attack(); 
+            triggerDamageEffect();
+            kiwi.hurt();
+
+            bricks = [];
+            boss.qIndex++;
+            setTimeout(() => {
+                if (gameState !== 'GAMEOVER') loadQuestion();
+            }, 3000); 
+        }
+    }
+
+    function bossDefeated() {
+        boss.active = false;
+        document.getElementById('question-panel').style.display = 'none';
+        document.getElementById('status-display').innerText = "GO TO FLAG!";
+        gameState = 'PLAYING'; 
+    }
+
+    function levelClear() {
+        gameState = 'LEVEL_CLEAR_ANIM';
+        document.getElementById('status-display').innerText = "COURSE CLEAR!";
+        kiwi.x = levels[currentLevel].flagX; 
+    }
+
+    function nextLevel() {
+        projectiles = [];
+        
+        if (currentLevel < levels.length - 1) {
+            currentLevel++;
+            document.getElementById('level-display').innerText = levels[currentLevel].name;
+            document.getElementById('status-display').innerText = "READY";
+            
+            boss.active = false;
+            boss.qIndex = 0;
+            kiwi.x = 100;
+            kiwi.y = 300;
+            kiwi.vx = 0; 
+            kiwi.state = 'normal'; 
+            
+            gameState = 'PLAYING';
+            cameraX = 0;
+        } else {
+            gameState = 'WIN';
+            document.getElementById('win-screen').style.display = 'flex';
+        }
+    }
+
+    const bindTouch = (id, key) => {
+        let el = document.getElementById(id);
+        const active = (e) => { e.preventDefault(); keys[key] = true; el.style.background = 'rgba(255,255,255,0.6)'; };
+        const inactive = (e) => { e.preventDefault(); keys[key] = false; el.style.background = 'rgba(255,255,255,0.3)'; };
+        
+        el.addEventListener('touchstart', active);
+        el.addEventListener('touchend', inactive);
+        el.addEventListener('mousedown', active);
+        el.addEventListener('mouseup', inactive);
+    };
+    bindTouch('btn-left', 'ArrowLeft');
+    bindTouch('btn-right', 'ArrowRight');
+    bindTouch('btn-jump', 'ArrowUp');
+    bindTouch('btn-down', 'ArrowDown'); 
+
+    // 更新鍵盤監聽，支援 WASD
+    window.addEventListener('keydown', e => { 
+        if(keys.hasOwnProperty(e.code)) keys[e.code] = true; 
+    });
+    window.addEventListener('keyup', e => { 
+        if(keys.hasOwnProperty(e.code)) keys[e.code] = false; 
+    });
+
+</script>
+</body>
+</html>
