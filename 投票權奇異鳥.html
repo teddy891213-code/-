@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>奇異鳥：公民權利大冒險 - 民主進階版</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #2c3e50;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            background: #87CEEB;
+            border: 4px solid #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+        canvas {
+            display: block;
+        }
+        /* 震動動畫 */
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-5px, -5px) rotate(-3deg) scale(1.05); }
+            20% { transform: translate(-8px, 0px) rotate(3deg); }
+            30% { transform: translate(8px, 5px) rotate(0deg); }
+            40% { transform: translate(5px, -5px) rotate(3deg); }
+            50% { transform: translate(-5px, 5px) rotate(-3deg); }
+            60% { transform: translate(-8px, 2px) rotate(0deg); }
+            70% { transform: translate(8px, 2px) rotate(-3deg); }
+            80% { transform: translate(-5px, -5px) rotate(3deg); }
+            90% { transform: translate(5px, 5px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        }
+        .shake-effect {
+            animation: shake 0.8s;
+            animation-iteration-count: 1;
+        }
+        /* 受傷紅光 */
+        #damage-flash {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 50;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 800;
+            text-shadow: 2px 2px 0px rgba(255,255,255,0.9);
+        }
+        #question-panel {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 10px 20px;
+            text-align: center;
+            border: 3px solid #f39c12;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 20;
+        }
+        #q-text {
+            font-size: 20px;
+            color: #d35400;
+            margin: 0;
+            line-height: 1.4;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 30;
+        }
+        .control-group {
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        .btn-touch {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255,255,255,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            user-select: none;
+            backdrop-filter: blur(2px);
+        }
+        .btn-touch:active {
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0.95);
+        }
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 100;
+            text-align: center;
+        }
+        .big-btn {
+            margin-top: 30px;
+            padding: 10px 40px;
+            font-size: 22px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #219150;
+            font-weight: bold;
+        }
+        .big-btn:active { transform: translateY(5px); box-shadow: none; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    
+    <div id="damage-flash"></div>
+
+    <div id="ui-layer">
+        <div>❤️ x <span id="hp-display">3</span></div>
+        <div id="level-display" style="color:#fff; text-shadow:2px 2px 0 #000;">WORLD 1-1</div>
+        <div id="status-display" style="color:#fff; text-shadow:2px 2px 0 #000;">READY</div>
+    </div>
+
+    <div id="question-panel">
+        <h3 id="q-text">題目載入中...</h3>
+        <p style="font-size:12px; color:#7f8c8d; margin-top:5px;">(跳起來撞擊選項磚塊！)</p>
+    </div>
+
+    <div id="controls">
+        <div class="control-group">
+            <div class="btn-touch" id="btn-left">◀</div>
+            <div class="btn-touch" id="btn-down">▼</div>
+            <div class="btn-touch" id="btn-right">▶</div>
+        </div>
+        <div class="control-group">
+            <div class="btn-touch" id="btn-jump" style="width:80px; height:80px; border-radius:25px;">⇪</div>
+        </div>
+    </div>
+
+    <div id="start-screen" class="overlay">
+        <h1 style="font-size:40px; color:#f1c40f; margin-bottom:10px;">奇異鳥：公民權利大冒險</h1>
+        <p style="font-size:18px;">民主進階篇<br>WASD 或 方向鍵 移動，空白鍵跳躍<br>目標：踩扁小怪物，回答問題，拿到選票！</p>
+        <button class="big-btn" onclick="startGame()">START</button>
+    </div>
+
+    <div id="game-over" class="overlay" style="display:none;">
+        <h1 style="color:#e74c3c;">GAME OVER</h1>
+        <p>別氣餒！複習一下教材再挑戰！</p>
+        <button class="big-btn" onclick="location.reload()">TRY AGAIN</button>
+    </div>
+
+    <div id="win-screen" class="overlay" style="display:none;">
+        <h1 style="color:#f1c40f;">COURSE CLEAR!</h1>
+        <p>太棒了！你已經收集了所有的神聖選票！<br>你現在是個合格的民主公民了！</p>
+        <button class="big-btn" onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+    const damageFlash = document.getElementById('damage-flash');
+    
+    // 物理參數
+    const GRAVITY = 0.4; 
+    const JUMP_FORCE = -9.5; 
+    const SPEED = 3; 
+    const ICE_ACCEL = 0.15; 
+    const ICE_FRICTION = 0.985; 
+    const GROUND_Y = 440; 
+    
+    let gameState = 'START'; 
+    let currentLevel = 0;
+    let cameraX = 0;
+    let targetCameraX = 0;
+    
+    let keys = { 
+        ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false,
+        KeyA: false, KeyD: false, KeyW: false, KeyS: false
+    };
+
+    // --- 實體類別定義 ---
+
+    // 敵人 (小怪物)
+    class Enemy {
+        constructor(x, y, range) {
+            this.startX = x;
+            this.x = x;
+            this.y = y;
+            this.w = 30;
+            this.h = 30;
+            this.vx = 1.5; // 巡邏速度
+            this.range = range || 100;
+            this.active = true;
+            this.type = 'minion'; // or 'spike'
+            this.squished = false;
+        }
+        
+        update() {
+            if (!this.active || this.squished) return;
+            
+            this.x += this.vx;
+            
+            // 巡邏範圍檢查
+            if (this.x > this.startX + this.range) {
+                this.x = this.startX + this.range;
+                this.vx *= -1;
+            } else if (this.x < this.startX) {
+                this.x = this.startX;
+                this.vx *= -1;
+            }
+        }
+
+        draw() {
+            if (!this.active) return;
+            
+            ctx.save();
+            ctx.translate(this.x + this.w/2, this.y + this.h/2);
+            
+            if (this.squished) {
+                // 被踩扁的樣子
+                ctx.fillStyle = "#e74c3c";
+                ctx.fillRect(-15, 10, 30, 5);
+            } else {
+                // 正常樣子 (簡單的小怪物)
+                ctx.fillStyle = "#e74c3c"; // 紅色身體
+                if (currentLevel === 1) ctx.fillStyle = "#8e44ad"; // 第二關紫色
+                if (currentLevel === 2) ctx.fillStyle = "#2c3e50"; // 第三關黑色
+                
+                // 身體
+                ctx.beginPath();
+                ctx.arc(0, 0, 15, 0, Math.PI, true); // 半圓頂
+                ctx.lineTo(15, 15);
+                ctx.lineTo(-15, 15);
+                ctx.fill();
+                
+                // 眼睛
+                ctx.fillStyle = "white";
+                ctx.beginPath();
+                ctx.arc(-5, -5, 4, 0, Math.PI*2);
+                ctx.arc(5, -5, 4, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = "black";
+                ctx.beginPath();
+                ctx.arc(-5 + (this.vx>0?1:-1), -5, 2, 0, Math.PI*2);
+                ctx.arc(5 + (this.vx>0?1:-1), -5, 2, 0, Math.PI*2);
+                ctx.fill();
+
+                // 腳 (走路動畫)
+                ctx.fillStyle = "black";
+                let legOffset = Math.sin(Date.now() / 100) * 5;
+                ctx.fillRect(-10 + legOffset, 15, 6, 5);
+                ctx.fillRect(4 - legOffset, 15, 6, 5);
+            }
+            ctx.restore();
+        }
+    }
+
+    // 移動平台
+    class MovingPlatform {
+        constructor(x, y, w, rangeY, speed) {
+            this.initialY = y;
+            this.x = x;
+            this.y = y;
+            this.w = w;
+            this.h = 15;
+            this.rangeY = rangeY; // 上下移動範圍
+            this.speed = speed || 0.05;
+            this.timeOffset = Math.random() * 100;
+        }
+
+        update() {
+            // 使用正弦波進行上下移動
+            this.y = this.initialY + Math.sin((Date.now() / 1000 * 2) + this.timeOffset) * this.rangeY;
+        }
+
+        draw() {
+            ctx.fillStyle = "#d35400"; // 木頭色
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+            
+            // 木紋細節
+            ctx.strokeStyle = "#a04000";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x, this.y, this.w, this.h);
+            ctx.beginPath();
+            ctx.moveTo(this.x + 5, this.y + 5);
+            ctx.lineTo(this.x + this.w - 5, this.y + 5);
+            ctx.stroke();
+            
+            // 釘子
+            ctx.fillStyle = "#7f8c8d";
+            ctx.fillRect(this.x + 2, this.y + 2, 3, 3);
+            ctx.fillRect(this.x + this.w - 5, this.y + 2, 3, 3);
+        }
+    }
+
+    // --- 關卡資料 ---
+    const levels = [
+        {
+            name: "WORLD 1-1: 民主初體驗", 
+            bg: "#3498db", 
+            groundColor: "#2c3e50", 
+            bossType: "dictator", 
+            bossX: 2000, 
+            flagX: 2400,
+            questions: [
+                {
+                    q: "「主權在民」的意思是，國家的最高權力屬於誰？",
+                    options: [
+                        { text: "總統", correct: false },
+                        { text: "全體人民", correct: true }, 
+                        { text: "有錢人", correct: false },
+                        { text: "立法委員", correct: false }
+                    ]
+                },
+                {
+                    q: "下列哪一種行為「不屬於」合法的政治參與？",
+                    options: [
+                        { text: "參加遊行", correct: false },
+                        { text: "暴力脅迫", correct: true }, 
+                        { text: "投書媒體", correct: false },
+                        { text: "遊說立委", correct: false }
+                    ]
+                },
+                {
+                    q: "如果選出來的官員做得很爛，人民可以用什麼權利讓他下台？",
+                    options: [
+                        { text: "罷免權", correct: true }, 
+                        { text: "創制權", correct: false },
+                        { text: "複決權", correct: false },
+                        { text: "抵制權", correct: false }
+                    ]
+                }
+            ],
+            mapObjects: [
+                { x: 500, w: 50, h: 60, type: 'pipe', id: 1, dest: 2 },
+                { x: 800, w: 100, type: 'lava' }, 
+                { x: 1200, w: 150, type: 'ice' },
+                { x: 1500, w: 50, h: 90, type: 'pipe', id: 2, dest: 1 },
+                { x: 1000, y: 350, type: 'heart', active: true } 
+            ],
+            platforms: [
+                { x: 600, y: 360, w: 60 },
+                { x: 1400, y: 340, w: 60 },
+                { x: 1750, y: 350, w: 100 }
+            ],
+            movingPlatforms: [
+                new MovingPlatform(900, 300, 80, 50, 0.05) // 第一關簡單的移動平台
+            ],
+            enemies: [
+                new Enemy(700, GROUND_Y - 30, 150),
+                new Enemy(1300, GROUND_Y - 30, 100)
+            ],
+            spikes: [{x: 1100, y: GROUND_Y}]
+        },
+        {
+            name: "WORLD 1-2: 充滿陷阱的選舉路", 
+            bg: "#8e44ad", 
+            groundColor: "#2c3e50", 
+            bossType: "bribe_man", // 擬人化賄選怪
+            bossX: 2000,
+            flagX: 2400,
+            questions: [
+                {
+                    q: "我國立法委員選舉採「單一選區兩票制」，政黨票是用來分配？",
+                    options: [
+                        { text: "區域席次", correct: false },
+                        { text: "不分區席次", correct: true },
+                        { text: "僑民席次", correct: false },
+                        { text: "原住民席次", correct: false }
+                    ]
+                },
+                {
+                    q: "想參選「總統」，除了要繳保證金，年齡至少要滿幾歲？",
+                    options: [
+                        { text: "23 歲", correct: false },
+                        { text: "30 歲", correct: false },
+                        { text: "35 歲", correct: false },
+                        { text: "40 歲", correct: true }
+                    ]
+                },
+                {
+                    q: "選舉過程中，候選人送禮物賄賂選民，違反了什麼原則？",
+                    options: [
+                        { text: "普通原則", correct: false },
+                        { text: "平等原則", correct: false },
+                        { text: "公平競爭", correct: true },
+                        { text: "直接原則", correct: false }
+                    ]
+                }
+            ],
+            mapObjects: [
+                { x: 400, w: 50, h: 60, type: 'pipe', id: 3, dest: 4 },
+                { x: 700, w: 200, type: 'lava' }, // 變寬
+                { x: 1100, w: 300, type: 'ice' }, 
+                { x: 1600, w: 250, type: 'lava' }, 
+                { x: 1900, w: 50, h: 80, type: 'pipe', id: 4, dest: 3 },
+                { x: 1400, y: 300, type: 'heart', active: true }
+            ],
+            platforms: [
+                { x: 1000, y: 280, w: 60 },
+            ],
+            movingPlatforms: [
+                new MovingPlatform(750, 250, 80, 80, 0.08), // 上下幅度大
+                new MovingPlatform(1650, 300, 80, 60, 0.08)
+            ],
+            enemies: [
+                new Enemy(500, GROUND_Y - 30, 100),
+                new Enemy(1150, GROUND_Y - 30, 200), // 在冰上的敵人
+                new Enemy(1400, GROUND_Y - 30, 150)
+            ],
+            spikes: [{x: 1200, y: GROUND_Y}, {x: 1300, y: GROUND_Y}]
+        },
+        {
+            name: "WORLD 1-3: 公投風暴", 
+            bg: "#d35400", 
+            groundColor: "#2c3e50", 
+            bossType: "rumor", 
+            bossX: 2000,
+            flagX: 2400,
+            questions: [
+                {
+                    q: "下列哪一個事項「不可以」作為公民投票的提案內容？",
+                    options: [
+                        { text: "教育政策", correct: false },
+                        { text: "預算與租稅", correct: true }, 
+                        { text: "環境保護", correct: false },
+                        { text: "食品安全", correct: false }
+                    ]
+                },
+                {
+                    q: "公投案要通過，除了同意票多於不同意票，還需要？",
+                    options: [
+                        { text: "總統同意", correct: false },
+                        { text: "投票率破50%", correct: false },
+                        { text: "同意票達1/4", correct: true }, // 同意票達投票權人總額1/4以上
+                        { text: "立法院通過", correct: false }
+                    ]
+                },
+                {
+                    q: "「創制權」與「複決權」最大的差別在於？",
+                    options: [
+                        { text: "是否有投票", correct: false },
+                        { text: "是否為主動提議", correct: true }, 
+                        { text: "年齡限制", correct: false },
+                        { text: "設籍時間", correct: false }
+                    ]
+                }
+            ],
+            mapObjects: [
+                { x: 500, w: 50, h: 50, type: 'pipe', id: 5, dest: 6 },
+                { x: 800, w: 200, type: 'lava' }, 
+                { x: 1300, w: 50, h: 80, type: 'pipe', id: 6, dest: 5 },
+                { x: 1500, w: 300, type: 'lava' }, // 超寬岩漿
+                { x: 1200, y: 300, type: 'heart', active: true }
+            ],
+            platforms: [
+                { x: 1100, y: 280, w: 60 }
+            ],
+            movingPlatforms: [
+                new MovingPlatform(850, 300, 60, 90, 0.1), // 快速
+                new MovingPlatform(1550, 320, 60, 60, 0.1),
+                new MovingPlatform(1700, 250, 60, 80, 0.12) // 接力跳
+            ],
+            enemies: [
+                new Enemy(600, GROUND_Y - 30, 100),
+                new Enemy(1100, 250, 60), // 在平台上的敵人！
+                new Enemy(1800, GROUND_Y - 30, 150)
+            ],
+            spikes: [{x: 700, y: GROUND_Y}, {x: 1400, y: GROUND_Y}]
+        }
+    ];
+
+    // 投射物
+    let projectiles = [];
+    class Projectile {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.type = type;
+            this.vx = -3; 
+            this.vy = (Math.random() - 0.5) * 2;
+            this.active = true;
+            this.rotation = 0;
+            this.size = 25; 
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.rotation += 0.1;
+            if (this.x < cameraX - 100) this.active = false;
+        }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            if (this.type === 'dictator') { 
+                ctx.fillStyle = '#7f8c8d';
+                ctx.beginPath();
+                ctx.arc(0, 0, 15, 0, Math.PI*2);
+                ctx.stroke();
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#34495e';
+                ctx.stroke();
+            } else if (this.type === 'rumor') { 
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.fillText('?', -6, 8);
+            } else if (this.type === 'bribe_man') { 
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath();
+                ctx.arc(0, 0, 15, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#d35400';
+                ctx.font = '20px Arial';
+                ctx.fillText('$', -5, 7); 
+            }
+            ctx.restore();
+        }
+    }
+
+    // 選票 (終點)
+    const ballot = {
+        w: 50, h: 70,
+        draw(x, y) {
+            let floatY = y + Math.sin(Date.now() / 500) * 15 - 80; 
+            
+            ctx.save();
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = "yellow";
+            
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(x, floatY, this.w, this.h);
+            ctx.strokeStyle = "#bdc3c7";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, floatY, this.w, this.h);
+            
+            ctx.fillStyle = "#ecf0f1";
+            ctx.fillRect(x+10, floatY+10, 30, 30);
+            ctx.strokeStyle = "#95a5a6";
+            ctx.strokeRect(x+10, floatY+10, 30, 30);
+
+            ctx.strokeStyle = "#e74c3c";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(x+25, floatY+25, 10, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x+20, floatY+25);
+            ctx.lineTo(x+25, floatY+30);
+            ctx.lineTo(x+30, floatY+18);
+            ctx.stroke();
+
+            ctx.fillStyle = "#95a5a6";
+            ctx.fillRect(x+10, floatY+50, 30, 2);
+            ctx.fillRect(x+10, floatY+58, 20, 2);
+
+            ctx.restore();
+            
+            return {x: x, y: floatY, w: this.w, h: this.h};
+        }
+    };
+
+    // 主角 Kiwi
+    const kiwi = {
+        x: 100, y: 300, w: 32, h: 32,
+        vx: 0, vy: 0,
+        onGround: false,
+        onIce: false, 
+        hp: 3,
+        invincibleTimer: 0,
+        state: 'normal',
+        angle: 0, 
+        pipeTimer: 0, 
+        onPlatform: null, // 新增：是否在移動平台上
+
+        update() {
+            if (gameState === 'PLAYING' || gameState === 'BOSS') {
+                if (this.state === 'pipe_in') {
+                    this.y += 2;
+                    this.pipeTimer--;
+                    if (this.pipeTimer <= 0) {
+                        this.teleport();
+                    }
+                    return; 
+                }
+                if (this.state === 'pipe_out') {
+                    this.y -= 2;
+                    this.pipeTimer--;
+                    if (this.pipeTimer <= 0) {
+                        this.state = 'normal';
+                        this.vx = 0;
+                    }
+                    return;
+                }
+
+                if (keys.ArrowLeft || keys.KeyA) {
+                    if (this.onIce) this.vx -= ICE_ACCEL;
+                    else this.vx = -SPEED;
+                } else if (keys.ArrowRight || keys.KeyD) {
+                    if (this.onIce) this.vx += ICE_ACCEL;
+                    else this.vx = SPEED;
+                } else {
+                    if (this.onIce) this.vx *= ICE_FRICTION; 
+                    else this.vx = 0;
+                }
+
+                if (this.onIce) {
+                    if (this.vx > SPEED + 1) this.vx = SPEED + 1;
+                    if (this.vx < -(SPEED + 1)) this.vx = -(SPEED + 1);
+                    if (Math.abs(this.vx) < 0.1) this.vx = 0;
+                }
+
+                if ((keys.ArrowUp || keys.KeyW) && this.onGround) {
+                    this.vy = JUMP_FORCE;
+                    this.onGround = false;
+                    this.onPlatform = null; // 跳躍時離開平台
+                }
+
+                if ((keys.ArrowDown || keys.KeyS) && this.onGround && Math.abs(this.vx) < 1) {
+                    checkPipeEntry();
+                }
+
+                this.vy += GRAVITY;
+
+            } else if (gameState === 'LEVEL_CLEAR_WALK') {
+                // 過場動畫：自動往右走
+                this.vx = 2; 
+                this.vy += GRAVITY;
+                // 簡單的走路跳躍感
+                if (this.onGround && Math.random() > 0.9) this.vy = -3;
+            }
+
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // 地面碰撞
+            if (this.y + this.h > GROUND_Y) {
+                this.y = GROUND_Y - this.h;
+                this.vy = 0;
+                this.onGround = true;
+                this.onPlatform = null;
+                if (!checkIce(this.x, this.w)) this.onIce = false; 
+            }
+
+            if (this.invincibleTimer > 0) this.invincibleTimer--;
+            if (this.x < cameraX) this.x = cameraX;
+        },
+
+        teleport() {
+            let level = levels[currentLevel];
+            let targetPipe = level.mapObjects.find(obj => obj.id === this.targetPipeId);
+            if (targetPipe) {
+                this.x = targetPipe.x + (targetPipe.w - this.w)/2;
+                this.y = GROUND_Y - targetPipe.h + 32; 
+                this.state = 'pipe_out';
+                this.pipeTimer = 30;
+                cameraX = this.x - 400;
+                if (cameraX < 0) cameraX = 0;
+            } else {
+                this.state = 'normal'; 
+            }
+        },
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x + this.w/2, this.y + this.h/2);
+            if (this.angle !== 0) ctx.rotate(this.angle); 
+            
+            if (this.onIce && Math.abs(this.vx) > 0.5) {
+                ctx.rotate(this.vx * 0.1); 
+            }
+
+            // 走路擺動效果
+            if (Math.abs(this.vx) > 0.1 && this.onGround) {
+                ctx.rotate(Math.sin(Date.now() / 100) * 0.1);
+            }
+
+            ctx.translate(-this.w/2, -this.h/2);
+
+            if (this.invincibleTimer > 0 && Math.floor(Date.now() / 50) % 2 === 0) {
+                ctx.globalAlpha = 0.5;
+            }
+
+            // Kiwi 繪製
+            ctx.fillStyle = "#8d6e63";
+            ctx.beginPath();
+            ctx.ellipse(this.w/2, this.h/2, this.w/2, this.h/2, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.fillStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.moveTo(this.w*0.8, this.h*0.4);
+            ctx.lineTo(this.w*1.3, this.h*0.6);
+            ctx.lineTo(this.w*0.7, this.h*0.7);
+            ctx.fill();
+
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(this.w*0.7, this.h*0.3, 3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(this.w*0.72, this.h*0.28, 1, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.strokeStyle = "#3e2723";
+            ctx.lineWidth = 2;
+            
+            // 腳的動畫
+            if (this.onIce && Math.abs(this.vx) > 0.1) {
+                 ctx.beginPath();
+                 ctx.moveTo(this.w*0.3, this.h*0.9);
+                 ctx.lineTo(this.w*0.1, this.h + 4);
+                 ctx.moveTo(this.w*0.7, this.h*0.9);
+                 ctx.lineTo(this.w*0.9, this.h + 4);
+                 ctx.stroke();
+            } else if (Math.abs(this.vx) > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
+                ctx.beginPath();
+                ctx.moveTo(this.w*0.4, this.h*0.9);
+                ctx.lineTo(this.w*0.2, this.h + 4);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(this.w*0.5, this.h*0.9);
+                ctx.lineTo(this.w*0.5, this.h + 4);
+                ctx.stroke();
+            }
+            ctx.restore();
+        },
+
+        hurt(pushBackX) {
+            if (this.invincibleTimer > 0 || gameState !== 'PLAYING' && gameState !== 'BOSS') return;
+            
+            triggerDamageEffect();
+
+            this.hp--;
+            document.getElementById('hp-display').innerText = this.hp;
+            this.invincibleTimer = 120; 
+            this.vy = -8; 
+            this.vx = pushBackX ? pushBackX : (Math.random() > 0.5 ? 4 : -4); 
+            
+            if (this.hp <= 0) {
+                gameState = 'GAMEOVER';
+                document.getElementById('game-over').style.display = 'flex';
+                document.getElementById('question-panel').style.display = 'none';
+            }
+        },
+
+        bounce() {
+            this.vy = -8; // 踩到怪物的反彈
+        }
+    };
+
+    function triggerDamageEffect() {
+        container.classList.remove('shake-effect');
+        void container.offsetWidth;
+        container.classList.add('shake-effect');
+        
+        damageFlash.style.opacity = 0.6;
+        setTimeout(() => damageFlash.style.opacity = 0, 300);
+    }
+
+    // 魔王
+    const boss = {
+        x: 0, y: 280, w: 80, h: 100,
+        floatOffset: 0,
+        active: false,
+        qIndex: 0,
+        reactionTimer: 0,
+        reactionType: 'normal',
+        scale: 1, 
+        
+        update() {
+            if (!this.active) return;
+            
+            if (this.reactionTimer > 0) {
+                this.reactionTimer--;
+                if (this.reactionType === 'happy') {
+                    this.floatOffset = Math.sin(Date.now() / 100) * 15 - 5; 
+                    this.scale = 1;
+                } else if (this.reactionType === 'angry') {
+                    this.scale = 1.3 + Math.sin(Date.now() / 50) * 0.1; 
+                    this.x += (Math.random() - 0.5) * 8; 
+                }
+            } else {
+                this.floatOffset = Math.sin(Date.now() / 300) * 10;
+                this.reactionType = 'normal';
+                this.scale = 1;
+                let targetX = levels[currentLevel].bossX + 200;
+                if (Math.abs(this.x - targetX) > 2) this.x += (targetX - this.x) * 0.05;
+            }
+        },
+
+        draw() {
+            if (!this.active) return;
+            let by = this.y + this.floatOffset;
+            let type = levels[currentLevel].bossType;
+            
+            ctx.save();
+            ctx.translate(this.x + this.w/2, by + this.h/2);
+            ctx.scale(this.scale, this.scale);
+            ctx.translate(-(this.x + this.w/2), -(by + this.h/2));
+
+            if (type === 'dictator') {
+                // 獨裁高牆
+                ctx.fillStyle = "#34495e";
+                ctx.fillRect(this.x, by, this.w, this.h);
+                ctx.strokeStyle = "#2c3e50";
+                ctx.lineWidth = 4;
+                ctx.strokeRect(this.x, by, this.w, this.h);
+                ctx.fillStyle = "#7f8c8d";
+                ctx.fillRect(this.x, by+30, this.w, 10);
+                ctx.fillRect(this.x, by+70, this.w, 10);
+            } else if (type === 'rumor') {
+                // 謠言風暴
+                ctx.fillStyle = "#8e44ad";
+                ctx.beginPath();
+                ctx.arc(this.x + 40, by + 50, 50, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = "#9b59b6"; 
+                ctx.beginPath();
+                ctx.arc(this.x + 20, by + 30, 20, 0, Math.PI*2);
+                ctx.arc(this.x + 60, by + 30, 20, 0, Math.PI*2);
+                ctx.arc(this.x + 40, by + 20, 25, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = "white";
+                ctx.font = "bold 40px Arial";
+                ctx.fillText("?", this.x+30, by+65);
+            } else if (type === 'bribe_man') {
+                // 擬人化賄選怪
+                // 身體 (大衣)
+                ctx.fillStyle = "#2c3e50";
+                ctx.fillRect(this.x + 10, by + 20, 60, 80);
+                // 頭
+                ctx.fillStyle = "#f1c40f"; 
+                ctx.beginPath();
+                ctx.arc(this.x + 40, by + 10, 25, 0, Math.PI*2);
+                ctx.fill();
+                // 墨鏡
+                ctx.fillStyle = "black";
+                ctx.fillRect(this.x + 25, by + 5, 30, 10);
+                // 錢袋
+                ctx.fillStyle = "#27ae60";
+                ctx.beginPath();
+                ctx.arc(this.x + 10, by + 50, 20, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = "white";
+                ctx.font = "bold 20px Arial";
+                ctx.fillText("$", this.x + 5, by + 55);
+            }
+
+            // 表情
+            if (type !== 'bribe_man' && type !== 'rumor') { 
+                if (this.reactionType === 'angry') {
+                    ctx.fillStyle = "red"; 
+                    ctx.fillRect(this.x + 20, by + 40, 10, 5);
+                    ctx.fillRect(this.x + 50, by + 40, 10, 5);
+                } else {
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(this.x + 20, by + 40, 10, 5);
+                    ctx.fillRect(this.x + 50, by + 40, 10, 5);
+                }
+            }
+
+            ctx.restore();
+        },
+
+        react(type) {
+            this.reactionType = type;
+            this.reactionTimer = 90; 
+        },
+
+        attack() {
+            this.react('angry');
+            let type = levels[currentLevel].bossType;
+            setTimeout(() => {
+                projectiles.push(new Projectile(this.x, this.y + 50, type));
+            }, 500);
+        }
+    };
+
+    let bricks = [];
+    
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        gameState = 'PLAYING';
+        loop();
+    }
+
+    function loop() {
+        if (gameState === 'GAMEOVER' || gameState === 'WIN') return;
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    function update() {
+        kiwi.update();
+        boss.update();
+
+        // 平台與敵人更新
+        let level = levels[currentLevel];
+        if (level.movingPlatforms) level.movingPlatforms.forEach(p => p.update());
+        if (level.enemies) level.enemies.forEach(e => e.update());
+
+        projectiles.forEach(p => p.update());
+        projectiles = projectiles.filter(p => p.active);
+        
+        // 投射物碰撞
+        projectiles.forEach(p => {
+            if (checkRectCollide(kiwi, {x: p.x-5, y: p.y-5, w: 10, h: 10})) {
+                kiwi.hurt(-8); 
+                p.active = false;
+            }
+        });
+
+        // 攝影機跟隨
+        if (gameState !== 'LEVEL_CLEAR_WALK') {
+            targetCameraX = kiwi.x - 200; 
+            if (targetCameraX < 0) targetCameraX = 0;
+            let maxCam = levels[currentLevel].flagX - 400;
+            if (targetCameraX > maxCam) targetCameraX = maxCam;
+            cameraX += (targetCameraX - cameraX) * 0.1;
+        } else {
+             // 通關時攝影機慢慢往右
+             cameraX += 2;
+        }
+
+        
+        let onAnyIce = false;
+        
+        // 檢查一般物件碰撞 (水管、岩漿)
+        level.mapObjects.forEach(obj => {
+            if (obj.type === 'pipe') {
+                let pRect = {x: obj.x, y: GROUND_Y - obj.h, w: obj.w, h: obj.h};
+                if (checkRectCollide(kiwi, pRect)) {
+                    // 側面阻擋
+                    if (kiwi.y + kiwi.h > pRect.y + 5) {
+                         if (kiwi.vx > 0 && kiwi.x + kiwi.w < obj.x + 20) {
+                            kiwi.x = obj.x - kiwi.w;
+                        } else if (kiwi.vx < 0 && kiwi.x > obj.x + obj.w - 20) {
+                            kiwi.x = obj.x + obj.w;
+                        }
+                    }
+                    // 上方站立
+                    if (kiwi.vy >= 0 && 
+                        kiwi.x + kiwi.w > obj.x + 5 && kiwi.x < obj.x + obj.w - 5 &&
+                        kiwi.y + kiwi.h >= GROUND_Y - obj.h && kiwi.y + kiwi.h <= GROUND_Y - obj.h + 10) {
+                        kiwi.y = GROUND_Y - obj.h - kiwi.h;
+                        kiwi.vy = 0;
+                        kiwi.onGround = true;
+                    }
+                }
+            }
+            
+            if (obj.type === 'heart' && obj.active) {
+                if (checkRectCollide(kiwi, {x: obj.x, y: obj.y, w: 20, h: 20})) {
+                    obj.active = false;
+                    if (kiwi.hp < 3) {
+                        kiwi.hp++;
+                        document.getElementById('hp-display').innerText = kiwi.hp;
+                    }
+                }
+            }
+            
+            if (obj.type === 'lava') {
+                 if (checkRectCollide(kiwi, {x: obj.x + 10, y: GROUND_Y-10, w: obj.w - 20, h: 40})) {
+                    kiwi.hurt(-8); 
+                }
+            } else if (obj.type === 'ice') {
+                 if (checkRectCollide(kiwi, {x: obj.x, y: GROUND_Y-10, w: obj.w, h: 40})) {
+                      if (kiwi.onGround) onAnyIce = true;
+                 }
+            }
+        });
+        
+        kiwi.onIce = onAnyIce;
+
+        // 靜態平台碰撞
+        if (level.platforms) {
+            level.platforms.forEach(p => {
+                if (kiwi.vy >= 0 && 
+                    kiwi.x + kiwi.w > p.x && kiwi.x < p.x + p.w &&
+                    kiwi.y + kiwi.h >= p.y && kiwi.y + kiwi.h <= p.y + 15) { 
+                    
+                    kiwi.y = p.y - kiwi.h;
+                    kiwi.vy = 0;
+                    kiwi.onGround = true;
+                }
+            });
+        }
+
+        // 移動平台碰撞
+        if (level.movingPlatforms) {
+            level.movingPlatforms.forEach(p => {
+                if (kiwi.vy >= 0 && 
+                    kiwi.x + kiwi.w > p.x && kiwi.x < p.x + p.w &&
+                    kiwi.y + kiwi.h >= p.y && kiwi.y + kiwi.h <= p.y + 15) { 
+                    
+                    kiwi.y = p.y - kiwi.h;
+                    kiwi.vy = 0; // 跟隨平台Y軸不需要設vy，直接設定y即可
+                    kiwi.onGround = true;
+                    kiwi.onPlatform = p;
+                }
+            });
+        }
+        // 如果在平台上，跟隨平台移動
+        if (kiwi.onPlatform) {
+             // 這裡其實不需要額外做X軸跟隨，因為平台只動Y。若平台動X，則需要 kiwi.x += platform.vx
+             // 但為了確保貼合，再次鎖定Y
+             kiwi.y = kiwi.onPlatform.y - kiwi.h;
+        }
+
+        // 敵人碰撞 (踩頭判定)
+        if (level.enemies) {
+            level.enemies.forEach(e => {
+                if (!e.active || e.squished) return;
+                
+                // 簡單矩形碰撞
+                if (checkRectCollide(kiwi, {x: e.x, y: e.y, w: e.w, h: e.h})) {
+                    // 判定是否踩在頭上：kiwi在下降中，且kiwi底部高於敵人中心
+                    if (kiwi.vy > 0 && kiwi.y + kiwi.h < e.y + e.h / 2 + 10) {
+                        e.squished = true;
+                        kiwi.bounce();
+                        setTimeout(() => e.active = false, 500); // 0.5秒後消失
+                    } else {
+                        kiwi.hurt(e.x > kiwi.x ? -5 : 5);
+                    }
+                }
+            });
+        }
+
+        level.spikes.forEach(s => {
+            if (kiwi.x + kiwi.w > s.x + 5 && kiwi.x < s.x + 25 && kiwi.y + kiwi.h > s.y - 10) {
+                kiwi.hurt(-10);
+            }
+        });
+
+        if (!boss.active && kiwi.x > level.bossX - 100 && gameState === 'PLAYING') {
+            startBossBattle();
+        }
+
+        // 檢查是否拿到選票 (終點)
+        if (!boss.active && gameState === 'PLAYING') {
+            let bRect = ballot.draw(level.flagX, GROUND_Y); 
+            if (checkRectCollide(kiwi, {x: bRect.x, y: bRect.y, w: bRect.w, h: bRect.h})) {
+                levelClear();
+            }
+        }
+        
+        // 過場動畫：鳥走出畫面右側後切換關卡
+        if (gameState === 'LEVEL_CLEAR_WALK' && kiwi.x > cameraX + 850) { 
+            nextLevel();
+        }
+
+        bricks.forEach(b => {
+            if (kiwi.x + kiwi.w > b.x && kiwi.x < b.x + b.w &&
+                kiwi.y < b.y + b.h && kiwi.y > b.y && kiwi.vy < 0) {
+                checkAnswer(b);
+                kiwi.vy = 4; 
+            }
+        });
+    }
+
+    function checkIce(x, w) {
+        return false;
+    }
+
+    function checkPipeEntry() {
+        let level = levels[currentLevel];
+        let pipe = level.mapObjects.find(obj => {
+            return obj.type === 'pipe' && 
+                   kiwi.x + kiwi.w/2 > obj.x && 
+                   kiwi.x + kiwi.w/2 < obj.x + obj.w &&
+                   kiwi.y + kiwi.h >= GROUND_Y - obj.h; 
+        });
+
+        if (pipe && pipe.dest) {
+            kiwi.state = 'pipe_in';
+            kiwi.targetPipeId = pipe.dest;
+            kiwi.pipeTimer = 30;
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = levels[currentLevel].bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.translate(-cameraX, 0);
+
+        ctx.fillStyle = levels[currentLevel].groundColor;
+        ctx.fillRect(cameraX, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+        let level = levels[currentLevel];
+        ctx.fillRect(level.bossX - 100, GROUND_Y, 1500, canvas.height - GROUND_Y);
+
+        if (level.platforms) {
+            ctx.fillStyle = "#e67e22"; 
+            level.platforms.forEach(p => {
+                ctx.fillRect(p.x, p.y, p.w, 15);
+                ctx.strokeStyle = "#d35400";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(p.x, p.y, p.w, 15);
+                ctx.fillStyle = "black";
+                ctx.fillRect(p.x+2, p.y+2, 2, 2);
+                ctx.fillRect(p.x+p.w-4, p.y+2, 2, 2);
+                ctx.fillStyle = "#e67e22";
+            });
+        }
+
+        // 繪製移動平台
+        if (level.movingPlatforms) {
+            level.movingPlatforms.forEach(p => p.draw());
+        }
+        
+        level.mapObjects.forEach(obj => {
+            if (obj.x > level.bossX - 50 && (obj.type === 'lava')) return;
+
+            if (obj.type === 'lava') {
+                let time = Date.now() / 200;
+                let gradient = ctx.createLinearGradient(obj.x, GROUND_Y, obj.x, GROUND_Y+20);
+                gradient.addColorStop(0, '#e74c3c');
+                gradient.addColorStop(1, '#c0392b');
+                ctx.fillStyle = gradient;
+                
+                ctx.beginPath();
+                ctx.moveTo(obj.x, GROUND_Y);
+                for(let i=0; i<=obj.w; i+=10) {
+                    ctx.lineTo(obj.x + i, GROUND_Y + Math.sin(time + i/20)*3);
+                }
+                ctx.lineTo(obj.x + obj.w, GROUND_Y + 20);
+                ctx.lineTo(obj.x, GROUND_Y + 20);
+                ctx.fill();
+            } else if (obj.type === 'ice') {
+                ctx.fillStyle = "rgba(180, 230, 255, 0.7)";
+                ctx.fillRect(obj.x, GROUND_Y-5, obj.w, 25);
+                let shine = (Date.now() / 5) % (obj.w + 40) - 20;
+                ctx.fillStyle = "rgba(255,255,255,0.8)";
+                ctx.beginPath();
+                ctx.moveTo(obj.x + shine, GROUND_Y-5);
+                ctx.lineTo(obj.x + shine + 10, GROUND_Y-5);
+                ctx.lineTo(obj.x + shine - 10, GROUND_Y+20);
+                ctx.lineTo(obj.x + shine - 20, GROUND_Y+20);
+                ctx.fill();
+
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obj.x, GROUND_Y-5, obj.w, 25);
+            } else if (obj.type === 'pipe') {
+                let pY = GROUND_Y - obj.h;
+                let grad = ctx.createLinearGradient(obj.x, pY, obj.x + obj.w, pY);
+                grad.addColorStop(0, '#2ecc71');
+                grad.addColorStop(0.5, '#a9dfbf');
+                grad.addColorStop(1, '#27ae60');
+                ctx.fillStyle = grad;
+                
+                ctx.fillRect(obj.x + 2, pY + 20, obj.w - 4, obj.h - 20);
+                ctx.fillRect(obj.x, pY, obj.w, 20);
+                
+                ctx.strokeStyle = "#1e8449";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obj.x, pY, obj.w, 20);
+                ctx.strokeRect(obj.x + 2, pY + 20, obj.w - 4, obj.h - 20);
+            } else if (obj.type === 'heart' && obj.active) {
+                // 愛心繪製
+                let hx = obj.x + 10; 
+                let hy = obj.y + 10 + Math.sin(Date.now() / 300) * 5; 
+                ctx.fillStyle = "#e74c3c";
+                ctx.beginPath();
+                ctx.moveTo(hx, hy + 5);
+                ctx.bezierCurveTo(hx, hy, hx - 10, hy - 10, hx - 10, hy - 5);
+                ctx.bezierCurveTo(hx - 10, hy + 5, hx, hy + 10, hx, hy + 15);
+                ctx.bezierCurveTo(hx, hy + 10, hx + 10, hy + 5, hx + 10, hy - 5);
+                ctx.bezierCurveTo(hx + 10, hy - 10, hx, hy, hx, hy + 5);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(hx - 5, hy - 5, 5, 0, Math.PI, true);
+                ctx.arc(hx + 5, hy - 5, 5, 0, Math.PI, true);
+                ctx.lineTo(hx, hy + 8);
+                ctx.fill();
+            }
+        });
+
+        ctx.fillStyle = "#7f8c8d";
+        level.spikes.forEach(s => {
+            ctx.beginPath();
+            ctx.moveTo(s.x, s.y);
+            ctx.lineTo(s.x + 10, s.y - 20);
+            ctx.lineTo(s.x + 20, s.y);
+            ctx.fill();
+        });
+
+        // 繪製敵人
+        if (level.enemies) {
+            level.enemies.forEach(e => e.draw());
+        }
+
+        // 繪製選票 (只在非 BOSS 戰顯示)
+        if (!boss.active) {
+            ballot.draw(level.flagX, GROUND_Y);
+        }
+
+        boss.draw();
+        projectiles.forEach(p => p.draw());
+        kiwi.draw();
+
+        bricks.forEach(b => {
+            ctx.fillStyle = "#f39c12"; 
+            ctx.fillRect(b.x, b.y, b.w, b.h);
+            
+            ctx.fillStyle = "#e67e22";
+            ctx.fillRect(b.x + 2, b.y + 2, b.w - 4, b.h - 4);
+
+            ctx.fillStyle = "#2c3e50";
+            ctx.font = "bold 14px Arial"; 
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            
+            let text = b.text;
+            if (text.length > 5) ctx.font = "bold 12px Arial"; 
+            ctx.fillText(text, b.x + b.w/2, b.y + b.h/2);
+            
+            ctx.fillStyle = "#d35400";
+            ctx.fillRect(b.x, b.y, 4, 4);
+            ctx.fillRect(b.x + b.w - 4, b.y, 4, 4);
+            ctx.fillRect(b.x, b.y + b.h - 4, 4, 4);
+            ctx.fillRect(b.x + b.w - 4, b.y + b.h - 4, 4, 4);
+        });
+
+        ctx.restore();
+    }
+
+    function checkRectCollide(r1, r2) {
+        return (r1.x < r2.x + r2.w && r1.x + r1.w > r2.x &&
+                r1.y < r2.y + r2.h && r1.y + r1.h > r2.y);
+    }
+
+    function startBossBattle() {
+        boss.active = true;
+        boss.x = levels[currentLevel].bossX + 200; 
+        gameState = 'BOSS';
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        let qData = levels[currentLevel].questions[boss.qIndex];
+        if (!qData) {
+            bossDefeated();
+            return;
+        }
+
+        document.getElementById('question-panel').style.display = 'block';
+        document.getElementById('q-text').innerText = qData.q;
+
+        bricks = [];
+        let centerX = levels[currentLevel].bossX;
+        let startY = 320; 
+        
+        qData.options.forEach((opt, index) => {
+            bricks.push({
+                x: centerX + 50 + (index * 110), 
+                y: startY,
+                w: 100,
+                h: 40,
+                text: opt.text,
+                correct: opt.correct
+            });
+        });
+    }
+
+    function checkAnswer(brick) {
+        if (brick.correct) {
+            kiwi.state = 'big';
+            document.getElementById('status-display').innerText = "CORRECT!";
+            boss.react('happy');
+            
+            bricks = [];
+            boss.qIndex++;
+            setTimeout(() => {
+                if (gameState !== 'GAMEOVER') loadQuestion();
+            }, 2000); 
+
+        } else {
+            document.getElementById('status-display').innerText = "WRONG!";
+            boss.attack(); 
+            triggerDamageEffect();
+            kiwi.hurt();
+
+            bricks = [];
+            boss.qIndex++;
+            setTimeout(() => {
+                if (gameState !== 'GAMEOVER') loadQuestion();
+            }, 3000); 
+        }
+    }
+
+    function bossDefeated() {
+        boss.active = false;
+        document.getElementById('question-panel').style.display = 'none';
+        document.getElementById('status-display').innerText = "GET THE VOTE!";
+        gameState = 'PLAYING'; 
+    }
+
+    function levelClear() {
+        gameState = 'LEVEL_CLEAR_WALK';
+        document.getElementById('status-display').innerText = "VOTE CAST!";
+        kiwi.onPlatform = null; // 清除平台狀態
+    }
+
+    function nextLevel() {
+        projectiles = [];
+        
+        if (currentLevel < levels.length - 1) {
+            currentLevel++;
+            document.getElementById('level-display').innerText = levels[currentLevel].name;
+            document.getElementById('status-display').innerText = "READY";
+            
+            boss.active = false;
+            boss.qIndex = 0;
+            kiwi.x = 100;
+            kiwi.y = 300;
+            kiwi.vx = 0; 
+            kiwi.vy = 0;
+            kiwi.angle = 0;
+            kiwi.state = 'normal'; 
+            kiwi.onPlatform = null;
+            
+            gameState = 'PLAYING';
+            cameraX = 0;
+        } else {
+            gameState = 'WIN';
+            document.getElementById('win-screen').style.display = 'flex';
+        }
+    }
+
+    const bindTouch = (id, key) => {
+        let el = document.getElementById(id);
+        const active = (e) => { e.preventDefault(); keys[key] = true; el.style.background = 'rgba(255,255,255,0.6)'; };
+        const inactive = (e) => { e.preventDefault(); keys[key] = false; el.style.background = 'rgba(255,255,255,0.3)'; };
+        
+        el.addEventListener('touchstart', active);
+        el.addEventListener('touchend', inactive);
+        el.addEventListener('mousedown', active);
+        el.addEventListener('mouseup', inactive);
+    };
+    bindTouch('btn-left', 'ArrowLeft');
+    bindTouch('btn-right', 'ArrowRight');
+    bindTouch('btn-jump', 'ArrowUp');
+    bindTouch('btn-down', 'ArrowDown'); 
+
+    window.addEventListener('keydown', e => { 
+        if(keys.hasOwnProperty(e.code)) keys[e.code] = true; 
+    });
+    window.addEventListener('keyup', e => { 
+        if(keys.hasOwnProperty(e.code)) keys[e.code] = false; 
+    });
+
+</script>
+</body>
+</html>
