@@ -672,7 +672,7 @@
 
             } else if (gameState === 'LEVEL_CLEAR_WALK') {
                 // 過場動畫：自動往右走
-                this.vx = 2; 
+                this.vx = 4; // 加快離場速度
                 this.vy += GRAVITY;
                 // 簡單的走路跳躍感
                 if (this.onGround && Math.random() > 0.9) this.vy = -3;
@@ -969,10 +969,8 @@
             let maxCam = levels[currentLevel].flagX - 400;
             if (targetCameraX > maxCam) targetCameraX = maxCam;
             cameraX += (targetCameraX - cameraX) * 0.1;
-        } else {
-             // 通關時攝影機慢慢往右
-             cameraX += 2;
-        }
+        } 
+        // 修正：通關時不再移動攝影機，讓鳥能走出畫面
 
         
         let onAnyIce = false;
@@ -1097,7 +1095,7 @@
         }
         
         // 過場動畫：鳥走出畫面右側後切換關卡
-        if (gameState === 'LEVEL_CLEAR_WALK' && kiwi.x > cameraX + 850) { 
+        if (gameState === 'LEVEL_CLEAR_WALK' && kiwi.x > cameraX + 820) { 
             nextLevel();
         }
 
