@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@600&display=swap" rel="stylesheet">
     <style>
+        /* 這裡是你原本的自訂 CSS，現在全部整合進來，不會弄丟了 */
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #0f172a;
@@ -159,16 +160,14 @@
 <body>
 
     <div id="game-container" class="w-full h-full rpg-box relative flex flex-col">
-        <!-- Effects Layers -->
         <div id="slash-effect" class="slash-overlay"></div>
         <div id="scan-effect" class="scan-overlay"></div>
         <div id="beam-effect" class="beam-overlay"></div>
         <div id="shield-effect" class="shield-overlay"></div>
         <div id="burst-effect" class="burst-overlay"></div>
-        <div id="damage-effect" class="damage-overlay"></div> <!-- Added back -->
+        <div id="damage-effect" class="damage-overlay"></div>
         <div id="damage-flash" class="damage-flash"></div>
 
-        <!-- Start Screen -->
         <div id="screen-start" class="absolute inset-0 flex flex-col items-center justify-center space-y-8 z-30 bg-[#0f172a]/95 backdrop-blur-sm">
             <h1 class="text-6xl md:text-8xl font-bold tracking-widest text-center text-sky-400 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">會考閱讀勇者<br><span class="text-3xl md:text-4xl mt-4 block text-white">～ 決戰六到九式 ～</span></h1>
             <p class="text-gray-300 text-center max-w-2xl px-6 text-xl md:text-2xl leading-loose">
@@ -179,7 +178,6 @@
             <button onclick="startGame()" class="rpg-font px-12 py-4 bg-sky-600 text-white rounded-full text-3xl hover:bg-sky-500 hover:scale-105 transition-all shadow-[0_0_20px_rgba(56,189,248,0.6)]">開始修煉</button>
         </div>
 
-        <!-- Map Screen -->
         <div id="screen-map" class="hidden absolute inset-0 p-8 flex flex-col z-20 bg-[#0f172a]">
             <h2 class="text-4xl md:text-5xl mb-8 text-center text-sky-300 drop-shadow-lg rpg-font">選擇修煉關卡</h2>
             <div class="flex-grow flex items-center justify-center">
@@ -209,7 +207,6 @@
             <div class="mt-4 text-center text-2xl text-yellow-400 font-mono font-bold drop-shadow-md">勇者階級：LV <span id="hero-lv">1</span></div>
         </div>
 
-        <!-- Weapon Review -->
         <div id="screen-review" class="hidden absolute inset-0 p-6 md:p-12 flex flex-col z-30 bg-slate-900/98 backdrop-blur">
             <h2 class="text-4xl md:text-5xl mb-4 text-center text-sky-400 rpg-font drop-shadow-md">獲得傳說武器！</h2>
             <div class="flex-grow flex flex-col items-center justify-center text-center">
@@ -227,7 +224,6 @@
             </div>
         </div>
 
-        <!-- Battle Screen -->
         <div id="screen-battle" class="hidden absolute inset-0 flex flex-col battle-bg p-4 overflow-hidden">
             <div id="monster-bg-container" class="monster-bg-container monster-anim">
                 <span id="monster-bg-sprite">🐲</span>
@@ -356,7 +352,7 @@
                 questions: [
                     { passage: "余嘗於土庫街，見一丐，雖跛一足，而敝衣之中，皆蓄書也。......人遺之錢，則謝不受；遺之書，則「俛」而受之。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】文中「俛」字的意思最接近下列何者？<br>(A) 勉強<br>(B) 低頭<br>(C) 快速</div>", steps: [{q:"【定位】請用稜鏡鎖定目標字「俛」：", opts:["敝衣", "俛", "謝不受"], ans:1, damage:100, guide:"發射黃光定位...", highlight:"俛", highlightType:"target", feedback:"目標已鎖定！"}, {q:"【線索】乞丐拿到書很高興，動作上會如何表示感謝？", opts:["高傲地拿走", "低頭彎腰接受", "勉強收下"], ans:1, damage:100, guide:"藍光尋找線索...", highlight:"受之", highlightType:"clue", feedback:"語境線索確認。"}, {q:"【折射】綜合推論，「俛」通「俯」，意思是？", opts:["(A) 勉強", "(B) 低頭", "(C) 快速"], ans:1, damage:100, guide:"推導字義！", highlight:"俛", feedback:"推論正確！"}] },
                     { passage: "（蜀賈）乃取其易售者，標之以廉價；取其不易售者，居之以奇價。人爭趨之。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】文中「居」字的意思為何？<br>(A) 居住<br>(B) 囤積<br>(C) 歸還</div>", steps: [{q:"【定位】鎖定目標字「居」：", opts:["易售者", "廉價", "居"], ans:2, damage:100, guide:"定位...", highlight:"居", highlightType:"target", feedback:"鎖定！"}, {q:"【線索】商人對「不易售」（難賣）的貨物，會怎麼做？", opts:["立刻丟掉", "拿來住", "囤積起來等待高價"], ans:2, damage:100, guide:"分析行為...", highlight:"取其不易售者", highlightType:"clue", feedback:"線索：難賣的先放著。"}, {q:"【折射】成語「奇貨可居」的「居」，意思是？", opts:["(A) 居住", "(B) 囤積", "(C) 歸還"], ans:1, damage:100, guide:"字義透視！", feedback:"石像崩解！"}] },
-                    { passage: "子曰：「學而不思則罔，思而不學則殆。」<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】關於「罔」與「殆」的解釋，何者恰當？<br>(A) 罔：迷惘 / 殆：危險<br>(B) 罔：漁網 / 殆：怠惰<br>(C) 罔：欺騙 / 殆：死亡</div>", steps: [{q:"【魔王戰】先分析「學而不思則罔」：", opts:["只思考不學習", "只學習不思考", "不學也不思"], ans:1, damage:100, guide:"分析前半句...", highlight:"學而不思則罔", highlightType:"clue", feedback:"情境：死讀書。"}, {q:"【魔王戰】只讀書不想像，結果會如何？", opts:["會被魚網網住", "會欺騙老師", "會感到迷惘"], ans:2, damage:100, guide:"推導罔...", highlight:"罔", highlightType:"target", feedback:"罔 = 迷惘！"}, {q:"【魔王戰】接著分析「思而不學則殆」：", opts:["空想而不學習", "學習而不空想", "很危險"], ans:0, damage:100, guide:"分析後半句...", highlight:"思而不學則殆", highlightType:"clue", feedback:"情境：空想。"}, {q:"【魔王戰】整天胡思亂想卻沒根基，精神狀態會？", opts:["很懶惰", "很危險、疑惑不安", "死掉"], ans:1, damage:100, guide:"推導殆...", highlight:"殆", highlightType:"target", feedback:"殆 = 危殆！"}, {q:"【奧義】綜合以上，選出正確解釋：", opts:["(A)", "(B)", "(C)"], ans:0, damage:100, guide:"終極光束！", highlight:"(A) 罔：迷惘 / 殆：危險", feedback:"文言魔神被淨化了！"}] }
+                    { passage: "子曰：「學而不思則罔，思而不學則殆。」<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】關於「罔」與「殆」的解釋，何者恰當？<br>(A) 罔：迷惘 / 殆：危險<br>(B) 罔：漁網 / 殆：怠惰<br>(C) 罔：欺騙 / 殆：死亡</div>", steps: [{q:"【魔王戰】先分析「學而不思則罔」：", opts:["只思考不學習", "只學習不思考", "不學也不思"], ans:1, damage:100, guide:"分析後半句...", highlight:"學而不思則罔", highlightType:"clue", feedback:"情境：死讀書。"}, {q:"【魔王戰】只讀書不想像，結果會如何？", opts:["會被魚網網住", "會欺騙老師", "會感到迷惘"], ans:2, damage:100, guide:"推導罔...", highlight:"罔", highlightType:"target", feedback:"罔 = 迷惘！"}, {q:"【魔王戰】接著分析「思而不學則殆」：", opts:["空想而不學習", "學習而不空想", "很危險"], ans:0, damage:100, guide:"分析後半句...", highlight:"思而不學則殆", highlightType:"clue", feedback:"情境：空想。"}, {q:"【魔王戰】整天胡思亂想卻沒根基，精神狀態會？", opts:["很懶惰", "很危險、疑惑不安", "死掉"], ans:1, damage:100, guide:"推導殆...", highlight:"殆", highlightType:"target", feedback:"殆 = 危殆！"}, {q:"【奧義】綜合以上，選出正確解釋：", opts:["(A)", "(B)", "(C)"], ans:0, damage:100, guide:"終極光束！", highlight:"(A) 罔：迷惘 / 殆：危險", feedback:"文言魔神被淨化了！"}] }
                 ]
             },
             {
