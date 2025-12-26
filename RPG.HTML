@@ -3,322 +3,451 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>會考閱讀勇者：六到九式挑戰</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>會考閱讀勇者：六到九式挑戰 (Gemini 5 Edition)</title>
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@600&display=swap" rel="stylesheet">
+    
     <style>
+        /* =========================================
+           Gemini 5 - 原生 CSS 核心引擎 (不依賴外部庫)
+           ========================================= */
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --primary: #0ea5e9; /* Sky-500 */
+            --primary-glow: #38bdf8;
+            --accent: #eab308; /* Yellow-500 */
+            --danger: #ef4444; /* Red-500 */
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: #0f172a;
-            color: #38bdf8;
+            font-family: 'Noto Sans TC', "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             overflow: hidden;
             margin: 0;
             padding: 0;
-            user-select: none;
             width: 100vw;
             height: 100vh;
+            user-select: none;
         }
+
         h1, h2, .rpg-font {
-            font-family: 'ZCOOL KuaiLe', cursive;
+            font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
         }
-        #passage-text {
-            font-family: 'Noto Serif TC', serif;
-            line-height: 2.2;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-        }
-        .rpg-box {
+
+        /* 通用工具類 */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .absolute-fill { position: absolute; inset: 0; width: 100%; height: 100%; }
+        
+        /* 容器與背景 */
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
             background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
         }
-        .battle-bg {
-            background: linear-gradient(180deg, #020617 0%, #1e293b 100%);
-            position: relative;
-            z-index: 1;
+
+        .backdrop {
+            background-color: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 30;
         }
-        .hp-bar {
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        /* 按鈕樣式 */
+        .btn-start {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            padding: 1rem 3rem;
+            font-size: 2rem;
+            color: white;
+            background-color: #0284c7;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+            transition: transform 0.2s, background 0.2s;
         }
-        
-        /* --- MONSTER VISUALS --- */
-        .monster-bg-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90vh;
-            height: 90vh;
+        .btn-start:hover { transform: scale(1.05); background-color: #0ea5e9; }
+        .btn-start:active { transform: scale(0.95); }
+
+        .btn-action {
+            width: 100%;
+            height: 100%;
+            background-color: #dc2626;
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+            border-radius: 12px;
+            border: 4px solid #991b1b;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 0; 
-            pointer-events: none;
-            opacity: 1; 
-            font-size: 38rem; 
-            transition: all 0.2s ease;
-            filter: drop-shadow(0 0 60px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,255,255,0.2)); 
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .btn-action:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+        .btn-action:not(:disabled):hover { background-color: #ef4444; }
+        .btn-action:not(:disabled):active { transform: scale(0.95); }
+
+        /* 地圖關卡按鈕 */
+        .stage-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1200px;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        @media (min-width: 768px) { .stage-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .stage-grid { grid-template-columns: repeat(4, 1fr); } }
+
+        .stage-btn {
+            height: 300px;
+            background: rgba(30, 41, 59, 0.6);
+            border: 4px solid #334155;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .stage-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .stage-btn:not(:disabled) { border-color: var(--primary); background: rgba(30, 41, 59, 0.9); color: white; }
+        .stage-btn:not(:disabled):hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.5); background: rgba(15, 23, 42, 0.9); }
+        .stage-icon { font-size: 4rem; margin-bottom: 1rem; }
+
+        /* 戰鬥介面配置 */
+        .battle-header {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 0 20px;
+            margin-bottom: 10px;
+            z-index: 10;
+        }
+        .hp-container { flex: 1; margin: 0 20px; display: flex; flex-direction: column; align-items: center; }
+        .hp-track { width: 100%; height: 12px; background: #334155; border-radius: 6px; overflow: hidden; position: relative; border: 1px solid #000; }
+        .hp-fill { height: 100%; transition: width 0.3s ease; }
+        .hp-player { background: linear-gradient(90deg, #0284c7, #38bdf8); }
+        .hp-enemy { background: linear-gradient(90deg, #dc2626, #f87171); }
+
+        .battle-main {
+            flex: 1;
+            display: flex;
+            gap: 1rem;
+            overflow: hidden;
+            position: relative;
+            z-index: 10;
+            margin-bottom: 1rem;
+        }
+        .text-panel {
+            flex: 7;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            overflow-y: auto;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.5rem;
+            line-height: 2.2;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+        .guide-panel {
+            flex: 3;
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid rgba(234, 179, 8, 0.5);
+            border-radius: 16px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
         }
 
-        @keyframes monster-breath {
-            0% { transform: translate(-50%, -50%) scale(1); filter: brightness(1) drop-shadow(0 0 30px rgba(255,0,0,0.3)); }
-            50% { transform: translate(-50%, -50%) scale(1.05); filter: brightness(1.2) drop-shadow(0 0 60px rgba(255,50,0,0.6)); }
-            100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1) drop-shadow(0 0 30px rgba(255,0,0,0.3)); }
-        }
-        .monster-anim {
-            animation: monster-breath 5s ease-in-out infinite;
-        }
-
-        /* Fixed Hit Animation: No translate(-50%, -50%) to avoid jumping */
-        .monster-hit {
-            animation: hitViolent 0.3s cubic-bezier(.36,.07,.19,.97) both;
-            filter: brightness(3) sepia(1) hue-rotate(-50deg) saturate(5) drop-shadow(0 0 50px red) !important; 
-            color: #ef4444 !important;
-        }
-        @keyframes hitViolent {
-            0% { transform: scale(1); }
-            20% { transform: scale(0.9) translate3d(-15px, 15px, 0); }
-            40% { transform: scale(0.95) translate3d(15px, -15px, 0); }
-            60% { transform: scale(1.1) translate3d(-15px, -15px, 0); }
-            80% { transform: scale(0.95) translate3d(15px, 15px, 0); }
-            100% { transform: scale(1); }
+        .question-area {
+            height: 35%;
+            min-height: 220px;
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 4px solid var(--primary);
+            border-radius: 16px 16px 0 0;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
         }
 
-        /* --- PLAYER DAMAGE EFFECTS --- */
-        .shake-screen { animation: shakeScreen 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shakeScreen { 
-            10%, 90% { transform: translate3d(-5px, 0, 0); } 
-            20%, 80% { transform: translate3d(10px, 0, 0); } 
-            30%, 50%, 70% { transform: translate3d(-20px, 0, 0); } 
-            40%, 60% { transform: translate3d(20px, 0, 0); } 
+        .options-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            overflow-y: auto;
         }
+        @media (min-width: 768px) { .options-container { grid-template-columns: 1fr 1fr; } }
         
-        .damage-flash {
+        .opt-btn {
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .opt-btn:hover { background: #334155; border-color: var(--primary); }
+        .opt-btn.selected {
+            border-color: var(--accent);
+            background: rgba(234, 179, 8, 0.2);
+            color: white;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.3);
+            transform: scale(1.01);
+        }
+        .opt-btn.correct { background: #064e3b !important; border-color: #34d399 !important; color: #fff !important; }
+        .opt-btn.wrong { background: #7f1d1d !important; border-color: #f87171 !important; color: #fff !important; animation: shake 0.3s; }
+
+        .opt-tag {
+            display: inline-flex;
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 50%;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            margin-right: 10px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        /* 怪物背景與動畫 */
+        #monster-bg-container {
             position: absolute;
-            inset: 0;
-            background-color: rgba(220, 38, 38, 0.6);
-            z-index: 60;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40vh;
+            opacity: 0.3;
+            filter: blur(2px) grayscale(0.5);
+            z-index: 0;
             pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.1s;
+            transition: all 0.3s;
         }
-
-        /* --- ATTACK EFFECTS --- */
-        .slash-overlay { position: absolute; top: 50%; left: 50%; width: 0; height: 20px; background: #fff; box-shadow: 0 0 40px #fff, 0 0 80px #00ccff; transform: translate(-50%, -50%) rotate(-45deg); opacity: 0; z-index: 50; pointer-events: none; }
-        .slash-active { animation: slashAnim 0.3s ease-out forwards; }
-        @keyframes slashAnim { 0% { width: 0; opacity: 1; transform: translate(-50%, -50%) rotate(-45deg) scaleX(0); } 50% { width: 180%; opacity: 1; transform: translate(-50%, -50%) rotate(-45deg) scaleX(1); } 100% { width: 180%; opacity: 0; transform: translate(-50%, -50%) rotate(-45deg) scaleX(1); } }
-
-        .scan-overlay { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border-radius: 50%; border: 10px solid #38bdf8; background: rgba(56, 189, 248, 0.2); transform: translate(-50%, -50%); opacity: 0; z-index: 50; pointer-events: none; }
-        .scan-active { animation: scanAnim 0.8s ease-out forwards; }
-        @keyframes scanAnim { 0% { width: 10px; height: 10px; opacity: 1; border-width: 20px; } 50% { opacity: 0.8; } 100% { width: 250vw; height: 250vw; opacity: 0; border-width: 0px; } }
-
-        .beam-overlay { position: absolute; top: 50%; left: 0; width: 0; height: 150px; background: linear-gradient(90deg, rgba(255,255,255,1), rgba(0,255,255,0.8), rgba(238,130,238,0.5), rgba(0,0,0,0)); transform: translateY(-50%); opacity: 0; z-index: 50; pointer-events: none; filter: blur(8px); mix-blend-mode: screen; }
-        .beam-active { animation: beamAnim 0.5s ease-out forwards; }
-        @keyframes beamAnim { 0% { width: 0; opacity: 1; left: 0; } 40% { width: 200vw; opacity: 1; left: 0; } 100% { width: 200vw; opacity: 0; left: 200vw; } }
-
-        .burst-overlay { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: radial-gradient(circle, #fff 0%, #fbbf24 40%, transparent 70%); transform: translate(-50%, -50%); opacity: 0; z-index: 55; pointer-events: none; }
-        .burst-active { animation: burstAnim 0.8s ease-out forwards; }
-        @keyframes burstAnim { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 50% { transform: translate(-50%, -50%) scale(80); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(150); opacity: 0; } }
-
-        .shield-overlay { position: absolute; top: 50%; left: 50%; width: 100vw; height: 100vh; background: radial-gradient(circle, transparent 20%, rgba(255, 215, 0, 0.2) 80%); transform: translate(-50%, -50%); opacity: 0; z-index: 55; pointer-events: none; border: 20px solid rgba(255, 215, 0, 0.5); }
-        .shield-active { animation: shieldAnim 0.8s ease-out forwards; }
-        @keyframes shieldAnim { 0% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); } }
-
-        /* Damage Numbers */
-        .damage-popup { position: absolute; color: #ffeb3b; font-family: 'ZCOOL KuaiLe', cursive; font-size: 8rem; font-weight: bold; text-shadow: 5px 5px 0 #000; pointer-events: none; animation: damageFloat 0.8s ease-out forwards; z-index: 70; }
+        .monster-active {
+            animation: breathe 4s infinite ease-in-out;
+            opacity: 1 !important;
+            filter: none !important;
+            font-size: 50vh !important;
+            text-shadow: 0 0 50px rgba(255,0,0,0.5);
+        }
+        @keyframes breathe { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.05); } }
         
-        /* PLAYER DAMAGE POPUP */
-        .player-damage-popup { 
-            position: absolute; 
-            color: #ff2a2a; 
-            font-family: 'ZCOOL KuaiLe', cursive; 
-            font-size: 5rem; 
-            font-weight: bold; 
-            text-shadow: 3px 3px 0 #000, 0 0 15px rgba(255,0,0,0.8); 
-            pointer-events: none; 
-            animation: playerDamageFloat 0.8s ease-out forwards; 
-            z-index: 80; 
+        /* 標記樣式 */
+        .highlight-target { background: rgba(250, 204, 21, 0.6); border-bottom: 2px solid #eab308; color: white; padding: 0 4px; }
+        .highlight-clue { background: rgba(56, 189, 248, 0.5); border-bottom: 2px solid #0ea5e9; color: white; padding: 0 4px; }
+        .highlight-delete { text-decoration: line-through; color: #64748b; text-decoration-color: #ef4444; text-decoration-thickness: 3px; }
+
+        /* 特效與動畫 */
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%); } 100% { opacity: 0; transform: translate(-50%, -150%); } }
+        
+        .damage-popup {
+            position: absolute;
+            top: 40%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fbbf24;
+            font-size: 5rem;
+            font-weight: 900;
+            font-family: 'ZCOOL KuaiLe', cursive;
+            text-shadow: 3px 3px 0 #000;
+            pointer-events: none;
+            z-index: 100;
+            animation: floatUp 1s forwards;
         }
-        @keyframes damageFloat { 0% { opacity: 1; transform: translateY(0) scale(0.5); } 20% { transform: translateY(-20px) scale(1.2); } 100% { opacity: 0; transform: translateY(-150px) scale(1); } }
-        @keyframes playerDamageFloat { 0% { opacity: 1; transform: translateY(0) scale(0.5); } 20% { transform: translateY(20px) scale(1.2); } 100% { opacity: 0; transform: translateY(100px) scale(1); } }
 
-        /* Highlights */
-        .highlight-target { background-color: rgba(250, 204, 21, 0.7); color: #000; border-bottom: 3px solid #eab308; border-radius: 2px; padding: 2px 4px; font-weight: bold; box-shadow: 0 0 15px rgba(250, 204, 21, 0.6); }
-        .highlight-clue { background-color: rgba(56, 189, 248, 0.6); color: #000; border-bottom: 3px solid #0ea5e9; border-radius: 2px; padding: 2px 4px; font-weight: bold; box-shadow: 0 0 15px rgba(56, 189, 248, 0.6); }
-        .highlight-option { background-color: rgba(168, 85, 247, 0.5); color: #fff; border: 2px solid #a855f7; border-radius: 4px; padding: 2px 6px; box-shadow: 0 0 15px rgba(168, 85, 247, 0.6); font-weight: bold; }
-        .highlight-delete { text-decoration: line-through; text-decoration-color: red; text-decoration-thickness: 4px; color: #64748b; opacity: 0.6; }
+        .flash-msg {
+            position: absolute;
+            top: 30%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 6rem;
+            font-style: italic;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 0 20px var(--primary);
+            z-index: 101;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .flash-anim { animation: slash 0.6s ease-out; }
+        @keyframes slash { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
 
-        /* UI Elements */
-        .option-btn { transition: all 0.1s; }
-        .option-btn.selected { border-color: #facc15; background-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 20px rgba(234, 179, 8, 0.5); transform: scale(1.02); z-index: 10; color: white; }
-        .confirm-btn-disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
-        .confirm-btn-active { animation: pulseBtn 1s infinite; cursor: pointer; }
-        @keyframes pulseBtn { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); transform: scale(1); } 50% { box-shadow: 0 0 0 15px rgba(220, 38, 38, 0); transform: scale(1.05); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); transform: scale(1); } }
+        /* 滾動條 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        .passage-scroll::-webkit-scrollbar { width: 8px; }
-        .passage-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
-        .passage-scroll::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <div id="game-container" class="w-full h-full rpg-box relative flex flex-col">
-        <!-- Effects Layers -->
-        <div id="slash-effect" class="slash-overlay"></div>
-        <div id="scan-effect" class="scan-overlay"></div>
-        <div id="beam-effect" class="beam-overlay"></div>
-        <div id="shield-effect" class="shield-overlay"></div>
-        <div id="burst-effect" class="burst-overlay"></div>
-        <div id="damage-effect" class="damage-overlay"></div>
-        <div id="damage-flash" class="damage-flash"></div>
-
-        <!-- Start Screen -->
-        <div id="screen-start" class="absolute inset-0 flex flex-col items-center justify-center space-y-8 z-30 bg-[#0f172a]/95 backdrop-blur-sm">
-            <h1 class="text-6xl md:text-8xl font-bold tracking-widest text-center text-sky-400 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">會考閱讀勇者<br><span class="text-3xl md:text-4xl mt-4 block text-white">～ 決戰六到九式 ～</span></h1>
-            <p class="text-gray-300 text-center max-w-2xl px-6 text-xl md:text-2xl leading-loose">
-                機制修復完畢！<br>
-                從 Lv 1 開始，挑戰更強的魔王。<br>
-                答錯會直接扣血，請謹慎選擇！
+    <div id="game-container">
+        
+        <div id="screen-start" class="absolute-fill flex-center backdrop">
+            <h1 style="font-size: 4rem; color: #38bdf8; text-shadow: 0 0 15px rgba(56,189,248,0.5); margin-bottom: 0;">會考閱讀勇者</h1>
+            <h2 style="font-size: 2rem; color: white; margin-top: 10px;">～ 決戰六到九式 (修復版) ～</h2>
+            <p style="color: #cbd5e1; font-size: 1.2rem; text-align: center; margin: 2rem 0; line-height: 1.8;">
+                系統全面升級，捨棄脆弱的連結。<br>
+                從 Lv 1 開始，體驗真正的流暢戰鬥。<br>
+                答錯直接扣血，請謹慎選擇！
             </p>
-            <button onclick="startGame()" class="rpg-font px-12 py-4 bg-sky-600 text-white rounded-full text-3xl hover:bg-sky-500 hover:scale-105 transition-all shadow-[0_0_20px_rgba(56,189,248,0.6)]">開始修煉</button>
+            <button onclick="startGame()" class="btn-start">開始修煉</button>
         </div>
 
-        <!-- Map Screen -->
-        <div id="screen-map" class="hidden absolute inset-0 p-8 flex flex-col z-20 bg-[#0f172a]">
-            <h2 class="text-4xl md:text-5xl mb-8 text-center text-sky-300 drop-shadow-lg rpg-font">選擇修煉關卡</h2>
-            <div class="flex-grow flex items-center justify-center">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl h-full md:h-auto overflow-y-auto p-4">
-                    <button onclick="enterReview(0)" id="btn-0" class="stage-btn h-64 md:h-80 p-6 rounded-2xl border-4 border-sky-600 bg-slate-800/50 hover:bg-sky-900/50 transition flex flex-col items-center justify-center group relative overflow-hidden">
-                        <span class="text-6xl mb-4 group-hover:scale-125 transition duration-300">⚔️</span>
-                        <span class="text-3xl font-bold rpg-font mb-2 text-white">第六式：大意題</span>
-                        <div class="mt-2 text-center text-yellow-400 font-bold">需求等級：Lv 1</div>
+        <div id="screen-map" class="absolute-fill backdrop hidden" style="flex-direction: column; padding: 2rem;">
+            <h2 class="rpg-font" style="font-size: 3rem; color: #7dd3fc; text-align: center; margin-bottom: 2rem;">選擇修煉關卡</h2>
+            <div style="flex: 1; display: flex; justify-content: center; width: 100%;">
+                <div class="stage-grid">
+                    <button onclick="enterReview(0)" id="btn-0" class="stage-btn">
+                        <div class="stage-icon">⚔️</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">第六式：大意題</div>
+                        <div style="color: #fbbf24;">需求等級：Lv 1</div>
                     </button>
-                    <button onclick="enterReview(1)" id="btn-1" class="stage-btn h-64 md:h-80 p-6 rounded-2xl border-4 border-slate-700 bg-slate-900/50 flex flex-col items-center justify-center opacity-50 cursor-not-allowed group relative overflow-hidden" disabled>
-                        <span class="text-6xl mb-4 text-gray-500 group-hover:scale-110 transition duration-300">👓</span>
-                        <span class="text-3xl font-bold rpg-font mb-2 text-gray-400">第七式：細節題</span>
-                        <div class="mt-2 text-center text-red-400 font-bold">需求等級：Lv 15</div>
+                    <button onclick="enterReview(1)" id="btn-1" class="stage-btn" disabled>
+                        <div class="stage-icon">👓</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">第七式：細節題</div>
+                        <div style="color: #f87171;">需求等級：Lv 15</div>
                     </button>
-                     <button onclick="enterReview(2)" id="btn-2" class="stage-btn h-64 md:h-80 p-6 rounded-2xl border-4 border-slate-700 bg-slate-900/50 flex flex-col items-center justify-center opacity-50 cursor-not-allowed group relative overflow-hidden" disabled>
-                        <span class="text-6xl mb-4 text-gray-500 group-hover:scale-110 transition duration-300">💎</span>
-                        <span class="text-3xl font-bold rpg-font mb-2 text-gray-400">第八式：深難字詞</span>
-                        <div class="mt-2 text-center text-red-400 font-bold">需求等級：Lv 30</div>
+                    <button onclick="enterReview(2)" id="btn-2" class="stage-btn" disabled>
+                        <div class="stage-icon">💎</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">第八式：深難字詞</div>
+                        <div style="color: #f87171;">需求等級：Lv 30</div>
                     </button>
-                     <button onclick="enterReview(3)" id="btn-3" class="stage-btn h-64 md:h-80 p-6 rounded-2xl border-4 border-slate-700 bg-slate-900/50 flex flex-col items-center justify-center opacity-50 cursor-not-allowed group relative overflow-hidden" disabled>
-                        <span class="text-6xl mb-4 text-gray-500 group-hover:scale-110 transition duration-300">🛡️</span>
-                        <span class="text-3xl font-bold rpg-font mb-2 text-gray-400">第九式：文體拆解</span>
-                        <div class="mt-2 text-center text-red-400 font-bold">需求等級：Lv 50</div>
+                    <button onclick="enterReview(3)" id="btn-3" class="stage-btn" disabled>
+                        <div class="stage-icon">🛡️</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">第九式：文體拆解</div>
+                        <div style="color: #f87171;">需求等級：Lv 50</div>
                     </button>
                 </div>
             </div>
-            <div class="mt-4 text-center text-2xl text-yellow-400 font-mono font-bold drop-shadow-md">勇者階級：LV <span id="hero-lv">1</span></div>
-        </div>
-
-        <!-- Weapon Review -->
-        <div id="screen-review" class="hidden absolute inset-0 p-6 md:p-12 flex flex-col z-30 bg-slate-900/98 backdrop-blur">
-            <h2 class="text-4xl md:text-5xl mb-4 text-center text-sky-400 rpg-font drop-shadow-md">獲得傳說武器！</h2>
-            <div class="flex-grow flex flex-col items-center justify-center text-center">
-                <div class="text-9xl mb-6 animate-bounce" id="weapon-icon">⚔️</div>
-                <h3 id="weapon-name" class="text-5xl font-bold text-yellow-400 mb-6">武器名稱</h3>
-                <div class="bg-slate-800 p-8 rounded-2xl border-2 border-sky-600 max-w-3xl w-full text-left">
-                    <p class="text-2xl text-white mb-4 font-bold">【武器能力】</p>
-                    <ul class="space-y-4 text-xl text-gray-300 list-disc pl-6" id="weapon-desc"></ul>
-                </div>
-            </div>
-            <div class="mt-8 flex justify-center">
-                <button onclick="startCombat()" class="rpg-font px-12 py-4 bg-red-600 text-white rounded-full text-3xl hover:bg-red-500 transition shadow-[0_0_20px_rgba(220,38,38,0.6)] animate-pulse hover:animate-none transform hover:scale-105">
-                    裝備武器，進入迷宮！
-                </button>
+            <div style="text-align: center; font-size: 1.5rem; color: #fbbf24; margin-top: 1rem; font-weight: bold;">
+                勇者階級：LV <span id="hero-lv">1</span>
             </div>
         </div>
 
-        <!-- Battle Screen -->
-        <div id="screen-battle" class="hidden absolute inset-0 flex flex-col battle-bg p-4 overflow-hidden">
-            <div id="monster-bg-container" class="monster-bg-container monster-anim">
-                <span id="monster-bg-sprite">🐲</span>
+        <div id="screen-review" class="absolute-fill flex-center backdrop hidden" style="background: rgba(15, 23, 42, 0.98);">
+            <h2 class="rpg-font" style="font-size: 3rem; color: #38bdf8; margin-bottom: 1rem;">獲得傳說武器！</h2>
+            <div style="font-size: 8rem; animation: bounce 2s infinite;" id="weapon-icon">⚔️</div>
+            <h3 id="weapon-name" style="font-size: 2.5rem; color: #fbbf24; margin: 1rem 0;">武器名稱</h3>
+            <div style="background: #1e293b; padding: 2rem; border-radius: 1rem; border: 2px solid #0284c7; max-width: 600px; width: 90%;">
+                <p style="font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;">【武器能力】</p>
+                <ul id="weapon-desc" style="font-size: 1.1rem; line-height: 1.6; color: #cbd5e1; padding-left: 1.5rem;"></ul>
+            </div>
+            <button onclick="startCombat()" class="btn-start" style="margin-top: 2rem; background-color: #dc2626; box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);">
+                裝備武器，進入迷宮！
+            </button>
+        </div>
+
+        <div id="screen-battle" class="absolute-fill hidden" style="display: flex; flex-direction: column; padding: 10px;">
+            
+            <div id="monster-bg-container">🐲</div>
+            <div id="flash-msg" class="flash-msg">SLASH!</div>
+
+            <div class="battle-header">
+                <div style="display: flex; flex-direction: column; width: 200px;">
+                    <div style="display: flex; justify-content: space-between; color: #38bdf8; font-weight: bold; margin-bottom: 5px;">
+                        <span>勇者 HP</span>
+                        <span id="player-hp-text">100/100</span>
+                    </div>
+                    <div class="hp-track"><div id="player-hp-bar" class="hp-fill hp-player" style="width: 100%;"></div></div>
+                </div>
+
+                <div class="hp-container">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #f87171; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-bottom: 5px;" id="enemy-name">
+                        魔王名稱
+                    </div>
+                    <div class="hp-track" style="width: 100%; max-width: 400px; height: 16px;">
+                        <div id="enemy-hp-bar" class="hp-fill hp-enemy" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <div style="width: 150px; text-align: right; font-family: monospace; font-size: 1.2rem; color: #fbbf24; font-weight: bold;">
+                    Stage <span id="current-stage-num">1</span>-<span id="current-q-num">1</span>
+                </div>
             </div>
 
-            <div class="h-16 flex items-center justify-between px-6 bg-slate-900/90 rounded-2xl mb-2 border border-slate-700 shadow-lg shrink-0 z-10 backdrop-blur-md">
-                <div class="flex flex-col w-1/4">
-                    <div class="flex items-center gap-2">
-                        <span class="text-sky-400 font-bold text-lg">勇者 HP</span>
-                        <span class="text-sm text-gray-400" id="player-hp-text">100/100</span>
-                    </div>
-                    <div class="w-full bg-gray-800 rounded-full h-3 border border-sky-900 relative overflow-hidden">
-                        <div id="player-hp-bar" class="hp-bar h-full bg-gradient-to-r from-sky-600 to-blue-400" style="width: 100%"></div>
-                    </div>
+            <div class="battle-main">
+                <div class="text-panel">
+                    <div id="passage-text">文章載入中...</div>
                 </div>
-                <div class="flex-1 flex flex-col items-center mx-4">
-                    <div class="flex items-center gap-2">
-                        <span id="enemy-name" class="font-bold text-red-400 text-2xl shadow-black drop-shadow-md">敵人類型</span>
-                        <div id="combo-badge" class="hidden bg-yellow-500 text-black font-bold px-2 py-0.5 rounded text-sm animate-bounce">COMBO!</div>
+                <div class="guide-panel">
+                    <div style="text-align: center; border-bottom: 1px solid #475569; padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <div style="font-size: 3rem;" id="guide-weapon-icon">👓</div>
+                        <div style="color: #fbbf24; font-weight: bold;" id="guide-weapon-name">武器</div>
                     </div>
-                    <div class="w-full max-w-lg bg-gray-800 rounded-full h-3 border border-red-900 relative overflow-hidden shadow-inner mt-1">
-                        <div id="enemy-hp-bar" class="hp-bar h-full bg-gradient-to-r from-red-600 to-red-400" style="width: 100%"></div>
-                    </div>
-                </div>
-                <div class="w-1/4 text-right">
-                    <div class="text-xl font-mono text-yellow-500 font-bold">
-                        Stage <span id="current-stage-num">1</span>-<span id="current-q-num">1</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex-1 flex flex-row gap-4 overflow-hidden relative z-10 mb-2">
-                <div class="w-[70%] bg-slate-900/85 rounded-2xl p-6 overflow-y-auto passage-scroll border border-sky-700/30 relative shadow-inner backdrop-blur-sm">
-                    <span class="absolute top-4 right-4 text-sm bg-sky-900/80 px-3 py-1 rounded-full text-sky-200 border border-sky-700/50">閱讀文本</span>
-                    <div id="passage-text" class="text-2xl md:text-3xl text-gray-100 leading-loose font-serif tracking-wide transition-all duration-500"></div>
-                </div>
-
-                <div class="w-[30%] bg-slate-800/90 rounded-2xl p-4 flex flex-col border-2 border-yellow-600/50 shadow-2xl relative backdrop-blur-md">
-                    <div class="text-center mb-4 border-b border-gray-600 pb-2">
-                        <div class="text-5xl mb-2 animate-pulse" id="guide-weapon-icon">👓</div>
-                        <div class="text-yellow-400 font-bold text-xl" id="guide-weapon-name">武器</div>
-                    </div>
-                    <div class="flex-1 overflow-y-auto">
-                        <div id="guide-step-box" class="bg-slate-700 p-3 rounded-lg border-l-4 border-sky-500 mb-3">
-                            <p class="text-sky-300 font-bold text-lg mb-1">Step <span id="guide-step-idx">1</span></p>
-                            <p class="text-white text-lg leading-relaxed" id="guide-text">分析中...</p>
+                    <div style="flex: 1; overflow-y: auto;">
+                        <div style="background: #334155; padding: 1rem; border-radius: 8px; border-left: 4px solid #38bdf8;">
+                            <div style="color: #7dd3fc; font-weight: bold; margin-bottom: 0.5rem;">Step <span id="guide-step-idx">1</span></div>
+                            <div style="color: white; line-height: 1.5;" id="guide-text">提示文字</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="h-1/3 min-h-[220px] bg-slate-900/95 rounded-t-2xl p-4 flex flex-col border-t-4 border-sky-600 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] relative z-20">
-                <div class="flex justify-center w-full mb-3 shrink-0">
-                    <div id="question-text" class="text-xl font-bold text-white bg-slate-800/80 px-6 py-2 rounded-full border border-slate-600">
+            <div class="question-area">
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <span id="question-text" style="background: #1e293b; padding: 0.5rem 1.5rem; border-radius: 99px; font-weight: bold; border: 1px solid #475569;">
                         題目載入中...
-                    </div>
+                    </span>
                 </div>
-                <div class="flex-1 flex flex-col md:flex-row gap-4">
-                    <div id="options-grid" class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto content-center"></div>
-                    <div class="w-full md:w-48 flex items-center justify-center shrink-0">
-                        <button id="confirm-btn" onclick="executeAttack()" class="confirm-btn-disabled w-full h-full max-h-24 bg-red-600 text-white font-bold text-2xl rounded-xl shadow-lg border-4 border-red-800 transition-all transform active:scale-95 flex items-center justify-center gap-2" disabled>
-                            <span class="text-3xl">⚔️</span>
-                            <span>發動<br>攻擊</span>
+                <div style="display: flex; gap: 1rem; height: 100%;">
+                    <div id="options-grid" class="options-container"></div>
+                    <div style="width: 160px; flex-shrink: 0;">
+                        <button id="confirm-btn" onclick="executeAttack()" class="btn-action" disabled>
+                            <span>⚔️</span> 發動攻擊
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="screen-result" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-black/95 z-50 p-8">
-            <div id="result-icon" class="text-9xl mb-6 animate-bounce">🏆</div>
-            <h2 id="result-title" class="text-6xl font-bold mb-4 text-yellow-400 rpg-font">關卡攻略成功！</h2>
-            <p id="result-desc" class="text-2xl text-gray-300 text-center mb-10">等級提升！你已經準備好挑戰下一關了！</p>
-            <button onclick="backToMap()" class="rpg-font px-12 py-4 bg-sky-600 rounded-full text-white text-3xl hover:bg-sky-500 shadow-lg">返回地圖</button>
+        <div id="screen-result" class="absolute-fill flex-center backdrop hidden" style="z-index: 50; background: rgba(0,0,0,0.95);">
+            <div style="font-size: 6rem; margin-bottom: 1rem;">🏆</div>
+            <h2 class="rpg-font" style="font-size: 4rem; color: #fbbf24; margin-bottom: 1rem;">攻略成功！</h2>
+            <p style="font-size: 1.5rem; color: #cbd5e1; margin-bottom: 2rem;">等級提升！準備好挑戰下一關了嗎？</p>
+            <button onclick="backToMap()" class="btn-start">返回地圖</button>
         </div>
 
-        <div id="screen-gameover" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-red-950/95 z-50 p-8">
-            <div class="text-9xl mb-6 animate-pulse">💀</div>
-            <h2 class="text-6xl font-bold mb-4 text-red-500 rpg-font">修煉失敗...</h2>
-            <p class="text-2xl text-gray-300 text-center mb-10">勇者倒下了，請重新挑戰。</p>
-            <button onclick="retryStage()" class="rpg-font px-12 py-4 bg-gray-600 rounded-full text-white text-3xl hover:bg-gray-500 shadow-lg border-2 border-gray-400">重新挑戰</button>
+        <div id="screen-gameover" class="absolute-fill flex-center backdrop hidden" style="z-index: 50; background: rgba(69, 10, 10, 0.95);">
+            <div style="font-size: 6rem; margin-bottom: 1rem;">💀</div>
+            <h2 class="rpg-font" style="font-size: 4rem; color: #ef4444; margin-bottom: 1rem;">修煉失敗...</h2>
+            <p style="font-size: 1.5rem; color: #cbd5e1; margin-bottom: 2rem;">勇者倒下了，請重新挑戰。</p>
+            <button onclick="retryStage()" class="btn-start" style="background-color: #4b5563;">重新挑戰</button>
         </div>
-        <div id="flash-msg" class="hidden absolute top-1/4 left-1/2 -translate-x-1/2 text-center pointer-events-none z-50">
-            <h1 class="text-6xl md:text-8xl font-black text-white italic drop-shadow-[0_0_10px_rgba(0,0,0,1)] text-stroke" style="-webkit-text-stroke: 2px black;" id="flash-text">SLASH!</h1>
-        </div>
+
     </div>
 
     <script>
+        // 遊戲數據
         const gameData = { heroLv: 1, unlockedStages: 0, currentStageIdx: 0, currentQIdx: 0, stepIdx: 0, enemyHp: 100, maxHp: 100, playerHp: 100, playerMaxHp: 100, selectedOption: null };
 
+        // 題目與關卡資料 (保留原本內容，這裡簡略呈現結構以確保運作)
         const stages = [
             {
                 name: "第六式：大意題",
@@ -327,15 +456,15 @@
                 enemies: [ { name: "論證幽靈", sprite: "👻", hp: 300, type: "mob" }, { name: "結構巨人", sprite: "🗿", hp: 300, type: "mob" }, { name: "主旨魔龍", sprite: "🐲", hp: 500, type: "boss" } ],
                 questions: [
                     {
-                        passage: "漢娜·鄂蘭提出的「平庸之惡」，並非指涉罪犯本身極端邪惡，而是指常人放棄思考、盲目服從權威所造成的巨大災難。納粹軍官艾希曼並非生性殘暴，他只是將自己視為這部殺人機器中的一顆螺絲釘，盡忠職守地執行上級命令。然而，正是這種「不思考」的平庸，構成了人類歷史上最駭人的罪惡。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】本文所謂「平庸之惡」的意涵，下列何者正確？<br>(A) 罪大惡極的戰犯<br>(B) 放棄思考而盲從的常人<br>(C) 生性殘暴的軍官</div>",
+                        passage: "漢娜·鄂蘭提出的「平庸之惡」，並非指涉罪犯本身極端邪惡，而是指常人放棄思考、盲目服從權威所造成的巨大災難。納粹軍官艾希曼並非生性殘暴，他只是將自己視為這部殺人機器中的一顆螺絲釘，盡忠職守地執行上級命令。然而，正是這種「不思考」的平庸，構成了人類歷史上最駭人的罪惡。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】本文所謂「平庸之惡」的意涵，下列何者正確？<br>(A) 罪大惡極的戰犯<br>(B) 放棄思考而盲從的常人<br>(C) 生性殘暴的軍官</div>",
                         steps: [
                             { q: "這是關於「平庸之惡」的議論文，起手式該找什麼？", opts: ["開頭的「定義」與結尾的「結論」", "中間描寫納粹軍官的細節", "計算艾希曼殺了多少人"], ans: 0, damage: 100, guide: "判斷八二法則應用點...", feedback: "結構鎖定！" },
                             { q: "請找出作者對「平庸之惡」的最終結論（尾巴）：", opts: ["艾希曼並非生性殘暴", "他盡忠職守執行命令", "「不思考」的平庸構成了最駭人的罪惡"], ans: 2, damage: 100, guide: "揮劍斬向結論！", highlight: "正是這種「不思考」的平庸，構成了人類歷史上最駭人的罪惡。", feedback: "核心論點暴露！" },
                             { q: "根據高亮句，本文主旨為何？", opts: ["(A) 罪大惡極的戰犯", "(B) 放棄思考而盲從的常人", "(C) 生性殘暴的軍官"], ans: 1, damage: 100, guide: "給予最後一擊！", feedback: "斬斷迷思！" }
                         ]
                     },
-                    { passage: "機會成本是經濟學基石。當你選擇 A，放棄的 B 之中價值最高者，就是你的機會成本。例如你花 1 小時滑手機，放棄了打工賺 160 元或睡覺補眠。若你認為睡覺價值最高，那滑手機的機會成本就是「睡覺的價值」。了解此概念，能助我們做出更佳決策。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】作者撰寫本文的主要目的為何？<br>(A) 教導計算薪資<br>(B) 說明機會成本以優化決策<br>(C) 勸導不要滑手機</div>", steps: [{q:"這是一篇說明文，主旨通常藏在哪？", opts:["中間的舉例說明", "第一句的定義或最後一句的結論", "隨機分佈"], ans:1, damage:100, guide:"判斷位置...", feedback:"鎖定首尾！"}, {q:"請找出本文的「寫作目的」（結論）：", opts:["機會成本是經濟學基石", "例如你花 1 小時滑手機", "了解此概念，能助我們做出更佳決策"], ans:2, damage:100, guide:"鎖定尾巴！", highlight:"了解此概念，能助我們做出更佳決策。", feedback:"目的明確！"}, {q:"作者寫這段文字的核心用意是？", opts:["(A) 教導計算薪資", "(B) 說明機會成本以優化決策", "(C) 勸導不要滑手機"], ans:1, damage:100, guide:"終結！", feedback:"理解正確！"}] },
-                    { passage: "北極熊是北極圈的頂級掠食者，擁有極厚的脂肪層以抵禦嚴寒。牠們主要在海冰上獵捕海豹維生。隨著全球暖化加劇，北極海冰融化的速度越來越快，這使得北極熊的狩獵場域大幅縮減。為了尋找食物，牠們被迫游得更遠，甚至進入人類居住地。這種現象顯示，氣候變遷已對北極熊的生存造成了嚴重威脅。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】這段文字的主旨是？<br>(A) 北極熊的身體構造<br>(B) 氣候變遷威脅北極熊生存<br>(C) 人類應餵食北極熊</div>", steps: [{q:"【魔王戰】面對「現象-解釋-結論」結構，八二神劍斬向何處？", opts:["中間的獵捕過程", "開頭的動物介紹", "結尾的現象總結"], ans:2, damage:100, guide:"分析結構...", feedback:"識破結構！"}, {q:"【魔王戰】找出導致北極熊威脅的「根本原因」關鍵字：", opts:["脂肪層", "全球暖化", "海豹"], ans:1, damage:100, guide:"鎖定原因...", highlight:"全球暖化", feedback:"元兇是暖化！"}, {q:"【魔王戰】找出描述「後果」的關鍵句：", opts:["主要在海冰上獵捕海豹", "被迫游得更遠", "擁有極厚的脂肪層"], ans:1, damage:100, guide:"推導後果...", highlight:"被迫游得更遠", feedback:"生存困境！"}, {q:"【魔王戰】找出全篇結論句：", opts:["北極熊是頂級掠食者", "氣候變遷已對北極熊的生存造成了嚴重威脅", "進入人類居住地"], ans:1, damage:100, guide:"鎖定結論！", highlight:"氣候變遷已對北極熊的生存造成了嚴重威脅。", feedback:"核心暴露！"}, {q:"【奧義】這段文字主要在說明？", opts:["(A) 北極熊的身體構造", "(B) 氣候變遷威脅北極熊生存", "(C) 人類應餵食北極熊"], ans:1, damage:100, guide:"聖光爆裂！", feedback:"魔龍被淨化了！"}] }
+                    { passage: "機會成本是經濟學基石。當你選擇 A，放棄的 B 之中價值最高者，就是你的機會成本。例如你花 1 小時滑手機，放棄了打工賺 160 元或睡覺補眠。若你認為睡覺價值最高，那滑手機的機會成本就是「睡覺的價值」。了解此概念，能助我們做出更佳決策。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】作者撰寫本文的主要目的為何？<br>(A) 教導計算薪資<br>(B) 說明機會成本以優化決策<br>(C) 勸導不要滑手機</div>", steps: [{q:"這是一篇說明文，主旨通常藏在哪？", opts:["中間的舉例說明", "第一句的定義或最後一句的結論", "隨機分佈"], ans:1, damage:100, guide:"判斷位置...", feedback:"鎖定首尾！"}, {q:"請找出本文的「寫作目的」（結論）：", opts:["機會成本是經濟學基石", "例如你花 1 小時滑手機", "了解此概念，能助我們做出更佳決策"], ans:2, damage:100, guide:"鎖定尾巴！", highlight:"了解此概念，能助我們做出更佳決策。", feedback:"目的明確！"}, {q:"作者寫這段文字的核心用意是？", opts:["(A) 教導計算薪資", "(B) 說明機會成本以優化決策", "(C) 勸導不要滑手機"], ans:1, damage:100, guide:"終結！", feedback:"理解正確！"}] },
+                    { passage: "北極熊是北極圈的頂級掠食者，擁有極厚的脂肪層以抵禦嚴寒。牠們主要在海冰上獵捕海豹維生。隨著全球暖化加劇，北極海冰融化的速度越來越快，這使得北極熊的狩獵場域大幅縮減。為了尋找食物，牠們被迫游得更遠，甚至進入人類居住地。這種現象顯示，氣候變遷已對北極熊的生存造成了嚴重威脅。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】這段文字的主旨是？<br>(A) 北極熊的身體構造<br>(B) 氣候變遷威脅北極熊生存<br>(C) 人類應餵食北極熊</div>", steps: [{q:"【魔王戰】面對「現象-解釋-結論」結構，八二神劍斬向何處？", opts:["中間的獵捕過程", "開頭的動物介紹", "結尾的現象總結"], ans:2, damage:100, guide:"分析結構...", feedback:"識破結構！"}, {q:"【魔王戰】找出導致北極熊威脅的「根本原因」關鍵字：", opts:["脂肪層", "全球暖化", "海豹"], ans:1, damage:100, guide:"鎖定原因...", highlight:"全球暖化", feedback:"元兇是暖化！"}, {q:"【魔王戰】找出描述「後果」的關鍵句：", opts:["主要在海冰上獵捕海豹", "被迫游得更遠", "擁有極厚的脂肪層"], ans:1, damage:100, guide:"推導後果...", highlight:"被迫游得更遠", feedback:"生存困境！"}, {q:"【魔王戰】找出全篇結論句：", opts:["北極熊是頂級掠食者", "氣候變遷已對北極熊的生存造成了嚴重威脅", "進入人類居住地"], ans:1, damage:100, guide:"鎖定結論！", highlight:"氣候變遷已對北極熊的生存造成了嚴重威脅。", feedback:"核心暴露！"}, {q:"【奧義】這段文字主要在說明？", opts:["(A) 北極熊的身體構造", "(B) 氣候變遷威脅北極熊生存", "(C) 人類應餵食北極熊"], ans:1, damage:100, guide:"聖光爆裂！", feedback:"魔龍被淨化了！"}] }
                 ]
             },
             {
@@ -344,9 +473,9 @@
                 weapon: { name: "鷹眼護目鏡", icon: "👓", desc: "【能力】掃描選項，透視細節。<li><strong>透視：</strong>先讀選項關鍵字。</li><li><strong>掃描：</strong>回到文章定位。</li>" },
                 enemies: [ { name: "數據蝙蝠", sprite: "🦇", hp: 300, type: "mob" }, { name: "邏輯蜘蛛", sprite: "🕷️", hp: 300, type: "mob" }, { name: "細節魔眼", sprite: "👹", hp: 500, type: "boss" } ],
                 questions: [
-                    { passage: "聚四氟乙烯（PTFE）俗稱鐵氟龍，因其極低的摩擦係數而被廣泛應用於不沾鍋塗層。PTFE 的化學性質極其穩定，耐酸鹼、耐高溫。然而，當溫度超過 260°C 時，塗層可能開始變質；若超過 350°C，則會分解產生有毒氣體。因此，使用不沾鍋時應避免空燒，且不宜使用金屬鏟，以免刮傷塗層導致物質釋出。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】關於不沾鍋的使用，下列敘述何者正確？<br>(A) 鐵氟龍耐高溫，空燒也不會釋放毒素<br>(B) 為延長壽命，應使用金屬鏟翻炒<br>(C) 超過 260°C 時，塗層性質可能改變</div>", steps: [{q:"【透視】請掃描選項 (C) 的關鍵字：", opts:["耐酸鹼、穩定", "260°C、性質改變", "金屬鏟、刮傷"], ans:1, damage:100, guide:"掃描選項 C...", highlight:"(C) 超過 260°C 時，塗層性質可能改變", feedback:"關鍵字確認！"}, {q:"【掃描】在文中找出「260°C」的相關敘述：", opts:["化學性質極其穩定", "當溫度超過 260°C 時，塗層可能開始變質", "超過 350°C，產生有毒氣體"], ans:1, damage:100, guide:"比對文章...", highlight:"當溫度超過 260°C 時，塗層可能開始變質", feedback:"數據吻合！"}, {q:"【判斷】選項 (C) 是否正確？", opts:["正確", "錯誤", "無法判斷"], ans:0, damage:100, guide:"發動攻擊！", feedback:"精準命中！"}] },
-                    { passage: "那雙粗糙的手，佈滿了歲月的刻痕，每一道裂紋都藏著為家庭操勞的故事。父親從不說愛，但餐桌上那碗總是剝好殼的蝦，卻比任何言語都震耳欲聾。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】這段文字運用了什麼寫作技巧？<br>(A) 藉事抒情<br>(B) 誇飾修辭<br>(C) 倒敘手法</div>", steps: [{q:"鎖定文章中的「具體事件」：", opts:["歲月的刻痕", "剝好殼的蝦", "震耳欲聾"], ans:1, damage:100, guide:"尋找事件...", highlight:"餐桌上那碗總是剝好殼的蝦", feedback:"事件鎖定！"}, {q:"這件事代表了什麼抽象情感？", opts:["父親很閒", "父親喜歡吃海鮮", "父親沈默但深厚的愛"], ans:2, damage:100, guide:"分析情感...", highlight:"比任何言語都震耳欲聾。", feedback:"情感連結！"}, {q:"對照選項，哪一個符合「藉事抒情」？", opts:["(A) 藉事抒情", "(B) 誇飾修辭", "(C) 倒敘手法"], ans:0, damage:100, guide:"終結！", feedback:"技巧識破！"}] },
-                    { passage: "蘇軾，字子瞻，號東坡居士。生性豪放，仕途坎坷，曾因「烏臺詩案」貶謫黃州。其文汪洋恣肆，詩詞亦豪邁奔放，與父蘇洵、弟蘇轍合稱「三蘇」，同列唐宋古文八大家。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】關於蘇軾，下列何者「錯誤」？<br>(A) 曾遭遇政治迫害<br>(B) 父親是蘇轍<br>(C) 是唐宋八大家之一</div>", steps: [{q:"【魔王戰】題目問「錯誤」，這代表什麼？", opts:["只有一個選項正確", "有兩個選項正確", "只有一個選項錯誤"], ans:2, damage:100, guide:"逆向思考...", feedback:"找出唯一的謊言！"}, {q:"【魔王戰】驗證 (A)「政治迫害」：", opts:["生性豪放", "因「烏臺詩案」貶謫黃州", "同列唐宋八大家"], ans:1, damage:100, guide:"比對 A...", highlight:"曾因「烏臺詩案」貶謫黃州", feedback:"A 是正確的！"}, {q:"【魔王戰】驗證 (B)「父親是蘇轍」：", opts:["與父蘇洵、弟蘇轍合稱「三蘇」", "字子瞻", "號東坡居士"], ans:0, damage:100, guide:"比對 B...", highlight:"與父蘇洵、弟蘇轍合稱「三蘇」", feedback:"發現矛盾！B 是錯的！"}, {q:"【魔王戰】驗證 (C)「唐宋八大家」：", opts:["仕途坎坷", "同列唐宋古文八大家", "其文汪洋恣肆"], ans:1, damage:100, guide:"比對 C...", highlight:"同列唐宋古文八大家。", feedback:"C 是正確的！"}, {q:"【奧義】選出「錯誤」的敘述：", opts:["(A)", "(B)", "(C)"], ans:1, damage:100, guide:"終結魔眼！", feedback:"細節魔眼被封印！"}] }
+                    { passage: "聚四氟乙烯（PTFE）俗稱鐵氟龍，因其極低的摩擦係數而被廣泛應用於不沾鍋塗層。PTFE 的化學性質極其穩定，耐酸鹼、耐高溫。然而，當溫度超過 260°C 時，塗層可能開始變質；若超過 350°C，則會分解產生有毒氣體。因此，使用不沾鍋時應避免空燒，且不宜使用金屬鏟，以免刮傷塗層導致物質釋出。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】關於不沾鍋的使用，下列敘述何者正確？<br>(A) 鐵氟龍耐高溫，空燒也不會釋放毒素<br>(B) 為延長壽命，應使用金屬鏟翻炒<br>(C) 超過 260°C 時，塗層性質可能改變</div>", steps: [{q:"【透視】請掃描選項 (C) 的關鍵字：", opts:["耐酸鹼、穩定", "260°C、性質改變", "金屬鏟、刮傷"], ans:1, damage:100, guide:"掃描選項 C...", highlight:"(C) 超過 260°C 時，塗層性質可能改變", feedback:"關鍵字確認！"}, {q:"【掃描】在文中找出「260°C」的相關敘述：", opts:["化學性質極其穩定", "當溫度超過 260°C 時，塗層可能開始變質", "超過 350°C，產生有毒氣體"], ans:1, damage:100, guide:"比對文章...", highlight:"當溫度超過 260°C 時，塗層可能開始變質", feedback:"數據吻合！"}, {q:"【判斷】選項 (C) 是否正確？", opts:["正確", "錯誤", "無法判斷"], ans:0, damage:100, guide:"發動攻擊！", feedback:"精準命中！"}] },
+                    { passage: "那雙粗糙的手，佈滿了歲月的刻痕，每一道裂紋都藏著為家庭操勞的故事。父親從不說愛，但餐桌上那碗總是剝好殼的蝦，卻比任何言語都震耳欲聾。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】這段文字運用了什麼寫作技巧？<br>(A) 藉事抒情<br>(B) 誇飾修辭<br>(C) 倒敘手法</div>", steps: [{q:"鎖定文章中的「具體事件」：", opts:["歲月的刻痕", "剝好殼的蝦", "震耳欲聾"], ans:1, damage:100, guide:"尋找事件...", highlight:"餐桌上那碗總是剝好殼的蝦", feedback:"事件鎖定！"}, {q:"這件事代表了什麼抽象情感？", opts:["父親很閒", "父親喜歡吃海鮮", "父親沈默但深厚的愛"], ans:2, damage:100, guide:"分析情感...", highlight:"比任何言語都震耳欲聾。", feedback:"情感連結！"}, {q:"對照選項，哪一個符合「藉事抒情」？", opts:["(A) 藉事抒情", "(B) 誇飾修辭", "(C) 倒敘手法"], ans:0, damage:100, guide:"終結！", feedback:"技巧識破！"}] },
+                    { passage: "蘇軾，字子瞻，號東坡居士。生性豪放，仕途坎坷，曾因「烏臺詩案」貶謫黃州。其文汪洋恣肆，詩詞亦豪邁奔放，與父蘇洵、弟蘇轍合稱「三蘇」，同列唐宋古文八大家。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】關於蘇軾，下列何者「錯誤」？<br>(A) 曾遭遇政治迫害<br>(B) 父親是蘇轍<br>(C) 是唐宋八大家之一</div>", steps: [{q:"【魔王戰】題目問「錯誤」，這代表什麼？", opts:["只有一個選項正確", "有兩個選項正確", "只有一個選項錯誤"], ans:2, damage:100, guide:"逆向思考...", feedback:"找出唯一的謊言！"}, {q:"【魔王戰】驗證 (A)「政治迫害」：", opts:["生性豪放", "因「烏臺詩案」貶謫黃州", "同列唐宋八大家"], ans:1, damage:100, guide:"比對 A...", highlight:"曾因「烏臺詩案」貶謫黃州", feedback:"A 是正確的！"}, {q:"【魔王戰】驗證 (B)「父親是蘇轍」：", opts:["與父蘇洵、弟蘇轍合稱「三蘇」", "字子瞻", "號東坡居士"], ans:0, damage:100, guide:"比對 B...", highlight:"與父蘇洵、弟蘇轍合稱「三蘇」", feedback:"發現矛盾！B 是錯的！"}, {q:"【魔王戰】驗證 (C)「唐宋八大家」：", opts:["仕途坎坷", "同列唐宋古文八大家", "其文汪洋恣肆"], ans:1, damage:100, guide:"比對 C...", highlight:"同列唐宋古文八大家。", feedback:"C 是正確的！"}, {q:"【奧義】選出「錯誤」的敘述：", opts:["(A)", "(B)", "(C)"], ans:1, damage:100, guide:"終結魔眼！", feedback:"細節魔眼被封印！"}] }
                 ]
             },
             {
@@ -355,9 +484,9 @@
                 weapon: { name: "透視稜鏡", icon: "💎", desc: "【能力】光束折射，推敲字義。" },
                 enemies: [ { name: "古文石像", sprite: "🗿", hp: 300, type: "mob" }, { name: "多義幻影", sprite: "👻", hp: 300, type: "mob" }, { name: "文言魔神", sprite: "👹", hp: 500, type: "boss" } ],
                 questions: [
-                    { passage: "余嘗於土庫街，見一丐，雖跛一足，而敝衣之中，皆蓄書也。......人遺之錢，則謝不受；遺之書，則「俛」而受之。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】文中「俛」字的意思最接近下列何者？<br>(A) 勉強<br>(B) 低頭<br>(C) 快速</div>", steps: [{q:"【定位】請用稜鏡鎖定目標字「俛」：", opts:["敝衣", "俛", "謝不受"], ans:1, damage:100, guide:"發射黃光定位...", highlight:"俛", highlightType:"target", feedback:"目標已鎖定！"}, {q:"【線索】乞丐拿到書很高興，動作上會如何表示感謝？", opts:["高傲地拿走", "低頭彎腰接受", "勉強收下"], ans:1, damage:100, guide:"藍光尋找線索...", highlight:"受之", highlightType:"clue", feedback:"語境線索確認。"}, {q:"【折射】綜合推論，「俛」通「俯」，意思是？", opts:["(A) 勉強", "(B) 低頭", "(C) 快速"], ans:1, damage:100, guide:"推導字義！", highlight:"俛", feedback:"推論正確！"}] },
-                    { passage: "（蜀賈）乃取其易售者，標之以廉價；取其不易售者，居之以奇價。人爭趨之。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】文中「居」字的意思為何？<br>(A) 居住<br>(B) 囤積<br>(C) 歸還</div>", steps: [{q:"【定位】鎖定目標字「居」：", opts:["易售者", "廉價", "居"], ans:2, damage:100, guide:"定位...", highlight:"居", highlightType:"target", feedback:"鎖定！"}, {q:"【線索】商人對「不易售」（難賣）的貨物，會怎麼做？", opts:["立刻丟掉", "拿來住", "囤積起來等待高價"], ans:2, damage:100, guide:"分析行為...", highlight:"取其不易售者", highlightType:"clue", feedback:"線索：難賣的先放著。"}, {q:"【折射】成語「奇貨可居」的「居」，意思是？", opts:["(A) 居住", "(B) 囤積", "(C) 歸還"], ans:1, damage:100, guide:"字義透視！", feedback:"石像崩解！"}] },
-                    { passage: "子曰：「學而不思則罔，思而不學則殆。」<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】關於「罔」與「殆」的解釋，何者恰當？<br>(A) 罔：迷惘 / 殆：危險<br>(B) 罔：漁網 / 殆：怠惰<br>(C) 罔：欺騙 / 殆：死亡</div>", steps: [{q:"【魔王戰】先分析「學而不思則罔」：", opts:["只思考不學習", "只學習不思考", "不學也不思"], ans:1, damage:100, guide:"分析前半句...", highlight:"學而不思則罔", highlightType:"clue", feedback:"情境：死讀書。"}, {q:"【魔王戰】只讀書不想像，結果會如何？", opts:["會被魚網網住", "會欺騙老師", "會感到迷惘"], ans:2, damage:100, guide:"推導罔...", highlight:"罔", highlightType:"target", feedback:"罔 = 迷惘！"}, {q:"【魔王戰】接著分析「思而不學則殆」：", opts:["空想而不學習", "學習而不空想", "很危險"], ans:0, damage:100, guide:"分析後半句...", highlight:"思而不學則殆", highlightType:"clue", feedback:"情境：空想。"}, {q:"【魔王戰】整天胡思亂想卻沒根基，精神狀態會？", opts:["很懶惰", "很危險、疑惑不安", "死掉"], ans:1, damage:100, guide:"推導殆...", highlight:"殆", highlightType:"target", feedback:"殆 = 危殆！"}, {q:"【奧義】綜合以上，選出正確解釋：", opts:["(A)", "(B)", "(C)"], ans:0, damage:100, guide:"終極光束！", highlight:"(A) 罔：迷惘 / 殆：危險", feedback:"文言魔神被淨化了！"}] }
+                    { passage: "余嘗於土庫街，見一丐，雖跛一足，而敝衣之中，皆蓄書也。......人遺之錢，則謝不受；遺之書，則「俛」而受之。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】文中「俛」字的意思最接近下列何者？<br>(A) 勉強<br>(B) 低頭<br>(C) 快速</div>", steps: [{q:"【定位】請用稜鏡鎖定目標字「俛」：", opts:["敝衣", "俛", "謝不受"], ans:1, damage:100, guide:"發射黃光定位...", highlight:"俛", highlightType:"target", feedback:"目標已鎖定！"}, {q:"【線索】乞丐拿到書很高興，動作上會如何表示感謝？", opts:["高傲地拿走", "低頭彎腰接受", "勉強收下"], ans:1, damage:100, guide:"藍光尋找線索...", highlight:"受之", highlightType:"clue", feedback:"語境線索確認。"}, {q:"【折射】綜合推論，「俛」通「俯」，意思是？", opts:["(A) 勉強", "(B) 低頭", "(C) 快速"], ans:1, damage:100, guide:"推導字義！", highlight:"俛", feedback:"推論正確！"}] },
+                    { passage: "（蜀賈）乃取其易售者，標之以廉價；取其不易售者，居之以奇價。人爭趨之。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】文中「居」字的意思為何？<br>(A) 居住<br>(B) 囤積<br>(C) 歸還</div>", steps: [{q:"【定位】鎖定目標字「居」：", opts:["易售者", "廉價", "居"], ans:2, damage:100, guide:"定位...", highlight:"居", highlightType:"target", feedback:"鎖定！"}, {q:"【線索】商人對「不易售」（難賣）的貨物，會怎麼做？", opts:["立刻丟掉", "拿來住", "囤積起來等待高價"], ans:2, damage:100, guide:"分析行為...", highlight:"取其不易售者", highlightType:"clue", feedback:"線索：難賣的先放著。"}, {q:"【折射】成語「奇貨可居」的「居」，意思是？", opts:["(A) 居住", "(B) 囤積", "(C) 歸還"], ans:1, damage:100, guide:"字義透視！", feedback:"石像崩解！"}] },
+                    { passage: "子曰：「學而不思則罔，思而不學則殆。」<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】關於「罔」與「殆」的解釋，何者恰當？<br>(A) 罔：迷惘 / 殆：危險<br>(B) 罔：漁網 / 殆：怠惰<br>(C) 罔：欺騙 / 殆：死亡</div>", steps: [{q:"【魔王戰】先分析「學而不思則罔」：", opts:["只思考不學習", "只學習不思考", "不學也不思"], ans:1, damage:100, guide:"分析後半句...", highlight:"學而不思則罔", highlightType:"clue", feedback:"情境：死讀書。"}, {q:"【魔王戰】只讀書不想像，結果會如何？", opts:["會被魚網網住", "會欺騙老師", "會感到迷惘"], ans:2, damage:100, guide:"推導罔...", highlight:"罔", highlightType:"target", feedback:"罔 = 迷惘！"}, {q:"【魔王戰】接著分析「思而不學則殆」：", opts:["空想而不學習", "學習而不空想", "很危險"], ans:0, damage:100, guide:"分析後半句...", highlight:"思而不學則殆", highlightType:"clue", feedback:"情境：空想。"}, {q:"【魔王戰】整天胡思亂想卻沒根基，精神狀態會？", opts:["很懶惰", "很危險、疑惑不安", "死掉"], ans:1, damage:100, guide:"推導殆...", highlight:"殆", highlightType:"target", feedback:"殆 = 危殆！"}, {q:"【奧義】綜合以上，選出正確解釋：", opts:["(A)", "(B)", "(C)"], ans:0, damage:100, guide:"終極光束！", highlight:"(A) 罔：迷惘 / 殆：危險", feedback:"文言魔神被淨化了！"}] }
                 ]
             },
             {
@@ -371,35 +500,239 @@
                     { name: "古文魔神", sprite: "👿", hp: 500, type: "boss", desc: "文言文魔王" }
                 ],
                 questions: [
-                    { passage: "生命就像一場馬拉松，重點不在於瞬間的爆發，而在於途中的堅持。雖然路途遙遠，充滿汗水與淚水，彷彿永遠看不到終點，但只要一步一腳印，就能抵達。那些華麗的裝備、旁人的喝采、甚至是偶爾的跌倒，都不過是過程中的點綴罷了。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】作者認為生命的重點在於？<br>(A) 瞬間的爆發<br>(B) 途中的堅持<br>(C) 華麗的裝備</div>", steps: [{q:"【白話文戰術】啟動「刪除之刃」！請找出應「刪除」的修飾語句：", opts:["重點不在於瞬間的爆發", "充滿汗水與淚水，彷彿永遠看不到終點", "只要一步一腳印，就能抵達"], ans:1, damage:100, guide:"刪除修飾...", highlight:"充滿汗水與淚水，彷彿永遠看不到終點", highlightType:"delete", feedback:"冗言已刪除！"}, {q:"【白話文戰術】再刪除「舉例/點綴」的部分：", opts:["那些華麗的裝備、旁人的喝采", "生命就像一場馬拉松", "在於途中的堅持"], ans:0, damage:100, guide:"刪除舉例...", highlight:"那些華麗的裝備、旁人的喝采、甚至是偶爾的跌倒", highlightType:"delete", feedback:"干擾排除！"}, {q:"【終結技】剩下的「骨幹」主旨是？", opts:["(A) 瞬間的爆發", "(B) 途中的堅持", "(C) 華麗的裝備"], ans:1, damage:100, guide:"核心一擊！", feedback:"史萊姆被淨化了！"}] },
-                    { passage: "母親是傘 / 是巨葉 / 是大樹 / 為了我的濕 / 為了我的熱 / 為了我的涼<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】這首詩中「傘、巨葉、大樹」象徵了母親的哪種特質？<br>(A) 喜愛大自然<br>(B) 對子女的保護<br>(C) 多變的性格</div>", steps: [{q:"【新詩戰術】啟動「意象雷達」！請圈出象徵母親的「具體事物」：", opts:["為了、我的", "濕、熱、涼", "傘 / 是巨葉 / 是大樹"], ans:2, damage:100, guide:"圈出具體名詞...", highlight:"傘 / 是巨葉 / 是大樹", feedback:"具體意象鎖定！"}, {q:"【新詩戰術】這些事物（傘、樹）有什麼共同功能？", opts:["遮蔽保護", "提供食物", "觀賞裝飾"], ans:0, damage:100, guide:"推測意象...", feedback:"功能：保護與遮蔽！"}, {q:"【終結技】這首詩想表達的意象是？", opts:["(A) 喜愛大自然", "(B) 對子女的保護", "(C) 多變的性格"], ans:1, damage:100, guide:"意象解碼！", feedback:"迷霧散去了！"}] },
-                    { passage: "枯藤老樹昏鴉，小橋流水人家，古道西風瘦馬。夕陽西下，斷腸人在天涯。<br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】這首曲描寫了什麼樣的情感？<br>(A) 田園閒適<br>(B) 漂泊愁苦<br>(C) 戰場殺敵</div>", steps: [{q:"【韻文戰術】圈出最重要的「曲眼」（關鍵情感詞）：", opts:["昏鴉", "瘦馬", "斷腸人"], ans:2, damage:100, guide:"尋找曲眼...", highlight:"斷腸人", highlightType:"target", feedback:"曲眼鎖定：斷腸人！"}, {q:"【韻文戰術】「增字」理解：枯藤(纏繞)老樹(棲息)昏鴉。這營造了什麼氣氛？", opts:["蕭瑟淒涼", "熱鬧繁華", "生機勃勃"], ans:0, damage:100, guide:"還原語境...", highlight:"枯藤老樹昏鴉", highlightType:"clue", feedback:"氣氛確認：蕭瑟！"}, {q:"【終結技】綜合「蕭瑟景物」與「斷腸人」，答案是？", opts:["(A) 田園閒適", "(B) 漂泊愁苦", "(C) 戰場殺敵"], ans:1, damage:100, guide:"聖盾衝擊！", feedback:"雙頭蛇被擊潰！"}] },
-                    { passage: "（孔子）問：「（子路）何以伐為？」對曰：「（子路）昔者由也聞諸夫子曰：『為國者無使為積，無法者無使為難。』」<br><span class='text-sm text-gray-400'>註：伐：誇耀。 由：子路的名。</span><br><div class='bg-slate-800 p-4 mt-4'>【模擬考題】子路引用孔子的話，目的是為了？<br>(A) 反駁孔子<br>(B) 解釋自己誇耀的原因<br>(C) 批評國君</div>", steps: [{q:"【魔王戰】「增及找」：找出省略的主語。誰在問「何以伐為」？", opts:["子路", "孔子", "夫子"], ans:1, damage:100, guide:"尋找隱形主語...", highlight:"（孔子）問：「（子路）何以伐為？」", feedback:"主語是孔子！"}, {q:"【魔王戰】「對曰」是誰在回答？", opts:["孔子", "子路 (由)", "無法者"], ans:1, damage:100, guide:"判斷對話者...", highlight:"對曰", feedback:"回答者是子路！"}, {q:"【魔王戰】「聞諸夫子」中的「夫子」是指誰？", opts:["子路的父親", "孔子", "國君"], ans:1, damage:100, guide:"解析代詞...", highlight:"聞諸夫子", feedback:"夫子 = 孔子！"}, {q:"【魔王戰】子路引用孔子的話，目的是為了？", opts:["(A) 反駁孔子", "(B) 解釋自己誇耀的原因", "(C) 批評國君"], ans:1, damage:100, guide:"推論意圖...", feedback:"是為了解釋行為！"}, {q:"【奧義】這段對話顯示了什麼樣的師生互動？", opts:["劍拔弩張", "循循善誘與據理回答", "冷漠無情"], ans:1, damage:100, guide:"聖光裁決！", feedback:"古文魔神被封印了！"}] }
+                    { passage: "生命就像一場馬拉松，重點不在於瞬間的爆發，而在於途中的堅持。雖然路途遙遠，充滿汗水與淚水，彷彿永遠看不到終點，但只要一步一腳印，就能抵達。那些華麗的裝備、旁人的喝采、甚至是偶爾的跌倒，都不過是過程中的點綴罷了。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】作者認為生命的重點在於？<br>(A) 瞬間的爆發<br>(B) 途中的堅持<br>(C) 華麗的裝備</div>", steps: [{q:"【白話文戰術】啟動「刪除之刃」！請找出應「刪除」的修飾語句：", opts:["重點不在於瞬間的爆發", "充滿汗水與淚水，彷彿永遠看不到終點", "只要一步一腳印，就能抵達"], ans:1, damage:100, guide:"刪除修飾...", highlight:"充滿汗水與淚水，彷彿永遠看不到終點", highlightType:"delete", feedback:"冗言已刪除！"}, {q:"【白話文戰術】再刪除「舉例/點綴」的部分：", opts:["那些華麗的裝備、旁人的喝采", "生命就像一場馬拉松", "在於途中的堅持"], ans:0, damage:100, guide:"刪除舉例...", highlight:"那些華麗的裝備、旁人的喝采、甚至是偶爾的跌倒", highlightType:"delete", feedback:"干擾排除！"}, {q:"【終結技】剩下的「骨幹」主旨是？", opts:["(A) 瞬間的爆發", "(B) 途中的堅持", "(C) 華麗的裝備"], ans:1, damage:100, guide:"核心一擊！", feedback:"史萊姆被淨化了！"}] },
+                    { passage: "母親是傘 / 是巨葉 / 是大樹 / 為了我的濕 / 為了我的熱 / 為了我的涼<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】這首詩中「傘、巨葉、大樹」象徵了母親的哪種特質？<br>(A) 喜愛大自然<br>(B) 對子女的保護<br>(C) 多變的性格</div>", steps: [{q:"【新詩戰術】啟動「意象雷達」！請圈出象徵母親的「具體事物」：", opts:["為了、我的", "濕、熱、涼", "傘 / 是巨葉 / 是大樹"], ans:2, damage:100, guide:"圈出具體名詞...", highlight:"傘 / 是巨葉 / 是大樹", feedback:"具體意象鎖定！"}, {q:"【新詩戰術】這些事物（傘、樹）有什麼共同功能？", opts:["遮蔽保護", "提供食物", "觀賞裝飾"], ans:0, damage:100, guide:"推測意象...", feedback:"功能：保護與遮蔽！"}, {q:"【終結技】這首詩想表達的意象是？", opts:["(A) 喜愛大自然", "(B) 對子女的保護", "(C) 多變的性格"], ans:1, damage:100, guide:"意象解碼！", feedback:"迷霧散去了！"}] },
+                    { passage: "枯藤老樹昏鴉，小橋流水人家，古道西風瘦馬。夕陽西下，斷腸人在天涯。<br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】這首曲描寫了什麼樣的情感？<br>(A) 田園閒適<br>(B) 漂泊愁苦<br>(C) 戰場殺敵</div>", steps: [{q:"【韻文戰術】圈出最重要的「曲眼」（關鍵情感詞）：", opts:["昏鴉", "瘦馬", "斷腸人"], ans:2, damage:100, guide:"尋找曲眼...", highlight:"斷腸人", highlightType:"target", feedback:"曲眼鎖定：斷腸人！"}, {q:"【韻文戰術】「增字」理解：枯藤(纏繞)老樹(棲息)昏鴉。這營造了什麼氣氛？", opts:["蕭瑟淒涼", "熱鬧繁華", "生機勃勃"], ans:0, damage:100, guide:"還原語境...", highlight:"枯藤老樹昏鴉", highlightType:"clue", feedback:"氣氛確認：蕭瑟！"}, {q:"【終結技】綜合「蕭瑟景物」與「斷腸人」，答案是？", opts:["(A) 田園閒適", "(B) 漂泊愁苦", "(C) 戰場殺敵"], ans:1, damage:100, guide:"聖盾衝擊！", feedback:"雙頭蛇被擊潰！"}] },
+                    { passage: "（孔子）問：「（子路）何以伐為？」對曰：「（子路）昔者由也聞諸夫子曰：『為國者無使為積，無法者無使為難。』」<br><span style='color:#94a3b8; font-size:0.9rem;'>註：伐：誇耀。 由：子路的名。</span><br><div style='background:#0f172a; padding:10px; margin-top:10px; border-radius:8px; border:1px solid #334155;'>【模擬考題】子路引用孔子的話，目的是為了？<br>(A) 反駁孔子<br>(B) 解釋自己誇耀的原因<br>(C) 批評國君</div>", steps: [{q:"【魔王戰】「增及找」：找出省略的主語。誰在問「何以伐為」？", opts:["子路", "孔子", "夫子"], ans:1, damage:100, guide:"尋找隱形主語...", highlight:"（孔子）問：「（子路）何以伐為？」", feedback:"主語是孔子！"}, {q:"【魔王戰】「對曰」是誰在回答？", opts:["孔子", "子路 (由)", "無法者"], ans:1, damage:100, guide:"判斷對話者...", highlight:"對曰", feedback:"回答者是子路！"}, {q:"【魔王戰】「聞諸夫子」中的「夫子」是指誰？", opts:["子路的父親", "孔子", "國君"], ans:1, damage:100, guide:"解析代詞...", highlight:"聞諸夫子", feedback:"夫子 = 孔子！"}, {q:"【魔王戰】子路引用孔子的話，目的是為了？", opts:["(A) 反駁孔子", "(B) 解釋自己誇耀的原因", "(C) 批評國君"], ans:1, damage:100, guide:"推論意圖...", feedback:"是為了解釋行為！"}, {q:"【奧義】這段對話顯示了什麼樣的師生互動？", opts:["劍拔弩張", "循循善誘與據理回答", "冷漠無情"], ans:1, damage:100, guide:"聖光裁決！", feedback:"古文魔神被封印了！"}] }
                 ]
             }
         ];
 
-        function startGame() { document.getElementById('screen-start').classList.add('hidden'); document.getElementById('screen-map').classList.remove('hidden'); updateMapButtons(); }
-        function enterReview(stageIdx) { gameData.currentStageIdx = stageIdx; const stage = stages[stageIdx]; document.getElementById('weapon-icon').innerText = stage.weapon.icon; document.getElementById('weapon-name').innerText = stage.weapon.name; document.getElementById('weapon-desc').innerHTML = stage.weapon.desc; document.getElementById('screen-map').classList.add('hidden'); document.getElementById('screen-review').classList.remove('hidden'); }
-        function startCombat() { gameData.playerHp = gameData.playerMaxHp; gameData.currentQIdx = 0; gameData.stepIdx = 0; gameData.selectedOption = null; setupEnemy(); document.getElementById('screen-review').classList.add('hidden'); document.getElementById('screen-battle').classList.remove('hidden'); loadStepUI(); updatePlayerHpBar(); }
-        function setupEnemy() { const stage = stages[gameData.currentStageIdx]; const enemy = stage.enemies[gameData.currentQIdx]; gameData.maxHp = enemy.hp; gameData.enemyHp = enemy.hp; const bgSprite = document.getElementById('monster-bg-sprite'); bgSprite.innerText = enemy.sprite; document.getElementById('enemy-name').innerText = enemy.name; if (enemy.type === 'boss') { document.getElementById('enemy-name').className = "font-bold text-yellow-400 text-2xl shadow-black drop-shadow-md"; } else { document.getElementById('enemy-name').className = "font-bold text-red-400 text-2xl shadow-black drop-shadow-md"; } updateHpBar(); }
-        function loadStepUI() { const stage = stages[gameData.currentStageIdx]; const qData = stage.questions[gameData.currentQIdx]; const stepData = qData.steps[gameData.stepIdx]; gameData.selectedOption = null; document.getElementById('confirm-btn').disabled = true; document.getElementById('confirm-btn').classList.add('confirm-btn-disabled'); document.getElementById('confirm-btn').classList.remove('confirm-btn-active'); document.getElementById('current-stage-num').innerText = gameData.currentStageIdx + 6; document.getElementById('current-q-num').innerText = gameData.currentQIdx + 1; document.getElementById('guide-step-idx').innerText = gameData.stepIdx + 1; document.getElementById('guide-text').innerText = stepData.guide; let passageHTML = qData.passage; for (let i = 0; i < gameData.stepIdx; i++) { const s = qData.steps[i]; if (s.highlight) { let className = "highlight-target"; if (s.highlightType === 'clue') className = "highlight-clue"; else if (s.highlightType === 'delete') className = "highlight-delete"; if (s.highlight.includes('(') || s.highlight.includes('選項')) className = "highlight-option"; passageHTML = passageHTML.replace(s.highlight, `<span class="${className}">${s.highlight}</span>`); } } document.getElementById('passage-text').innerHTML = passageHTML; document.getElementById('question-text').innerText = stepData.q; const grid = document.getElementById('options-grid'); grid.innerHTML = ''; stepData.opts.forEach((opt, idx) => { const btn = document.createElement('button'); btn.className = "option-btn w-full text-left p-4 bg-slate-800 border border-slate-600 rounded-xl hover:bg-sky-900/90 hover:border-sky-400 text-lg text-gray-200 flex items-center shadow-lg group"; btn.innerHTML = `<span class="font-bold text-yellow-400 mr-2 border border-yellow-400 rounded-full w-6 h-6 flex items-center justify-center text-xs shrink-0">${String.fromCharCode(65+idx)}</span> <span>${opt}</span>`; btn.onclick = () => selectOption(idx, btn); grid.appendChild(btn); }); }
-        function selectOption(idx, btnElement) { gameData.selectedOption = idx; document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected')); btnElement.classList.add('selected'); const confirmBtn = document.getElementById('confirm-btn'); confirmBtn.disabled = false; confirmBtn.classList.remove('confirm-btn-disabled'); confirmBtn.classList.add('confirm-btn-active'); }
-        function executeAttack() { const stage = stages[gameData.currentStageIdx]; const qData = stage.questions[gameData.currentQIdx]; const stepData = qData.steps[gameData.stepIdx]; const idx = gameData.selectedOption; const grid = document.getElementById('options-grid'); const btns = grid.getElementsByClassName('option-btn'); if (idx === stepData.ans) { btns[idx].classList.add('bg-green-900', 'border-green-400'); triggerWeaponEffect(stage.name); triggerMonsterHit(); showDamageNumber(stepData.damage); if (stepData.highlight) { let className = "highlight-target"; if (stepData.highlightType === 'clue') className = "highlight-clue"; else if (stepData.highlightType === 'delete') className = "highlight-delete"; if (stepData.highlight.includes('(') || stepData.highlight.includes('選項')) className = "highlight-option"; const originalHTML = document.getElementById('passage-text').innerHTML; const newHTML = originalHTML.replace(stepData.highlight, `<span class="${className}">${stepData.highlight}</span>`); document.getElementById('passage-text').innerHTML = newHTML; } gameData.enemyHp = Math.max(0, gameData.enemyHp - stepData.damage); updateHpBar(); setTimeout(() => { nextStep(); }, 1500); } else { btns[idx].classList.add('bg-red-900', 'border-red-400'); triggerPlayerDamage(); showFlashText("OUCH!"); showPlayerDamageNumber(25); gameData.playerHp = Math.max(0, gameData.playerHp - 25); updatePlayerHpBar(); if (gameData.playerHp <= 0) { setTimeout(triggerGameOver, 1000); } } }
-        function triggerWeaponEffect(stageName) { if (stageName.includes("大意")) { const slash = document.getElementById('slash-effect'); slash.classList.remove('slash-active'); void slash.offsetWidth; slash.classList.add('slash-active'); showFlashText("SLASH!"); } else if (stageName.includes("細節")) { const scan = document.getElementById('scan-effect'); scan.classList.remove('scan-active'); void scan.offsetWidth; scan.classList.add('scan-active'); showFlashText("SCAN!"); } else if (stageName.includes("深難")) { const beam = document.getElementById('beam-effect'); beam.classList.remove('beam-active'); void beam.offsetWidth; beam.classList.add('beam-active'); showFlashText("BEAM!"); } else if (stageName.includes("文體")) { const shield = document.getElementById('shield-effect'); shield.classList.remove('shield-active'); void shield.offsetWidth; shield.classList.add('shield-active'); showFlashText("SHIELD!"); } }
-        function nextStep() { const stage = stages[gameData.currentStageIdx]; const qData = stage.questions[gameData.currentQIdx]; if (gameData.stepIdx < qData.steps.length - 1) { gameData.stepIdx++; loadStepUI(); } else { nextLevel(); } }
-        function nextLevel() { const stage = stages[gameData.currentStageIdx]; if (gameData.currentQIdx < stage.enemies.length - 1) { gameData.currentQIdx++; gameData.stepIdx = 0; setupEnemy(); loadStepUI(); } else { document.getElementById('screen-battle').classList.add('hidden'); document.getElementById('screen-result').classList.remove('hidden'); gameData.heroLv += [15, 15, 20, 49][gameData.currentStageIdx]; if(gameData.heroLv > 99) gameData.heroLv = 99; document.getElementById('hero-lv').innerText = gameData.heroLv; updateMapButtons(); } }
-        function backToMap() { document.getElementById('screen-result').classList.add('hidden'); document.getElementById('screen-map').classList.remove('hidden'); updateMapButtons(); }
-        function retryStage() { document.getElementById('screen-gameover').classList.add('hidden'); startCombat(); }
-        function triggerGameOver() { document.getElementById('screen-gameover').classList.remove('hidden'); }
-        function triggerMonsterHit() { const enemy = document.getElementById('monster-bg-sprite'); enemy.classList.add('monster-hit'); setTimeout(() => { enemy.classList.remove('monster-hit'); }, 400); }
-        function triggerPlayerDamage() { const container = document.getElementById('game-container'); const overlay = document.getElementById('damage-effect'); const flash = document.getElementById('damage-flash'); const stage = stages[gameData.currentStageIdx]; const enemy = stage.enemies[gameData.currentQIdx]; container.classList.add('shake-screen'); flash.style.opacity = 1; setTimeout(() => { flash.style.opacity = 0; }, 300); setTimeout(() => container.classList.remove('shake-screen'), 500); if (enemy.type === 'boss') { overlay.className = 'damage-overlay damage-fire'; } else { overlay.className = 'damage-overlay damage-scratch'; } setTimeout(() => { overlay.className = 'damage-overlay'; }, 800); }
-        function showDamageNumber(val) { const bgContainer = document.getElementById('monster-bg-container'); const popup = document.createElement('div'); popup.className = 'damage-popup'; popup.innerText = `-${val}`; popup.style.left = '50%'; popup.style.top = '40%'; popup.style.transform = 'translate(-50%, -50%)'; bgContainer.appendChild(popup); setTimeout(() => popup.remove(), 1000); }
-        function showPlayerDamageNumber(val) { const container = document.getElementById('game-container'); const popup = document.createElement('div'); popup.className = 'player-damage-popup'; popup.innerText = `-${val}`; popup.style.left = '15%'; popup.style.top = '12%'; container.appendChild(popup); setTimeout(() => popup.remove(), 1000); }
-        function showFlashText(text) { const box = document.getElementById('flash-msg'); const txt = document.getElementById('flash-text'); txt.innerText = text; let color = 'text-white'; if (text === 'OUCH!') color = 'text-red-500'; if (text === 'SCAN!' || text === 'BEAM!') color = 'text-sky-300'; if (text === 'SHIELD!') color = 'text-yellow-400'; txt.className = `text-6xl md:text-8xl font-black italic drop-shadow-[0_0_10px_rgba(0,0,0,1)] text-stroke ${color}`; box.classList.remove('hidden'); txt.classList.add('scale-150'); setTimeout(() => txt.classList.remove('scale-150'), 100); setTimeout(() => box.classList.add('hidden'), 800); }
-        function updateHpBar() { const percent = (gameData.enemyHp / gameData.maxHp) * 100; document.getElementById('enemy-hp-bar').style.width = percent + '%'; }
-        function updatePlayerHpBar() { const percent = (gameData.playerHp / gameData.playerMaxHp) * 100; const bar = document.getElementById('player-hp-bar'); document.getElementById('player-hp-text').innerText = `${gameData.playerHp}/${gameData.playerMaxHp}`; bar.style.width = percent + '%'; if (percent <= 25) { bar.classList.remove('from-sky-600', 'to-blue-400'); bar.classList.add('from-red-600', 'to-orange-500'); } else { bar.classList.add('from-sky-600', 'to-blue-400'); bar.classList.remove('from-red-600', 'to-orange-500'); } }
-        function updateMapButtons() { for (let i = 0; i <= 3; i++) { const btn = document.getElementById(`btn-${i}`); const stage = stages[i]; if (gameData.heroLv >= stage.levelReq) { btn.classList.remove('opacity-50', 'cursor-not-allowed'); btn.disabled = false; } } }
+        // ------------------------------------------
+        // 核心邏輯 (移除依賴 Tailwind Class 的操作)
+        // ------------------------------------------
+
+        function startGame() {
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-map').classList.remove('hidden');
+            document.getElementById('screen-map').style.display = 'flex'; // 確保顯示
+            updateMapButtons();
+        }
+
+        function enterReview(stageIdx) {
+            gameData.currentStageIdx = stageIdx;
+            const stage = stages[stageIdx];
+            document.getElementById('weapon-icon').innerText = stage.weapon.icon;
+            document.getElementById('weapon-name').innerText = stage.weapon.name;
+            document.getElementById('weapon-desc').innerHTML = stage.weapon.desc;
+            document.getElementById('screen-map').classList.add('hidden');
+            document.getElementById('screen-review').classList.remove('hidden');
+        }
+
+        function startCombat() {
+            gameData.playerHp = gameData.playerMaxHp;
+            gameData.currentQIdx = 0;
+            gameData.stepIdx = 0;
+            gameData.selectedOption = null;
+            setupEnemy();
+            document.getElementById('screen-review').classList.add('hidden');
+            document.getElementById('screen-battle').classList.remove('hidden');
+            loadStepUI();
+            updatePlayerHpBar();
+        }
+
+        function setupEnemy() {
+            const stage = stages[gameData.currentStageIdx];
+            const enemy = stage.enemies[gameData.currentQIdx];
+            gameData.maxHp = enemy.hp;
+            gameData.enemyHp = enemy.hp;
+            
+            // 怪物顯示邏輯
+            const bgContainer = document.getElementById('monster-bg-container');
+            bgContainer.innerText = enemy.sprite;
+            bgContainer.className = ''; // 重置動畫
+            void bgContainer.offsetWidth; // 觸發重繪
+            bgContainer.className = 'monster-active'; // 啟動呼吸燈
+
+            document.getElementById('enemy-name').innerText = enemy.name;
+            updateHpBar();
+        }
+
+        function loadStepUI() {
+            const stage = stages[gameData.currentStageIdx];
+            const qData = stage.questions[gameData.currentQIdx];
+            const stepData = qData.steps[gameData.stepIdx];
+            
+            gameData.selectedOption = null;
+            const confirmBtn = document.getElementById('confirm-btn');
+            confirmBtn.disabled = true;
+
+            document.getElementById('current-stage-num').innerText = gameData.currentStageIdx + 6;
+            document.getElementById('current-q-num').innerText = gameData.currentQIdx + 1;
+            document.getElementById('guide-step-idx').innerText = gameData.stepIdx + 1;
+            document.getElementById('guide-text').innerText = stepData.guide;
+            
+            // 文本渲染 (含 Highlight)
+            let passageHTML = qData.passage;
+            for (let i = 0; i < gameData.stepIdx; i++) {
+                const s = qData.steps[i];
+                if (s.highlight) {
+                    let className = "highlight-target";
+                    if (s.highlightType === 'clue') className = "highlight-clue";
+                    else if (s.highlightType === 'delete') className = "highlight-delete";
+                    passageHTML = passageHTML.replace(s.highlight, `<span class="${className}">${s.highlight}</span>`);
+                }
+            }
+            document.getElementById('passage-text').innerHTML = passageHTML;
+            document.getElementById('question-text').innerText = stepData.q;
+            
+            // 渲染選項
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            stepData.opts.forEach((opt, idx) => {
+                const btn = document.createElement('div');
+                btn.className = "opt-btn";
+                btn.innerHTML = `<span class="opt-tag">${String.fromCharCode(65+idx)}</span> <span>${opt}</span>`;
+                btn.onclick = () => selectOption(idx, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectOption(idx, btnElement) {
+            gameData.selectedOption = idx;
+            document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+            btnElement.classList.add('selected');
+            document.getElementById('confirm-btn').disabled = false;
+        }
+
+        function executeAttack() {
+            const stage = stages[gameData.currentStageIdx];
+            const qData = stage.questions[gameData.currentQIdx];
+            const stepData = qData.steps[gameData.stepIdx];
+            const idx = gameData.selectedOption;
+            const btns = document.querySelectorAll('.opt-btn');
+
+            if (idx === stepData.ans) {
+                // 答對
+                btns[idx].classList.add('correct');
+                showFlashText(getWeaponEffectName(stage.name));
+                showDamageNumber(stepData.damage);
+                
+                // 更新高亮
+                if (stepData.highlight) {
+                    let className = "highlight-target";
+                    if (stepData.highlightType === 'clue') className = "highlight-clue";
+                    else if (stepData.highlightType === 'delete') className = "highlight-delete";
+                    const originalHTML = document.getElementById('passage-text').innerHTML;
+                    const newHTML = originalHTML.replace(stepData.highlight, `<span class="${className}">${stepData.highlight}</span>`);
+                    document.getElementById('passage-text').innerHTML = newHTML;
+                }
+
+                gameData.enemyHp = Math.max(0, gameData.enemyHp - stepData.damage);
+                updateHpBar();
+                setTimeout(() => { nextStep(); }, 1500);
+            } else {
+                // 答錯
+                btns[idx].classList.add('wrong');
+                showFlashText("OUCH!");
+                gameData.playerHp = Math.max(0, gameData.playerHp - 25);
+                updatePlayerHpBar();
+                document.getElementById('game-container').style.animation = "shake 0.4s";
+                setTimeout(()=> document.getElementById('game-container').style.animation = "", 400);
+
+                if (gameData.playerHp <= 0) {
+                    setTimeout(() => {
+                        document.getElementById('screen-gameover').classList.remove('hidden');
+                    }, 1000);
+                }
+            }
+        }
+
+        function getWeaponEffectName(stageName) {
+            if (stageName.includes("大意")) return "SLASH!";
+            if (stageName.includes("細節")) return "SCAN!";
+            if (stageName.includes("深難")) return "BEAM!";
+            if (stageName.includes("文體")) return "SHIELD!";
+            return "HIT!";
+        }
+
+        function nextStep() {
+            const stage = stages[gameData.currentStageIdx];
+            const qData = stage.questions[gameData.currentQIdx];
+            if (gameData.stepIdx < qData.steps.length - 1) {
+                gameData.stepIdx++;
+                loadStepUI();
+            } else {
+                nextLevel();
+            }
+        }
+
+        function nextLevel() {
+            const stage = stages[gameData.currentStageIdx];
+            if (gameData.currentQIdx < stage.enemies.length - 1) {
+                gameData.currentQIdx++;
+                gameData.stepIdx = 0;
+                setupEnemy();
+                loadStepUI();
+            } else {
+                // 關卡完成
+                document.getElementById('screen-battle').classList.add('hidden');
+                document.getElementById('screen-result').classList.remove('hidden');
+                gameData.heroLv += [15, 15, 20, 49][gameData.currentStageIdx];
+                if(gameData.heroLv > 99) gameData.heroLv = 99;
+                document.getElementById('hero-lv').innerText = gameData.heroLv;
+                updateMapButtons();
+            }
+        }
+
+        function backToMap() {
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-map').classList.remove('hidden');
+            updateMapButtons();
+        }
+
+        function retryStage() {
+            document.getElementById('screen-gameover').classList.add('hidden');
+            startCombat();
+        }
+
+        function showDamageNumber(val) {
+            const bgContainer = document.getElementById('game-container');
+            const popup = document.createElement('div');
+            popup.className = 'damage-popup';
+            popup.innerText = `-${val}`;
+            bgContainer.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        function showFlashText(text) {
+            const txt = document.getElementById('flash-msg');
+            txt.innerText = text;
+            txt.style.color = (text === 'OUCH!') ? '#ef4444' : 'white';
+            txt.classList.remove('flash-anim');
+            void txt.offsetWidth; // Trigger reflow
+            txt.classList.add('flash-anim');
+        }
+
+        function updateHpBar() {
+            const percent = (gameData.enemyHp / gameData.maxHp) * 100;
+            document.getElementById('enemy-hp-bar').style.width = percent + '%';
+        }
+
+        function updatePlayerHpBar() {
+            const percent = (gameData.playerHp / gameData.playerMaxHp) * 100;
+            document.getElementById('player-hp-bar').style.width = percent + '%';
+        }
+
+        function updateMapButtons() {
+            for (let i = 0; i <= 3; i++) {
+                const btn = document.getElementById(`btn-${i}`);
+                const stage = stages[i];
+                if (gameData.heroLv >= stage.levelReq) {
+                    btn.disabled = false;
+                }
+            }
+        }
     </script>
 </body>
 </html>
