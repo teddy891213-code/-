@@ -35,7 +35,6 @@
         .btn { display: inline-block; background: var(--primary); color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 500; transition: 0.3s; }
         .btn:hover { background: #4338ca; }
 
-        /* Footer */
         footer { text-align: center; padding: 40px; color: #94a3b8; }
     </style>
 </head>
@@ -103,7 +102,7 @@
                 <span class="card-tag">馬力歐</span>
                 <h3>紐西蘭地理馬力歐</h3>
                 <p>控制奇異鳥馬力歐，探索紐西蘭地理特徵。</p>
-                <a href="https://htmlpreview.github.io/?https://raw.githubusercontent.com/teddy891213-code/-/refs/heads/main/%E5%A5%87%E7%95%B0%E9%B3%A5%E9%A6%AC%E5%8A%9B%E6%AD%90.html" target="_blank" class="btn">進入遊戲</a>
+                <a href="https://teddy891213-code.github.io/-/奇異鳥馬力歐.html" target="_blank" class="btn">進入遊戲</a>
             </div>
         </div>
         <div class="card">
