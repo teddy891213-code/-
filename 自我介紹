@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教育科技作品集 | 互動教材展示</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #0ea5e9;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "PingFang TC", sans-serif; }
+        body { background: var(--bg); color: #334155; line-height: 1.6; }
+        
+        /* Header */
+        header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 60px 20px; text-align: center; }
+        header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        
+        /* Container */
+        .container { max-width: 1100px; margin: -40px auto 40px; padding: 0 20px; }
+        
+        /* Category Section */
+        .category-title { margin: 40px 0 20px; font-size: 1.8rem; border-left: 5px solid var(--primary); padding-left: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+        
+        /* Card Style */
+        .card { background: var(--card-bg); border-radius: 15px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); transition: 0.3s; }
+        .card:hover { transform: translateY(-5px); }
+        .card-content { padding: 20px; }
+        .card-tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; background: #e0e7ff; color: var(--primary); margin-bottom: 10px; }
+        .card h3 { margin-bottom: 10px; font-size: 1.3rem; }
+        .card p { font-size: 0.95rem; color: #64748b; margin-bottom: 20px; height: 3em; overflow: hidden; }
+        .btn { display: inline-block; background: var(--primary); color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 500; transition: 0.3s; }
+        .btn:hover { background: #4338ca; }
+
+        /* Footer */
+        footer { text-align: center; padding: 40px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>教育科技開發展示</h1>
+    <p>結合遊戲機制與學科知識，創造沉浸式學習體驗</p>
+</header>
+
+<div class="container">
+    
+    <h2 class="category-title">國文科作品</h2>
+    <div class="grid">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-tag">RPG 遊戲</span>
+                <h3>會考勇者 (會考九式)</h3>
+                <p>將會考九式知識融入 RPG 冒險，提升學習動機。</p>
+                <a href="https://htmlpreview.github.io/?https://raw.githubusercontent.com/teddy891213-code/-/refs/heads/main/RPG.HTML" target="_blank" class="btn">進入遊戲</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-content">
+                <span class="card-tag">彈幕機</span>
+                <h3>國文科小飛機遊戲</h3>
+                <p>一邊躲避彈幕一邊練習語文常識，適合課堂複習。</p>
+                <a href="https://htmlpreview.github.io/?https://gist.githubusercontent.com/teddy891213-code/5f99924965362d773eb0fc07e82b3b36/raw/2a743c14dd1d0d829d85688bf919f068fbd4b025/index%25E7%25AC%25AC%25E5%2585%25AD%25E5%2586%258A%25E4%25B8%2580%25E5%2588%25B0%25E4%25BA%2594%25E8%25AA%25B2%25E5%259C%258B%25E6%2596%2587%25E5%25BD%2588%25E5%25B9%2595%25E6%25A9%259F.html" target="_blank" class="btn">進入遊戲</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-content">
+                <span class="card-tag">形音義</span>
+                <h3>機器人爬樓梯</h3>
+                <p>透過爬樓梯競賽，鞏固學生的形音義基礎。</p>
+                <a href="https://htmlpreview.github.io/?https://gist.githubusercontent.com/teddy891213-code/6fcb42ddc23c9d464d6534689c2b6c0a/raw/f8565a36894b50f23373bf9f4ccc55e85adec5a6/gistfile1.txt" target="_blank" class="btn">進入遊戲</a>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="category-title">公民科作品</h2>
+    <div class="grid">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-tag">行政劃分</span>
+                <h3>吃豆子人：中央與地方分權</h3>
+                <p>經典吃豆人機制，學習地方政府處理事項與分權。</p>
+                <a href="https://teddy891213-code.github.io/-/" target="_blank" class="btn">進入遊戲</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-content">
+                <span class="card-tag">五院互動</span>
+                <h3>疊積木：五院權力互動</h3>
+                <p>運用疊積木概念，圖像化呈現五院間的制衡關係。</p>
+                <a href="https://htmlpreview.github.io/?https://gist.githubusercontent.com/teddy891213-code/9605b17a0dd717dcb03d6ed2942008f2/raw/462a367d85de8583dac2ea4b65daa85f156ba9ac/gistfile1.txt" target="_blank" class="btn">進入遊戲</a>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="category-title">地理科作品</h2>
+    <div class="grid">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-tag">馬力歐</span>
+                <h3>紐西蘭地理馬力歐</h3>
+                <p>控制奇異鳥馬力歐，探索紐西蘭地理特徵。</p>
+                <a href="https://htmlpreview.github.io/?https://raw.githubusercontent.com/teddy891213-code/-/refs/heads/main/%E5%A5%87%E7%95%B0%E9%B3%A5%E9%A6%AC%E5%8A%9B%E6%AD%90.html" target="_blank" class="btn">進入遊戲</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-content">
+                <span class="card-tag">三大群島</span>
+                <h3>郵差遊戲：大洋洲地理</h3>
+                <p>化身郵差穿梭美拉尼西亞與密克羅尼西亞。</p>
+                <a href="https://gemini.google.com/share/f53a3abd30a0" target="_blank" class="btn">進入遊戲</a>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-content">
+                <span class="card-tag">氣候分析</span>
+                <h3>中南美洲氣候挑戰</h3>
+                <p>互動式對話遊戲，深入理解中南美洲氣候成因。</p>
+                <a href="https://gemini.google.com/gem/18n3ssZCfbdTrUyj8Oy_mC62K0Tlk22U3?usp=sharing" target="_blank" class="btn">進入遊戲</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    &copy; 2025 作品集展現 - 致力於遊戲化教學開發
+</footer>
+
+</body>
+</html>
