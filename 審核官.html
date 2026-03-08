@@ -4,24 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>邊境哨口：灰色地帶</title>
+    <!-- 增加更穩定的 Tailwind CDN 載入 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+TC:wght@400;900&display=swap');
 
+        /* 核心樣式強制定義，防止 CDN 延遲導致白屏 */
         :root {
             --bg-dark: #0d0d0f;
             --paper-color: #f4f1ea;
-            --accent-red: #ff3e3e;
-            --accent-green: #38ff7d;
         }
 
         body {
-            background-color: var(--bg-dark);
+            background-color: #0d0d0f !important; /* 強制深色背景 */
             color: #d1d5db;
             font-family: 'Noto Sans TC', sans-serif;
             overflow: hidden;
             height: 100vh;
             margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 確保遊戲 UI 預設隱藏，避免載入時閃爍 */
+        #game-ui, #feedback-modal, #end-screen {
+            display: none;
         }
 
         .crt-overlay {
@@ -43,7 +50,7 @@
         .shake { animation: shake 0.3s ease-in-out; }
 
         .document {
-            background-color: var(--paper-color);
+            background-color: #f4f1ea;
             color: #262626;
             box-shadow: 20px 20px 0px rgba(0,0,0,0.7);
             border: 1px solid #d1d1d1;
@@ -63,38 +70,40 @@
             transform: scale(2);
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .stamp-pass { color: #15803d; border-color: #15803d; transform: rotate(-15deg) scale(2); }
+        .stamp-pass { color: #15803d; border-color: #16a34a; transform: rotate(-15deg) scale(2); }
         .stamp-fail { color: #b91c1c; border-color: #b91c1c; transform: rotate(15deg) scale(2); }
-        .stamp-active { opacity: 0.8; transform: rotate(var(--rot)) scale(1); }
+        .stamp-active { opacity: 0.8; transform: rotate(var(--rot)) scale(1); display: block !important; }
 
         .btn-press:active { transform: scale(0.9); }
+        
+        /* 針對行動裝置優化 */
+        @media (max-width: 768px) {
+            #avatar { font-size: 6rem; }
+            .document { transform: scale(0.85); }
+        }
     </style>
 </head>
-<body class="flex flex-col">
+<body>
     <div class="crt-overlay"></div>
 
-    <!-- 1. 深度劇情與規則說明 -->
+    <!-- 1. 劇情與規則 -->
     <div id="intro-screen" class="fixed inset-0 z-[2000] bg-black flex items-center justify-center p-8">
         <div class="max-w-4xl w-full space-y-8">
-            <h1 class="text-6xl font-black text-zinc-600 italic text-center tracking-tighter">GRAY ZONE: 2026</h1>
+            <h1 class="text-5xl md:text-6xl font-black text-zinc-600 italic text-center tracking-tighter">GRAY ZONE: 2026</h1>
             
             <div class="bg-zinc-900 p-8 border border-zinc-700 shadow-2xl space-y-6">
-                <p class="text-zinc-400 leading-relaxed">
+                <p class="text-zinc-400 leading-relaxed text-lg">
                     <span class="text-zinc-100 font-bold">【絕密檔案：哨口 14-S】</span><br>
-                    戰爭沒有結束，它只是躲進了人群裡。每天有上千人試圖跨越這條分界線，有人是為了生存，有人則是為了滲透。
-                </p>
-                <p class="text-zinc-400 leading-relaxed">
-                    情報顯示，敵對勢力已滲透進遷移隊伍。他們會偽裝成一般的學生、勞工或難民，並給出聽起來極其合理的理由。
+                    世界局勢動盪，人口大規模遷移。情報顯示，多名滲透者已混入隊伍，企圖破壞邊境安全。
                 </p>
                 <div class="bg-zinc-800 p-6 border-l-4 border-yellow-600">
                     <p class="text-yellow-500 font-bold mb-2">審核官守則：</p>
                     <ul class="text-sm space-y-2 text-zinc-300">
-                        <li>1. 不要相信對方的身分，只相信邏輯。</li>
-                        <li>2. 嚴格對比「口頭理由」與「書面申報」。</li>
-                        <li>3. 空間（國內/國際）或時間（暫時/永久）任一項申報不實，即判定為滲透者。</li>
+                        <li>1. 嚴格對比「口頭理由」與「書面申報」。</li>
+                        <li>2. 空間（國內/國際）或時間（暫時/永久）任一項申報不實，即判定為滲透者。</li>
                     </ul>
                 </div>
-                <p class="text-red-600 font-black animate-pulse">警告：誤判達 2 次，你將因「通敵罪」被撤職並移送軍事法庭。</p>
+                <p class="text-red-600 font-black animate-pulse">警告：誤判達 2 次，你將因「通敵罪」被撤職處分。</p>
             </div>
 
             <div class="text-center">
@@ -104,180 +113,102 @@
     </div>
 
     <!-- 2. 遊戲主畫面 -->
-    <div id="game-ui" class="hidden h-screen flex flex-col">
-        <!-- 頂部 HUD -->
+    <div id="game-ui" class="h-screen flex flex-col">
         <header class="h-20 bg-zinc-950 border-b-2 border-zinc-800 flex items-center justify-between px-10">
             <div class="flex items-center gap-6">
-                <h2 class="text-xl font-bold text-zinc-500 tracking-widest uppercase">District 14-S Control</h2>
-                <div class="h-4 w-[1px] bg-zinc-700"></div>
+                <h2 class="text-xl font-bold text-zinc-500 tracking-widest uppercase hidden md:block">District 14-S Control</h2>
                 <p class="text-yellow-600 font-mono">CASE: <span id="progress">1</span> / 10</p>
             </div>
             <div class="flex gap-12">
                 <div class="text-right">
                     <p class="text-[10px] text-zinc-600 uppercase">Trust Index</p>
-                    <p id="trust-val" class="text-3xl font-black text-blue-600">100%</p>
+                    <p id="trust-val" class="text-2xl md:text-3xl font-black text-blue-600">100%</p>
                 </div>
                 <div class="text-right">
                     <p class="text-[10px] text-zinc-600 uppercase">Intercepted</p>
-                    <p id="spy-val" class="text-3xl font-black text-red-600">0</p>
+                    <p id="spy-val" class="text-2xl md:text-3xl font-black text-red-600">0</p>
                 </div>
             </div>
         </header>
 
-        <main class="flex-grow flex">
+        <main class="flex-grow flex flex-col md:flex-row">
             <!-- 左側：申請人 -->
-            <div class="w-1/3 bg-zinc-900 flex flex-col items-center justify-center p-12 border-r-2 border-zinc-800">
-                <div id="avatar" class="text-[10rem] mb-12 drop-shadow-2xl transition-transform duration-300">👤</div>
-                <div id="name-plate" class="bg-zinc-800 px-6 py-2 border border-zinc-600 font-bold mb-12">---</div>
-                <div class="w-full bg-zinc-800 p-6 border-l-4 border-blue-900 shadow-inner italic">
-                    <p id="dialogue" class="text-lg text-zinc-300">「...」</p>
+            <div class="w-full md:w-1/3 bg-zinc-900 flex flex-col items-center justify-center p-6 md:p-12 border-b-2 md:border-b-0 md:border-r-2 border-zinc-800">
+                <div id="avatar" class="text-8xl md:text-[10rem] mb-4 md:mb-12 drop-shadow-2xl transition-transform duration-300">👤</div>
+                <div id="name-plate" class="bg-zinc-800 px-6 py-2 border border-zinc-600 font-bold mb-6 text-zinc-100">---</div>
+                <div class="w-full bg-zinc-800 p-4 md:p-6 border-l-4 border-blue-900 shadow-inner italic">
+                    <p id="dialogue" class="text-base md:text-lg text-zinc-300 leading-relaxed">「...」</p>
                 </div>
             </div>
 
             <!-- 右側：辦公桌 -->
-            <div id="desk" class="w-2/3 bg-zinc-950 flex flex-col items-center justify-center p-10 relative">
-                <!-- 申報文件 -->
-                <div id="paper" class="document w-full max-w-xl h-[420px] p-10 relative">
-                    <div class="flex justify-between items-start border-b-2 border-zinc-300 pb-4 mb-8">
+            <div id="desk" class="w-full md:w-2/3 bg-zinc-950 flex flex-col items-center justify-center p-6 md:p-10 relative">
+                <div id="paper" class="document w-full max-w-xl p-6 md:p-10 relative">
+                    <div class="flex justify-between items-start border-b-2 border-zinc-300 pb-4 mb-6">
                         <div>
-                            <h3 class="text-3xl font-black tracking-tighter text-zinc-500 italic uppercase">Transit Permit</h3>
+                            <h3 class="text-2xl md:text-3xl font-black tracking-tighter text-zinc-500 italic uppercase">Transit Permit</h3>
                             <p class="text-[10px] font-mono mt-1 text-zinc-400" id="case-id">ID: 000-000</p>
                         </div>
-                        <div class="w-12 h-12 border-2 border-zinc-300 rounded-full flex items-center justify-center font-serif text-zinc-300">GMA</div>
+                        <div class="w-10 h-10 border-2 border-zinc-300 rounded-full flex items-center justify-center font-serif text-zinc-300 text-xs">GMA</div>
                     </div>
 
-                    <div class="space-y-10">
-                        <div class="relative">
-                            <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">申報空間類別 (Relocation Space)</label>
-                            <p id="claim-space" class="text-3xl font-black text-zinc-800 border-b border-zinc-200 pb-2">---</p>
+                    <div class="space-y-6 md:space-y-10">
+                        <div>
+                            <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">申報空間類別 (Relocation Space)</label>
+                            <p id="claim-space" class="text-2xl md:text-3xl font-black text-zinc-800 border-b border-zinc-200 pb-2">---</p>
                         </div>
-                        <div class="relative">
-                            <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">申報時間類別 (Relocation Time)</label>
-                            <p id="claim-time" class="text-3xl font-black text-zinc-800 border-b border-zinc-200 pb-2">---</p>
+                        <div>
+                            <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">申報時間類別 (Relocation Time)</label>
+                            <p id="claim-time" class="text-2xl md:text-3xl font-black text-zinc-800 border-b border-zinc-200 pb-2">---</p>
                         </div>
                     </div>
 
-                    <div class="absolute bottom-6 right-6 text-[8px] text-zinc-400 text-right font-mono">
-                        VERIFY ALL DATA.<br>MISMATCH = ARREST.
-                    </div>
-
-                    <!-- 印章層 -->
                     <div id="stamp-layer" class="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div id="st-pass" class="stamp stamp-pass">APPROVED</div>
                         <div id="st-fail" class="stamp stamp-fail">REJECTED</div>
                     </div>
                 </div>
 
-                <!-- 按鈕區域 -->
-                <div class="mt-12 flex gap-12">
-                    <button onclick="makeDecision(false)" class="btn-press w-24 h-24 bg-red-900 hover:bg-red-800 border-b-8 border-red-950 rounded-lg flex items-center justify-center text-4xl shadow-2xl">🚫</button>
-                    <button onclick="makeDecision(true)" class="btn-press w-24 h-24 bg-green-900 hover:bg-green-800 border-b-8 border-green-950 rounded-lg flex items-center justify-center text-4xl shadow-2xl">✔️</button>
-                </div>
-                <div class="mt-4 flex gap-20 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
-                    <span>拒絕逮捕 (D)</span>
-                    <span>核准通過 (A)</span>
+                <div class="mt-8 md:mt-12 flex gap-12">
+                    <button onclick="makeDecision(false)" class="btn-press w-20 h-20 md:w-24 md:h-24 bg-red-900 hover:bg-red-800 border-b-8 border-red-950 rounded-lg flex items-center justify-center text-3xl md:text-4xl">🚫</button>
+                    <button onclick="makeDecision(true)" class="btn-press w-20 h-20 md:w-24 md:h-24 bg-green-900 hover:bg-green-800 border-b-8 border-green-950 rounded-lg flex items-center justify-center text-3xl md:text-4xl">✔️</button>
                 </div>
             </div>
         </main>
     </div>
 
     <!-- 3. 結果反饋 -->
-    <div id="feedback-modal" class="fixed inset-0 z-[3000] hidden items-center justify-center p-8 bg-black/90">
+    <div id="feedback-modal" class="fixed inset-0 z-[3000] flex items-center justify-center p-8 bg-black/95">
         <div id="fb-card" class="max-w-md w-full bg-white p-8 border-t-[10px]">
             <h4 id="fb-status" class="text-2xl font-black mb-4 uppercase">審核結果</h4>
-            <p id="fb-msg" class="text-zinc-700 mb-8 italic leading-relaxed">...</p>
-            <button onclick="nextCase()" class="w-full py-4 bg-zinc-900 text-white font-bold hover:bg-zinc-800 transition-colors">下一個案件</button>
+            <p id="fb-msg" class="text-zinc-700 mb-8 italic leading-relaxed text-lg">...</p>
+            <button onclick="nextCase()" class="w-full py-4 bg-zinc-900 text-white font-bold hover:bg-zinc-800">下一個案件</button>
         </div>
     </div>
 
     <!-- 4. 終局結局 -->
-    <div id="end-screen" class="fixed inset-0 z-[4000] hidden flex-col items-center justify-center p-8 bg-zinc-950 text-center">
-        <div id="end-icon" class="text-[12rem] mb-8">🏆</div>
-        <h2 id="end-title" class="text-6xl font-black mb-6">勤務結束</h2>
-        <p id="end-desc" class="text-xl text-zinc-500 max-w-2xl mb-12 italic">...</p>
+    <div id="end-screen" class="fixed inset-0 z-[4000] flex flex-col items-center justify-center p-8 bg-zinc-950 text-center">
+        <div id="end-icon" class="text-8xl md:text-[12rem] mb-8">🏆</div>
+        <h2 id="end-title" class="text-4xl md:text-6xl font-black mb-6 text-zinc-100">勤務結束</h2>
+        <p id="end-desc" class="text-lg md:text-xl text-zinc-500 max-w-2xl mb-12 italic">...</p>
         <button onclick="location.reload()" class="px-12 py-4 bg-white text-black font-black hover:bg-zinc-200">重新啟動系統</button>
     </div>
 
     <script>
         const cases = [
-            {
-                name: "佐藤 健", icon: "👨‍💼",
-                dialogue: "我是從東京來的。公司派我到這裡的分部支援三個月。喔對了，聽說這裡的拉麵很有名，結束後我一定要去吃。",
-                claim: { space: "國內遷移", time: "永久性遷移" },
-                correct: false,
-                explanation: "【攔截正確】他提到支援『三個月』，這屬於暫時性遷移，文件卻申報永久。此人企圖規避居留限制。"
-            },
-            {
-                name: "李 芳", icon: "👩",
-                dialogue: "我這輩子都在上海。但我決定搬到隔壁縣市的新家定居，因為那裡的環境比較安靜，適合我養老。",
-                claim: { space: "國內遷移", time: "永久性遷移" },
-                correct: true,
-                explanation: "【核准正確】同國家的跨區移動（國內）且長期居住（永久）。這是一位誠實的退休居民。"
-            },
-            {
-                name: "代號：K", icon: "👤",
-                dialogue: "我是從國外過來的考察員。我打算在這裡待一個禮拜就走。長官，你的領帶歪了，需要我幫你調整嗎？",
-                claim: { space: "國際遷移", time: "暫時性遷移" },
-                correct: true,
-                explanation: "【核准正確】跨國界（國際）且僅停留一週（暫時）。雖然語氣傲慢，但資料正確。"
-            },
-            {
-                name: "安娜 史密斯", icon: "👧",
-                dialogue: "我考上了這座城市的藝術大學，未來四年我會待在這裡。希望我能成為很棒的畫家，畫出邊境的風景。",
-                claim: { space: "國內遷移", time: "永久性遷移" },
-                correct: false,
-                explanation: "【攔截正確】大學讀書有明確期限（暫時性），申報永久是不合法的。她的天真可能是某種掩飾。"
-            },
-            {
-                name: "馬可斯", icon: "👨",
-                dialogue: "我從家鄉搬到鄰國工作，因為那邊的薪水比較高。合約簽了一年，但我打算在那邊住一輩子，不回來了。",
-                claim: { space: "國際遷移", time: "永久性遷移" },
-                correct: true,
-                explanation: "【核准正確】跨國（國際）且目標為長久居住（永久）。雖然有合約，但最終目的決定了遷移性質。"
-            },
-            {
-                name: "索非亞", icon: "👩‍🌾",
-                dialogue: "我們要搬去遠方了。因為戰爭，原本的家已經毀了。我們打算在那邊落地生根，再也不想遷移了。",
-                claim: { space: "國際遷移", time: "永久性遷移" },
-                correct: false,
-                explanation: "【攔截正確：誘答陷阱】雖然她說搬去『遠方』，但經查證目的地仍在國內。申報國際遷移顯然有誤。"
-            },
-            {
-                name: "拉爾斯", icon: "🧔",
-                dialogue: "我從總部被派來這個國家考察為期三天。我只是路過，明天就會離開。這是我的名片，請收下。",
-                claim: { space: "國際遷移", time: "永久性遷移" },
-                correct: false,
-                explanation: "【攔截正確】明顯的矛盾。口述三天（暫時），文件卻寫永久。此人很可能是來進行非法測繪的特務。"
-            },
-            {
-                name: "新住民 艾蜜莉", icon: "👩",
-                dialogue: "我剛從法國嫁過來定居，我愛上這裡的人情味。我會跟我的丈夫在這裡一起生活下去。",
-                claim: { space: "國際遷移", time: "永久性遷移" },
-                correct: true,
-                explanation: "【核准正確】跨國婚姻（國際）且定居（永久）。歡迎新的國民。"
-            },
-            {
-                name: "小明", icon: "👦",
-                dialogue: "爸爸說我們要搬到隔壁縣市。雖然我很不想離開現在的學校，但聽說那邊有很大的公園...",
-                claim: { space: "國內遷移", time: "暫時性遷移" },
-                correct: false,
-                explanation: "【攔截正確】搬家定居屬於永久性，申報暫時性有誤。這可能是為了逃避某些稅務申報。"
-            },
-            {
-                name: "不知名的黑影", icon: "👤",
-                dialogue: "我... 我只是從國外回來，想在家鄉待幾個月就再出國。對了，長官，我可以借用你的電腦查個資料嗎？",
-                claim: { space: "國內遷移", time: "暫時性遷移" },
-                correct: false,
-                explanation: "【攔截正確：最終博弈】從國外回來屬於『國際遷移』的範疇，他卻申報國內。此人背景極其可疑。"
-            }
+            { name: "佐藤 健", icon: "👨‍💼", dialogue: "我是從東京來的。公司派我到這裡的分部支援三個月。聽說這裡的拉麵很有名，結束後我一定要去吃。", claim: { space: "國內遷移", time: "永久性遷移" }, correct: false, explanation: "【攔截正確】他提到支援『三個月』，這屬於暫時性遷移，文件卻申報永久。此人企圖規避居留限制。" },
+            { name: "李 芳", icon: "👩", dialogue: "我這輩子都在上海。但我決定搬到隔壁縣市的新家定居，因為那裡的環境比較安靜，適合我養老。", claim: { space: "國內遷移", time: "永久性遷移" }, correct: true, explanation: "【核准正確】同國家的跨區移動（國內）且長期居住（永久）。這是一位誠實的退休居民。" },
+            { name: "候選人 08", icon: "👤", dialogue: "我是從國外過來的考察員。我打算在這裡待一個禮拜就走。長官，你的領帶歪了，需要我幫你調整嗎？", claim: { space: "國際遷移", time: "暫時性遷移" }, correct: true, explanation: "【核准正確】跨國界（國際）且僅停留一週（暫時）。雖然語氣傲慢，但資料正確。" },
+            { name: "安娜 史密斯", icon: "👧", dialogue: "我考上了這座城市的藝術大學，未來四年我會待在這裡。希望我能成為畫家，畫出邊境的風景。", claim: { space: "國內遷移", time: "永久性遷移" }, correct: false, explanation: "【攔截正確】大學讀書有明確期限（暫時性），申報永久是不合法的。她的天真可能是某種掩飾。" },
+            { name: "馬可斯", icon: "👨", dialogue: "我從家鄉搬到鄰國工作，薪水比較高。合約簽了一年，但我打算在那邊住一輩子，不回來了。", claim: { space: "國際遷移", time: "永久性遷移" }, correct: true, explanation: "【核准正確】跨國（國際）且目標為長久居住（永久）。最終目的決定了遷移性質。" },
+            { name: "索非亞", icon: "👩‍🌾", dialogue: "我們要搬去遠方了。因為戰爭，家已經毀了。我們打算在那邊落地生根，再也不想遷移了。", claim: { space: "國際遷移", time: "永久性遷移" }, correct: false, explanation: "【攔截正確】雖然說搬去『遠方』，但經查目的地仍在國內。申報國際遷移顯然有誤。" },
+            { name: "拉爾斯", icon: "🧔", dialogue: "我從總部被派來考察為期三天。我只是路過，明天就會離開。這是我的名片，請收下。", claim: { space: "國際遷移", time: "永久性遷移" }, correct: false, explanation: "【攔截正確】矛盾。口述三天（暫時），文件卻寫永久。此人可能是來進行非法測繪的特務。" },
+            { name: "新住民 艾蜜莉", icon: "👩", dialogue: "我剛從法國嫁過來定居，我愛上這裡的人情味。我會跟我的丈夫在這裡一起生活下去。", claim: { space: "國際遷移", time: "永久性遷移" }, correct: true, explanation: "【核准正確】跨國婚姻（國際）且定居（永久）。歡迎新的國民。" },
+            { name: "小明", icon: "👦", dialogue: "爸爸說我們要搬到隔壁縣市。雖然我很不想離開現在的學校，但那邊有很大的公園...", claim: { space: "國內遷移", time: "暫時性遷移" }, correct: false, explanation: "【攔截正確】搬家定居屬於永久性，申報暫時性有誤。這可能是為了逃避稅務申報。" },
+            { name: "不知名的黑影", icon: "👤", dialogue: "我... 我只是從國外回來，想在家鄉待幾個月就再出國。對了，長官，可以借你的電腦查個資料嗎？", claim: { space: "國內遷移", time: "暫時性遷移" }, correct: false, explanation: "【攔截正確】從國外回來屬於『國際遷移』，他卻申報國內。此人背景極其可疑。" }
         ];
 
-        let state = {
-            idx: 0,
-            err: 0,
-            spy: 0,
-            busy: false
-        };
+        let state = { idx: 0, err: 0, spy: 0, busy: false };
 
         function initGame() {
             document.getElementById('intro-screen').style.display = 'none';
@@ -295,7 +226,6 @@
             document.getElementById('claim-time').innerText = c.claim.time;
             document.getElementById('progress').innerText = state.idx + 1;
             document.getElementById('case-id').innerText = "ID: " + Math.random().toString().substring(2,8);
-
             document.getElementById('st-pass').classList.remove('stamp-active');
             document.getElementById('st-fail').classList.remove('stamp-active');
             document.getElementById('paper').style.transform = 'scale(1)';
@@ -305,19 +235,14 @@
         function makeDecision(approve) {
             if (state.busy) return;
             state.busy = true;
-
             const c = cases[state.idx];
             const stampId = approve ? 'st-pass' : 'st-fail';
             const stamp = document.getElementById(stampId);
             stamp.style.setProperty('--rot', approve ? '-15deg' : '15deg');
             stamp.classList.add('stamp-active');
             document.getElementById('paper').style.transform = 'scale(1.05)';
-
             const wise = (approve === c.correct);
-
-            setTimeout(() => {
-                showFB(wise, approve, c);
-            }, 500);
+            setTimeout(() => { showFB(wise, approve, c); }, 500);
         }
 
         function showFB(wise, approve, c) {
@@ -325,13 +250,11 @@
             const box = document.getElementById('fb-card');
             const status = document.getElementById('fb-status');
             const icon = document.getElementById('avatar');
-
             modal.style.display = 'flex';
             document.getElementById('fb-msg').innerText = c.explanation;
-
             if (wise) {
                 status.innerText = approve ? "✅ 判定：合法入境" : "🚨 判定：攔截成功";
-                status.className = "text-2xl font-black mb-4 uppercase text-green-600";
+                status.className = "text-2xl font-black mb-4 text-green-600";
                 box.style.borderTopColor = "#16a34a";
                 icon.innerText = approve ? "😊" : "😱";
                 if (!approve) state.spy++;
@@ -339,28 +262,19 @@
                 document.getElementById('desk').classList.add('shake');
                 setTimeout(() => document.getElementById('desk').classList.remove('shake'), 300);
                 status.innerText = approve ? "❌ 判定：審核失職" : "🚫 判定：冤枉公民";
-                status.className = "text-2xl font-black mb-4 uppercase text-red-600";
+                status.className = "text-2xl font-black mb-4 text-red-600";
                 box.style.borderTopColor = "#dc2626";
                 icon.innerText = approve ? "😈" : "😭";
                 state.err++;
             }
-
             document.getElementById('trust-val').innerText = (100 - (state.err * 50)) + "%";
             document.getElementById('spy-val').innerText = state.spy;
-
-            if (state.err >= 2) {
-                setTimeout(() => finish(false), 800);
-            }
+            if (state.err >= 2) { setTimeout(() => finish(false), 800); }
         }
 
         function nextCase() {
             state.idx++;
-            if (state.idx >= cases.length) {
-                finish(true);
-            } else {
-                document.getElementById('feedback-modal').style.display = 'none';
-                load();
-            }
+            if (state.idx >= cases.length) { finish(true); } else { document.getElementById('feedback-modal').style.display = 'none'; load(); }
         }
 
         function finish(win) {
@@ -370,21 +284,18 @@
             if (win) {
                 document.getElementById('end-icon').innerText = "🏆";
                 document.getElementById('end-title').innerText = "勤務評等：優等";
-                document.getElementById('end-desc').innerText = `你展現了驚人的邏輯洞察力，共攔截了 ${state.spy} 起潛在的違規遷移與滲透。邊境的安全因你而存在。`;
+                document.getElementById('end-desc').innerText = `你展現了驚人的邏輯洞察力，共攔截了 ${state.spy} 起潛在的違規滲透。邊境安全因你而存在。`;
                 document.getElementById('end-title').className = "text-6xl font-black mb-6 text-green-500";
             } else {
                 document.getElementById('end-icon').innerText = "💀";
                 document.getElementById('end-title').innerText = "勤務評等：撤職";
-                document.getElementById('end-desc').innerText = "因為你在審核過程中的嚴重疏失，國家的邊境數據已遭到破壞，且多名重要人士被無端扣留。你已被解除職務。";
+                document.getElementById('end-desc').innerText = "因嚴重疏失造成國防漏洞，你已被解除職務。";
                 document.getElementById('end-title').className = "text-6xl font-black mb-6 text-red-600";
             }
         }
 
         window.addEventListener('keydown', (e) => {
-            if (state.busy) {
-                if (e.key === 'Enter' && document.getElementById('feedback-modal').style.display === 'flex') nextCase();
-                return;
-            }
+            if (state.busy) { if (e.key === 'Enter' && document.getElementById('feedback-modal').style.display === 'flex') nextCase(); return; }
             if (e.key.toLowerCase() === 'a') makeDecision(true);
             if (e.key.toLowerCase() === 'd') makeDecision(false);
             if (e.key === 'Enter' && document.getElementById('intro-screen').style.display !== 'none') initGame();
