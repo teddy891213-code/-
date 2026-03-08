@@ -4,33 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>邊境哨口：灰色地帶</title>
-    <!-- 增加更穩定的 Tailwind CDN 載入 -->
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+TC:wght@400;900&display=swap');
+        /* 基礎定義與字體 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;900&display=swap');
 
-        /* 核心樣式強制定義，防止 CDN 延遲導致白屏 */
         :root {
-            --bg-dark: #0d0d0f;
+            --bg-dark: #0a0a0c;
+            --zinc-950: #09090b;
+            --zinc-900: #18181b;
+            --zinc-800: #27272a;
+            --zinc-700: #3f3f46;
+            --zinc-600: #52525b;
+            --zinc-500: #71717a;
+            --zinc-400: #a1a1aa;
+            --zinc-300: #d4d4d8;
+            --zinc-100: #f4f4f5;
             --paper-color: #f4f1ea;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #ca8a04;
         }
 
+        * { box-sizing: border-box; }
+
         body {
-            background-color: #0d0d0f !important; /* 強制深色背景 */
-            color: #d1d5db;
-            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--zinc-300);
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
             overflow: hidden;
             height: 100vh;
-            margin: 0;
             display: flex;
             flex-direction: column;
         }
 
-        /* 確保遊戲 UI 預設隱藏，避免載入時閃爍 */
-        #game-ui, #feedback-modal, #end-screen {
-            display: none;
-        }
-
+        /* CRT 掃描線效果 */
         .crt-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -40,6 +49,211 @@
             z-index: 1000;
         }
 
+        /* 介面容器 */
+        header {
+            height: 80px;
+            background-color: var(--zinc-950);
+            border-bottom: 2px solid var(--zinc-800);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            z-index: 10;
+        }
+
+        main {
+            flex-grow: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .side-panel {
+            width: 33.333%;
+            background-color: var(--zinc-900);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            border-right: 2px solid var(--zinc-800);
+        }
+
+        .desk-area {
+            width: 66.666%;
+            background-color: var(--zinc-950);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        /* 角色相關 */
+        #avatar {
+            font-size: 10rem;
+            margin-bottom: 40px;
+            filter: drop-shadow(0 20px 20px rgba(0,0,0,0.5));
+            transition: transform 0.3s;
+        }
+
+        .name-plate {
+            background-color: var(--zinc-800);
+            padding: 8px 24px;
+            border: 1px solid var(--zinc-600);
+            font-weight: 900;
+            color: var(--zinc-100);
+            margin-bottom: 40px;
+        }
+
+        .dialogue-box {
+            width: 100%;
+            background-color: var(--zinc-800);
+            padding: 24px;
+            border-left: 4px solid var(--accent-blue);
+            font-style: italic;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        /* 文件卡片 */
+        .document {
+            background-color: var(--paper-color);
+            color: #262626;
+            width: 100%;
+            max-width: 500px;
+            height: 420px;
+            padding: 40px;
+            box-shadow: 20px 20px 0px rgba(0,0,0,0.7);
+            border: 1px solid #d1d1d1;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .doc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .doc-title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            font-style: italic;
+            color: var(--zinc-500);
+            margin: 0;
+        }
+
+        .doc-field {
+            margin-bottom: 40px;
+        }
+
+        .doc-label {
+            font-size: 0.65rem;
+            font-weight: 900;
+            color: var(--zinc-400);
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .doc-value {
+            font-size: 1.8rem;
+            font-weight: 900;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            margin: 0;
+        }
+
+        /* 按鈕區域 */
+        .button-group {
+            margin-top: 50px;
+            display: flex;
+            gap: 50px;
+        }
+
+        .btn-game {
+            width: 100px;
+            height: 100px;
+            border: none;
+            border-radius: 8px;
+            border-bottom: 8px solid;
+            font-size: 2.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+
+        .btn-deny { background-color: #7f1d1d; border-color: #450a0a; }
+        .btn-deny:hover { background-color: #991b1b; }
+        .btn-approve { background-color: #14532d; border-color: #064e3b; }
+        .btn-approve:hover { background-color: #166534; }
+        .btn-game:active { transform: scale(0.95); border-bottom-width: 0; }
+
+        /* 印章 */
+        .stamp {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(2);
+            font-size: 4rem;
+            font-weight: 900;
+            padding: 10px 30px;
+            border: 8px solid;
+            border-radius: 8px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .stamp-pass { color: var(--accent-green); border-color: var(--accent-green); }
+        .stamp-fail { color: var(--accent-red); border-color: var(--accent-red); }
+        .stamp-active { opacity: 0.8; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
+
+        /* 模態框與覆蓋層 */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0,0,0,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            z-index: 2000;
+        }
+
+        .modal-box {
+            max-width: 500px;
+            width: 100%;
+            background-color: white;
+            color: black;
+            padding: 40px;
+            border-top: 10px solid var(--accent-blue);
+        }
+
+        .btn-next {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--zinc-950);
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+
+        .btn-next:hover { background-color: var(--zinc-700); }
+
+        /* 開場畫面 */
+        #intro-screen { z-index: 3000; background-color: black; }
+        .intro-content { max-width: 800px; width: 100%; text-align: center; }
+        .rule-card { background-color: var(--zinc-900); border: 1px solid var(--zinc-700); padding: 30px; margin: 30px 0; text-align: left; }
+
+        /* 動效 */
         @keyframes shake {
             0%, 100% { transform: translate(0,0); }
             20% { transform: translate(-5px, 5px); }
@@ -47,151 +261,132 @@
             60% { transform: translate(5px, 5px); }
             80% { transform: translate(5px, -5px); }
         }
-        .shake { animation: shake 0.3s ease-in-out; }
+        .shake-active { animation: shake 0.3s ease-in-out; }
 
-        .document {
-            background-color: #f4f1ea;
-            color: #262626;
-            box-shadow: 20px 20px 0px rgba(0,0,0,0.7);
-            border: 1px solid #d1d1d1;
-            transition: transform 0.2s;
-        }
+        /* 隱藏元素 */
+        .hidden { display: none !important; }
 
-        .stamp {
-            position: absolute;
-            font-size: 4.5rem;
-            font-weight: 900;
-            padding: 5px 30px;
-            border: 8px solid;
-            border-radius: 8px;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 100;
-            transform: scale(2);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .stamp-pass { color: #15803d; border-color: #16a34a; transform: rotate(-15deg) scale(2); }
-        .stamp-fail { color: #b91c1c; border-color: #b91c1c; transform: rotate(15deg) scale(2); }
-        .stamp-active { opacity: 0.8; transform: rotate(var(--rot)) scale(1); display: block !important; }
-
-        .btn-press:active { transform: scale(0.9); }
-        
-        /* 針對行動裝置優化 */
+        /* 響應式優化 */
         @media (max-width: 768px) {
-            #avatar { font-size: 6rem; }
-            .document { transform: scale(0.85); }
+            main { flex-direction: column; }
+            .side-panel { width: 100%; height: 40%; padding: 20px; border-right: none; border-bottom: 2px solid var(--zinc-800); }
+            .desk-area { width: 100%; height: 60%; padding: 20px; }
+            #avatar { font-size: 5rem; margin-bottom: 10px; }
+            .document { transform: scale(0.8); }
         }
     </style>
 </head>
 <body>
     <div class="crt-overlay"></div>
 
-    <!-- 1. 劇情與規則 -->
-    <div id="intro-screen" class="fixed inset-0 z-[2000] bg-black flex items-center justify-center p-8">
-        <div class="max-w-4xl w-full space-y-8">
-            <h1 class="text-5xl md:text-6xl font-black text-zinc-600 italic text-center tracking-tighter">GRAY ZONE: 2026</h1>
-            
-            <div class="bg-zinc-900 p-8 border border-zinc-700 shadow-2xl space-y-6">
-                <p class="text-zinc-400 leading-relaxed text-lg">
-                    <span class="text-zinc-100 font-bold">【絕密檔案：哨口 14-S】</span><br>
-                    世界局勢動盪，人口大規模遷移。情報顯示，多名滲透者已混入隊伍，企圖破壞邊境安全。
+    <!-- 1. 開場故事 -->
+    <div id="intro-screen" class="overlay">
+        <div class="intro-content">
+            <h1 style="font-size: 4rem; font-weight: 900; font-style: italic; color: var(--accent-red);">GRAY ZONE: 2026</h1>
+            <div class="rule-card">
+                <p style="color: white; font-weight: bold;">【絕密檔案：哨口 14-S】</p>
+                <p style="color: var(--zinc-400); line-height: 1.8;">
+                    戰爭爆發後，人口大規模移動。敵國間諜正偽裝成難民、學生與勞工，企圖攜帶違禁資料跨越分界線。
                 </p>
-                <div class="bg-zinc-800 p-6 border-l-4 border-yellow-600">
-                    <p class="text-yellow-500 font-bold mb-2">審核官守則：</p>
-                    <ul class="text-sm space-y-2 text-zinc-300">
-                        <li>1. 嚴格對比「口頭理由」與「書面申報」。</li>
-                        <li>2. 空間（國內/國際）或時間（暫時/永久）任一項申報不實，即判定為滲透者。</li>
+                <div style="background-color: var(--zinc-800); padding: 15px; margin-top: 20px; border-left: 4px solid var(--accent-yellow);">
+                    <p style="color: var(--accent-yellow); font-weight: bold; margin: 0 0 10px 0;">審核官任務：</p>
+                    <ul style="font-size: 0.9rem; color: var(--zinc-300); margin: 0; padding-left: 20px;">
+                        <li>1. 不要看身分，要看邏輯。</li>
+                        <li>2. 嚴格比對「口頭理由」與「書面申報」。</li>
+                        <li>3. 空間（國內/國際）或時間（暫時/永久）任一項不實，即判定為滲透者。</li>
                     </ul>
                 </div>
-                <p class="text-red-600 font-black animate-pulse">警告：誤判達 2 次，你將因「通敵罪」被撤職處分。</p>
+                <p style="color: var(--accent-red); font-weight: 900; margin-top: 20px; text-align: center;">警告：誤判達 2 次，你將因通敵罪被移送軍事法庭。</p>
             </div>
-
-            <div class="text-center">
-                <button onclick="initGame()" class="px-16 py-5 bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-black rounded-sm border border-zinc-600 shadow-xl transition-all">開始勤務</button>
-            </div>
+            <button onclick="initGame()" style="padding: 20px 60px; background-color: #991b1b; color: white; font-weight: 900; font-size: 1.5rem; border: none; cursor: pointer;">開始勤務</button>
         </div>
     </div>
 
     <!-- 2. 遊戲主畫面 -->
-    <div id="game-ui" class="h-screen flex flex-col">
-        <header class="h-20 bg-zinc-950 border-b-2 border-zinc-800 flex items-center justify-between px-10">
-            <div class="flex items-center gap-6">
-                <h2 class="text-xl font-bold text-zinc-500 tracking-widest uppercase hidden md:block">District 14-S Control</h2>
-                <p class="text-yellow-600 font-mono">CASE: <span id="progress">1</span> / 10</p>
+    <div id="game-ui" class="hidden" style="height: 100vh; display: flex; flex-direction: column;">
+        <header>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <h2 style="font-weight: 900; color: var(--zinc-500); letter-spacing: 2px;">DISTRICT 14-S</h2>
+                <div style="color: var(--accent-yellow); font-family: monospace;">CASE: <span id="progress">1</span> / 10</div>
             </div>
-            <div class="flex gap-12">
-                <div class="text-right">
-                    <p class="text-[10px] text-zinc-600 uppercase">Trust Index</p>
-                    <p id="trust-val" class="text-2xl md:text-3xl font-black text-blue-600">100%</p>
+            <div style="display: flex; gap: 40px;">
+                <div style="text-align: right;">
+                    <p style="font-size: 10px; color: var(--zinc-600); margin: 0;">TRUST INDEX</p>
+                    <p id="trust-val" style="font-size: 2rem; font-weight: 900; color: var(--accent-blue); margin: 0;">100%</p>
                 </div>
-                <div class="text-right">
-                    <p class="text-[10px] text-zinc-600 uppercase">Intercepted</p>
-                    <p id="spy-val" class="text-2xl md:text-3xl font-black text-red-600">0</p>
+                <div style="text-align: right;">
+                    <p style="font-size: 10px; color: var(--zinc-600); margin: 0;">INTERCEPTED</p>
+                    <p id="spy-val" style="font-size: 2rem; font-weight: 900; color: var(--accent-red); margin: 0;">0</p>
                 </div>
             </div>
         </header>
 
-        <main class="flex-grow flex flex-col md:flex-row">
-            <!-- 左側：申請人 -->
-            <div class="w-full md:w-1/3 bg-zinc-900 flex flex-col items-center justify-center p-6 md:p-12 border-b-2 md:border-b-0 md:border-r-2 border-zinc-800">
-                <div id="avatar" class="text-8xl md:text-[10rem] mb-4 md:mb-12 drop-shadow-2xl transition-transform duration-300">👤</div>
-                <div id="name-plate" class="bg-zinc-800 px-6 py-2 border border-zinc-600 font-bold mb-6 text-zinc-100">---</div>
-                <div class="w-full bg-zinc-800 p-4 md:p-6 border-l-4 border-blue-900 shadow-inner italic">
-                    <p id="dialogue" class="text-base md:text-lg text-zinc-300 leading-relaxed">「...」</p>
+        <main>
+            <div class="side-panel">
+                <div id="avatar">👤</div>
+                <div id="name-plate" class="name-plate">---</div>
+                <div class="dialogue-box">
+                    <p id="dialogue" style="margin: 0; color: var(--zinc-300);">「...」</p>
                 </div>
             </div>
 
-            <!-- 右側：辦公桌 -->
-            <div id="desk" class="w-full md:w-2/3 bg-zinc-950 flex flex-col items-center justify-center p-6 md:p-10 relative">
-                <div id="paper" class="document w-full max-w-xl p-6 md:p-10 relative">
-                    <div class="flex justify-between items-start border-b-2 border-zinc-300 pb-4 mb-6">
+            <div id="desk" class="desk-area">
+                <div id="paper" class="document">
+                    <div class="doc-header">
                         <div>
-                            <h3 class="text-2xl md:text-3xl font-black tracking-tighter text-zinc-500 italic uppercase">Transit Permit</h3>
-                            <p class="text-[10px] font-mono mt-1 text-zinc-400" id="case-id">ID: 000-000</p>
+                            <p class="doc-title">TRANSIT PERMIT</p>
+                            <p id="case-id" style="font-size: 10px; font-family: monospace; color: #999; margin: 5px 0 0 0;">ID: 000-000</p>
                         </div>
-                        <div class="w-10 h-10 border-2 border-zinc-300 rounded-full flex items-center justify-center font-serif text-zinc-300 text-xs">GMA</div>
+                        <div style="width: 40px; height: 40px; border: 2px solid #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #ddd;">GMA</div>
                     </div>
 
-                    <div class="space-y-6 md:space-y-10">
-                        <div>
-                            <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">申報空間類別 (Relocation Space)</label>
-                            <p id="claim-space" class="text-2xl md:text-3xl font-black text-zinc-800 border-b border-zinc-200 pb-2">---</p>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">申報時間類別 (Relocation Time)</label>
-                            <p id="claim-time" class="text-2xl md:text-3xl font-black text-zinc-800 border-b border-zinc-200 pb-2">---</p>
-                        </div>
+                    <div class="doc-field">
+                        <label class="doc-label">申報空間類別 (SPACE CATEGORY)</label>
+                        <p id="claim-space" class="doc-value">---</p>
                     </div>
 
-                    <div id="stamp-layer" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div id="st-pass" class="stamp stamp-pass">APPROVED</div>
-                        <div id="st-fail" class="stamp stamp-fail">REJECTED</div>
+                    <div class="doc-field">
+                        <label class="doc-label">申報時間類別 (TIME CATEGORY)</label>
+                        <p id="claim-time" class="doc-value">---</p>
                     </div>
+
+                    <p style="position: absolute; bottom: 20px; right: 20px; font-size: 8px; color: #bbb; text-align: right; font-family: monospace;">VERIFY ALL DATA.<br>MISMATCH = ARREST.</p>
+
+                    <div id="st-pass" class="stamp stamp-pass">APPROVED</div>
+                    <div id="st-fail" class="stamp stamp-fail">REJECTED</div>
                 </div>
 
-                <div class="mt-8 md:mt-12 flex gap-12">
-                    <button onclick="makeDecision(false)" class="btn-press w-20 h-20 md:w-24 md:h-24 bg-red-900 hover:bg-red-800 border-b-8 border-red-950 rounded-lg flex items-center justify-center text-3xl md:text-4xl">🚫</button>
-                    <button onclick="makeDecision(true)" class="btn-press w-20 h-20 md:w-24 md:h-24 bg-green-900 hover:bg-green-800 border-b-8 border-green-950 rounded-lg flex items-center justify-center text-3xl md:text-4xl">✔️</button>
+                <div class="button-group">
+                    <div style="text-align: center;">
+                        <button onclick="makeDecision(false)" class="btn-game btn-deny">🚫</button>
+                        <p style="font-size: 10px; color: var(--zinc-600); margin-top: 10px; font-weight: bold;">逮捕拒絕 (D)</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <button onclick="makeDecision(true)" class="btn-game btn-approve">✔️</button>
+                        <p style="font-size: 10px; color: var(--zinc-600); margin-top: 10px; font-weight: bold;">核准通過 (A)</p>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- 3. 結果反饋 -->
-    <div id="feedback-modal" class="fixed inset-0 z-[3000] flex items-center justify-center p-8 bg-black/95">
-        <div id="fb-card" class="max-w-md w-full bg-white p-8 border-t-[10px]">
-            <h4 id="fb-status" class="text-2xl font-black mb-4 uppercase">審核結果</h4>
-            <p id="fb-msg" class="text-zinc-700 mb-8 italic leading-relaxed text-lg">...</p>
-            <button onclick="nextCase()" class="w-full py-4 bg-zinc-900 text-white font-bold hover:bg-zinc-800">下一個案件</button>
+    <!-- 3. 反饋視窗 -->
+    <div id="feedback-modal" class="overlay hidden">
+        <div class="modal-box">
+            <h4 id="fb-status" style="font-size: 1.5rem; font-weight: 900; margin: 0 0 15px 0;">審核結果</h4>
+            <p id="fb-msg" style="line-height: 1.6; color: #333;">說明文字...</p>
+            <button onclick="nextCase()" class="btn-next">處理下一個案件</button>
         </div>
     </div>
 
-    <!-- 4. 終局結局 -->
-    <div id="end-screen" class="fixed inset-0 z-[4000] flex flex-col items-center justify-center p-8 bg-zinc-950 text-center">
-        <div id="end-icon" class="text-8xl md:text-[12rem] mb-8">🏆</div>
-        <h2 id="end-title" class="text-4xl md:text-6xl font-black mb-6 text-zinc-100">勤務結束</h2>
-        <p id="end-desc" class="text-lg md:text-xl text-zinc-500 max-w-2xl mb-12 italic">...</p>
-        <button onclick="location.reload()" class="px-12 py-4 bg-white text-black font-black hover:bg-zinc-200">重新啟動系統</button>
+    <!-- 4. 終局畫面 -->
+    <div id="end-screen" class="overlay hidden">
+        <div style="text-align: center;">
+            <div id="end-icon" style="font-size: 10rem; margin-bottom: 20px;">🏆</div>
+            <h2 id="end-title" style="font-size: 4rem; font-weight: 900; margin: 0 0 20px 0;">任務結束</h2>
+            <p id="end-desc" style="font-size: 1.2rem; color: var(--zinc-400); max-width: 600px; margin: 0 auto 40px auto; font-style: italic;">...</p>
+            <button onclick="location.reload()" style="padding: 15px 40px; background-color: white; color: black; font-weight: 900; border: none; cursor: pointer;">重新啟動系統</button>
+        </div>
     </div>
 
     <script>
@@ -211,8 +406,8 @@
         let state = { idx: 0, err: 0, spy: 0, busy: false };
 
         function initGame() {
-            document.getElementById('intro-screen').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'flex';
+            document.getElementById('intro-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
             load();
         }
 
@@ -250,20 +445,18 @@
             const box = document.getElementById('fb-card');
             const status = document.getElementById('fb-status');
             const icon = document.getElementById('avatar');
-            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
             document.getElementById('fb-msg').innerText = c.explanation;
             if (wise) {
                 status.innerText = approve ? "✅ 判定：合法入境" : "🚨 判定：攔截成功";
-                status.className = "text-2xl font-black mb-4 text-green-600";
-                box.style.borderTopColor = "#16a34a";
+                status.style.color = "#16a34a";
                 icon.innerText = approve ? "😊" : "😱";
                 if (!approve) state.spy++;
             } else {
-                document.getElementById('desk').classList.add('shake');
-                setTimeout(() => document.getElementById('desk').classList.remove('shake'), 300);
+                document.getElementById('desk').classList.add('shake-active');
+                setTimeout(() => document.getElementById('desk').classList.remove('shake-active'), 300);
                 status.innerText = approve ? "❌ 判定：審核失職" : "🚫 判定：冤枉公民";
-                status.className = "text-2xl font-black mb-4 text-red-600";
-                box.style.borderTopColor = "#dc2626";
+                status.style.color = "#dc2626";
                 icon.innerText = approve ? "😈" : "😭";
                 state.err++;
             }
@@ -274,31 +467,31 @@
 
         function nextCase() {
             state.idx++;
-            if (state.idx >= cases.length) { finish(true); } else { document.getElementById('feedback-modal').style.display = 'none'; load(); }
+            if (state.idx >= cases.length) { finish(true); } else { document.getElementById('feedback-modal').classList.add('hidden'); load(); }
         }
 
         function finish(win) {
-            document.getElementById('feedback-modal').style.display = 'none';
+            document.getElementById('feedback-modal').classList.add('hidden');
             const end = document.getElementById('end-screen');
-            end.style.display = 'flex';
+            end.classList.remove('hidden');
             if (win) {
                 document.getElementById('end-icon').innerText = "🏆";
                 document.getElementById('end-title').innerText = "勤務評等：優等";
                 document.getElementById('end-desc').innerText = `你展現了驚人的邏輯洞察力，共攔截了 ${state.spy} 起潛在的違規滲透。邊境安全因你而存在。`;
-                document.getElementById('end-title').className = "text-6xl font-black mb-6 text-green-500";
+                document.getElementById('end-title').style.color = "#22c55e";
             } else {
                 document.getElementById('end-icon').innerText = "💀";
                 document.getElementById('end-title').innerText = "勤務評等：撤職";
-                document.getElementById('end-desc').innerText = "因嚴重疏失造成國防漏洞，你已被解除職務。";
-                document.getElementById('end-title').className = "text-6xl font-black mb-6 text-red-600";
+                document.getElementById('end-desc').innerText = "因嚴重疏失造成國防漏洞，你已被解除職務並移送軍事法庭。";
+                document.getElementById('end-title').style.color = "#ef4444";
             }
         }
 
         window.addEventListener('keydown', (e) => {
-            if (state.busy) { if (e.key === 'Enter' && document.getElementById('feedback-modal').style.display === 'flex') nextCase(); return; }
+            if (state.busy) { if (e.key === 'Enter' && !document.getElementById('feedback-modal').classList.contains('hidden')) nextCase(); return; }
             if (e.key.toLowerCase() === 'a') makeDecision(true);
             if (e.key.toLowerCase() === 'd') makeDecision(false);
-            if (e.key === 'Enter' && document.getElementById('intro-screen').style.display !== 'none') initGame();
+            if (e.key === 'Enter' && !document.getElementById('intro-screen').classList.contains('hidden')) initGame();
         });
     </script>
 </body>
