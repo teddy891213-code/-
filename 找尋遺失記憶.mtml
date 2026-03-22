@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>文化時空偵探：小鎮奇遇記</title>
+    <style>
+        :root {
+            --ui-bg: rgba(255, 255, 255, 0.98);
+            --accent-color: #2c3e50;
+            --danger-color: #c0392b;
+            --success-color: #27ae60;
+            --lesson-bg: #fdf6e3;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #1a1a1a;
+            font-family: 'Microsoft JhengHei', sans-serif;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative; width: 100vw; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.1s;
+        }
+
+        canvas {
+            image-rendering: auto;
+            background-color: #87ae5e;
+            display: block;
+        }
+
+        /* 介面層 */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; z-index: 1000; text-align: center;
+            color: white; background: #000;
+        }
+
+        .dialogue-box {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 750px; min-height: 140px;
+            background: var(--ui-bg); border: 5px solid var(--accent-color); border-radius: 20px;
+            padding: 25px; box-sizing: border-box; display: none; z-index: 2000;
+            font-size: 20px; line-height: 1.6; color: #2c3e50;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6); cursor: pointer;
+        }
+
+        #confirm-modal, #lesson-modal, #end-screen {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 85%; max-width: 600px; background: var(--ui-bg);
+            border: 6px solid var(--accent-color); border-radius: 25px;
+            padding: 30px; z-index: 5000; color: #2c3e50; display: none;
+            box-shadow: 0 0 100px rgba(0,0,0,0.9); text-align: center;
+        }
+
+        #end-screen { background: #1a1a1a; color: white; border-color: #f1c40f; }
+
+        #stats-ui {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0,0,0,0.85); color: white; padding: 15px 30px;
+            border-radius: 50px; pointer-events: none; z-index: 1500;
+            font-size: 20px; border: 2px solid #666;
+        }
+
+        #joystick-base {
+            position: absolute; bottom: 50px; left: 50px;
+            width: 120px; height: 120px; background: rgba(255,255,255,0.1);
+            border-radius: 50%; border: 3px solid rgba(255,255,255,0.3);
+            display: none; z-index: 3000;
+        }
+        #joystick-stick {
+            position: absolute; top: 30px; left: 30px; width: 60px; height: 60px;
+            background: rgba(255,255,255,0.4); border-radius: 50%;
+        }
+
+        #action-btn {
+            position: absolute; bottom: 50px; right: 50px;
+            width: 110px; height: 110px; background: #e74c3c; color: white;
+            border-radius: 50%; border: 6px solid #fff; font-weight: bold;
+            display: none; z-index: 3000; align-items: center; justify-content: center;
+            font-size: 22px; cursor: pointer; user-select: none;
+        }
+
+        /* 效果層 */
+        #fx-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 2500; display: none;
+        }
+        .flash-success { background: rgba(39, 174, 96, 0.5); animation: flashFade 1s forwards; }
+        .flash-error { background: rgba(192, 57, 43, 0.7); }
+
+        @keyframes flashFade { from { opacity: 1; } to { opacity: 0; } }
+        
+        /* 全畫面抖動動畫 */
+        .shake-anim {
+            animation: shakeScreen 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shakeScreen {
+            10%, 90% { transform: translate3d(-2px, -50%, 0) translateX(-50%); }
+            20%, 80% { transform: translate3d(4px, -50%, 0) translateX(-50%); }
+            30%, 50%, 70% { transform: translate3d(-8px, -50%, 0) translateX(-50%); }
+            40%, 60% { transform: translate3d(8px, -50%, 0) translateX(-50%); }
+        }
+
+        .btn {
+            padding: 15px 40px; font-size: 22px; background: #f1c40f;
+            border: none; border-radius: 50px; cursor: pointer; margin-top: 20px;
+            font-weight: bold; color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="fx-layer"></div>
+
+    <!-- 開場 -->
+    <div id="intro-1" class="overlay">
+        <div style="font-size: 32px; font-weight: bold; margin-bottom: 20px;">文化時空偵探：小鎮甦醒</div>
+        <p style="max-width: 650px; padding: 20px; font-size: 18px; line-height: 1.8;">
+            2070 年，世界已失去靈魂。許多人的記憶只剩下破碎的片段。<br>
+            你必須引導這些失憶的旅人，回到屬於他們的文化根源。<br>
+            觀察、推論、修復... 只有你能找回世界的色彩。
+        </p>
+        <button class="btn" onclick="nextIntro(2)">啟動偵察</button>
+    </div>
+
+    <div id="intro-2" class="overlay" style="display: none;">
+        <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px;">偵探任務筆記</div>
+        <p style="max-width: 650px; padding: 20px; font-size: 18px; line-height: 1.8; text-align: left;">
+            🏘️ **推理大挑戰**：NPC 處於深度失憶，不會描述建築名稱與外觀。<br>
+            👔 **觀察服飾**：觀察 NPC 的「外觀描述」來判斷他們的族群背景。<br>
+            👁️ **感官觀察**：點擊建築物查看物理特徵，將其與 NPC 的渴望進行匹配。
+        </p>
+        <button class="btn" onclick="startGame()" style="background: #e74c3c; color: white;">進入模擬艙</button>
+    </div>
+
+    <!-- 推論確認 -->
+    <div id="confirm-modal">
+        <div style="font-size: 24px; font-weight: bold; margin-bottom: 15px; color: #c0392b;">確定此處記憶？</div>
+        <div id="modal-text" style="font-size: 18px; margin-bottom: 25px; line-height: 1.6; text-align: left;"></div>
+        <div style="display: flex; gap: 20px;">
+            <button onclick="handleConfirm(true)" style="flex:1; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 18px; cursor: pointer;">進入記憶</button>
+            <button onclick="handleConfirm(false)" style="flex:1; padding: 15px; background: #95a5a6; color: white; border: none; border-radius: 10px; font-size: 18px; cursor: pointer;">再觀察</button>
+        </div>
+    </div>
+
+    <!-- 教學視窗 -->
+    <div id="lesson-modal">
+        <div id="lesson-title" style="font-size: 26px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #2c3e50;"></div>
+        <div id="lesson-content" style="font-size: 18px; line-height: 1.7; margin-bottom: 20px;"></div>
+        <button class="btn" onclick="closeLesson()" style="width: 100%; margin-top: 0;">我了解了</button>
+    </div>
+
+    <!-- 結局畫面 -->
+    <div id="end-screen">
+        <div id="end-title" style="font-size: 40px; font-weight: bold; margin-bottom: 20px;"></div>
+        <div id="end-body" style="font-size: 20px; line-height: 1.6; margin-bottom: 30px;"></div>
+        <button class="btn" onclick="location.reload()">重新鏈接時空</button>
+    </div>
+
+    <div id="stats-ui">
+        修復進度: <span id="quest-val">0</span>/6 | 穩定值: <span id="time-val">300</span>s
+    </div>
+
+    <div id="dialogue" class="dialogue-box"></div>
+    <div id="joystick-base"><div id="joystick-stick"></div></div>
+    <div id="action-btn">...</div>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    const container = document.getElementById('game-container');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const timeVal = document.getElementById('time-val');
+    const questVal = document.getElementById('quest-val');
+    const dialogueBox = document.getElementById('dialogue');
+    const actionBtn = document.getElementById('action-btn');
+    const fxLayer = document.getElementById('fx-layer');
+    const confirmModal = document.getElementById('confirm-modal');
+    const modalText = document.getElementById('modal-text');
+    const lessonModal = document.getElementById('lesson-modal');
+    const endScreen = document.getElementById('end-screen');
+    const endTitle = document.getElementById('end-title');
+    const endBody = document.getElementById('end-body');
+
+    const WORLD_WIDTH = 3200;
+    const WORLD_HEIGHT = 2400;
+    let VIEW_WIDTH = window.innerWidth;
+    let VIEW_HEIGHT = window.innerHeight;
+
+    canvas.width = VIEW_WIDTH;
+    canvas.height = VIEW_HEIGHT;
+
+    let gameState = 'intro';
+    let timeLeft = 300;
+    let questsCompleted = 0;
+    let playerSpeed = 3.5; 
+    let currentInteraction = null;
+    let activeQuest = null;
+    let worldSaturation = 15; 
+
+    const camera = { x: 0, y: 0 };
+    const player = { x: 1600, y: 1200, r: 25, color: '#3498db', history: [] };
+
+    // 建築物
+    const landmarks = [
+        { id: 'noodle', name: "???", secretName: "北方風味館", x: 400, y: 400, w: 180, h: 140, color: "#d35400", icon: "🥟", type: 'target', 
+          desc: "這裡充滿了乾燥的粉末氣息。裡面傳來陣陣沈重且有節奏的撞擊聲，那是揉合麵團的響動。" },
+        { id: 'church', name: "???", secretName: "百步蛇石板教堂", x: 2600, y: 400, w: 200, h: 220, color: "#ecf0f1", icon: "⛪", type: 'target', 
+          desc: "冰冷的灰色片狀材質堆疊出了這棟建築。支柱上裝飾著螺旋狀的盤繞花紋與山區盛開的白色花朵圖案。" },
+        { id: 'mosque', name: "???", secretName: "新月禮拜堂", x: 500, y: 2000, w: 220, h: 160, color: "#27ae60", icon: "🕌", type: 'target', 
+          desc: "這是一個極度安靜的空間。高處的構造呈現出圓滑的弧度，指引著某個特定的方位。" },
+        { id: 'archive', name: "???", secretName: "語源紀錄館", x: 2600, y: 2000, w: 180, h: 140, color: "#95a5a6", icon: "📜", type: 'target', 
+          desc: "充滿了陳舊紙張的味道。牆上刻著解釋土地測量與編織物體起源的異國發音。" },
+        { id: 'thai', name: "???", secretName: "南洋香料屋", x: 1200, y: 400, w: 180, h: 140, color: "#f1c40f", icon: "🍲", type: 'target', 
+          desc: "靠近門口鼻腔就有種被刺痛的錯覺。滾燙的水氣混合著草本植物的芬芳，呈暖橘色調。" },
+        { id: 'rice', name: "???", secretName: "竹筒米坊", x: 1800, y: 2000, w: 180, h: 140, color: "#8e44ad", icon: "🍚", type: 'target', 
+          desc: "這裡有著炭火燒灼木材的煙味。一截截綠色的管狀植物內，正滲出晶瑩的米湯液體。" },
+        
+        // 誘答建築
+        { name: "???", secretName: "單一數據塔", x: 1000, y: 1000, w: 120, h: 350, color: "#34495e", icon: "🗼", type: 'fake', desc: "一座冰冷的全息顯示塔，播放著標準化的廣告數據。" },
+        { name: "???", secretName: "水泥蓄水池", x: 2000, y: 800, w: 200, h: 100, color: "#7f8c8d", icon: "🚰", type: 'fake', desc: "巨大且枯燥的水泥設施，沒有任何文化氣息。" },
+        { name: "???", secretName: "廢棄材料堆", x: 800, y: 1600, w: 150, h: 100, color: "#555", icon: "📦", type: 'fake', desc: "堆放著許多工業廢料，感覺不到任何土地的靈魂。" }
+    ];
+
+    const npcs = [
+        { id: 1, name: "失憶的老者", x: 1200, y: 1100, icon: "👴", look: "【服飾：衣袖沾滿了白色的細碎粉末，手指關節粗大。】", questText: "我想要找回一種...手掌按壓、充滿彈性的溫暖力量。那種很有嚼勁、包著餡料的味道在呼喚我...", target: "北方風味館", lesson: { title: "北方移民與麵食文化", content: "1949年後，大批移居臺灣的北方人帶來了麵食習慣。原本以米食為主的臺灣，因此加入了水餃、饅頭等風味，豐富了在地美食！" } },
+        { id: 2, name: "祈禱的男子", x: 1600, y: 1400, icon: "👳", look: "【服飾：戴著潔白的頭巾，身上帶著淡淡的檀香味。】", questText: "我必須洗淨雙手。我需要一個能脫去鞋履，將額頭貼在柔軟毯子，並面向特定的方位禱告的地方...", target: "新月禮拜堂", lesson: { title: "伊斯蘭教在臺灣", content: "隨著移工與移民增加，清真寺成為臺灣多元宗教的重要標誌。臺灣的包容性讓各種信仰都能在這片土地找到心靈寄託。" } },
+        { id: 3, name: "考究員", x: 1900, y: 1000, icon: "🕵️", look: "【服飾：懷中揣著印有『外來語』標籤的辭典，有陳年書卷味。】", questText: "數據遺失了...我一直在唸著『Ak-ker』這個發音。這似乎與某種測量土地的方式有關。我需要找到書面證據...", target: "語源紀錄館", lesson: { title: "語言的歷史足跡", content: "臺灣話中隱藏著歷史！『甲』源自荷蘭文 akker；『榻榻米』源自日文。這些外來語證明了臺灣長期與世界交流的脈絡。" } },
+        { id: 4, name: "沈默的山民", x: 900, y: 1300, icon: "🧔", look: "【服飾：穿著織有黑色百步蛇紋的紅背心，有山林煙火味。】", questText: "我在夢裡聽見了奇怪的鐘聲。在我們最熟悉的灰色石塊中，供奉著異國傳來的希望。我需要找尋那個地方...", target: "百步蛇石板教堂", lesson: { title: "原民信仰藝術化", content: "原住民族將傳統文化融入基督宗教。例如霧台石板教堂，運用族人工藝將百步蛇圖騰與西方宗教融合，是全球獨特的在地美學。" } },
+        { id: 5, name: "異鄉婦女", x: 1400, y: 1600, icon: "👩", look: "【服飾：披著亮麗的披肩，指尖染著香料黃色，聞起來像檸檬草。】", questText: "這世界的空氣太乾冷了。我渴望一種能讓身體發汗、充满酸辣刺激感的鮮橘色湯汁...那能讓我感到不再孤單...", target: "南洋香料屋", lesson: { title: "南洋風味與新住民", content: "泰、越等南洋料理深受臺灣人喜愛。新住民帶來的豐富香料與熱情的飲食文化，已成為臺灣多元文化的重要風味。" } },
+        { id: 6, name: "純樸少年", x: 2100, y: 1200, icon: "👦", look: "【服飾：繫著獵刀繩，赤著腳，衣服上有著煙燻與糯米的清香。】", questText: "長輩說過，我們曾經與竹林共生。我記得有一種利用自然的管子裝著穀物去烘烤的味道...我想重溫那種回憶。", target: "竹筒米坊", lesson: { title: "自然的智慧：竹筒飯", content: "原住民族利用自然資源發展出竹筒飯。鮮竹香氣滲入糯米，不僅是慶典美食，也是上山工作的絕佳乾糧，展現與大地和諧共存的智慧。" } }
+    ];
+
+    // 路人系統
+    const wanderers = [];
+    const wandererIcons = ["🚶", "🏃", "🚶‍♂️", "🚶‍♀️"];
+    for(let i=0; i<15; i++) {
+        wanderers.push({
+            x: Math.random() * WORLD_WIDTH,
+            y: Math.random() * WORLD_HEIGHT,
+            targetX: Math.random() * WORLD_WIDTH,
+            targetY: Math.random() * WORLD_HEIGHT,
+            icon: wandererIcons[Math.floor(Math.random()*wandererIcons.length)],
+            speed: 0.5 + Math.random()
+        });
+    }
+
+    const keys = {};
+    window.addEventListener('keydown', e => { 
+        keys[e.code] = true; 
+        if(e.code==='Space') interact(); 
+    });
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    function nextIntro(num) {
+        document.getElementById(`intro-${num-1}`).style.display = 'none';
+        document.getElementById(`intro-${num}`).style.display = 'flex';
+    }
+
+    function startGame() {
+        document.getElementById('intro-2').style.display = 'none';
+        document.getElementById('joystick-base').style.display = 'block';
+        document.getElementById('action-btn').style.display = 'flex';
+        gameState = 'playing';
+        startTimer();
+    }
+
+    function startTimer() {
+        const timer = setInterval(() => {
+            if (gameState === 'playing' && timeLeft > 0) {
+                timeLeft--;
+                timeVal.innerText = timeLeft;
+                if (timeLeft <= 0) gameOver(false);
+            } else if (gameState === 'end') clearInterval(timer);
+        }, 1000);
+    }
+
+    function interact() {
+        if (!currentInteraction || gameState !== 'playing') return;
+
+        if (currentInteraction.type === 'npc') {
+            const npc = currentInteraction.data;
+            if (npc.completed) {
+                showDialogue(`${npc.name}: 偵探，謝謝你修復了這段珍貴的色彩！`);
+            } else if (!activeQuest) {
+                activeQuest = npc;
+                npc.following = true;
+                showDialogue(`${npc.look}<br><b>${npc.name}:</b> 「${npc.questText}」`);
+            } else {
+                showDialogue(`系統：你正在帶著 ${activeQuest.name}，請先完成任務！`);
+            }
+        } else if (currentInteraction.type === 'landmark') {
+            const landmark = currentInteraction.data;
+            if (activeQuest) {
+                modalText.innerHTML = `你帶著 <b>${activeQuest.name}</b> 到達這裡。<br><br><b>偵探感官分析：</b><br>${landmark.desc}<br><br>這是否能喚醒他的記憶？`;
+                confirmModal.style.display = 'block';
+                gameState = 'paused';
+            } else {
+                showDialogue(`觀察筆記：這是【${landmark.name}】。<br>${landmark.desc}`);
+            }
+        }
+    }
+
+    function handleConfirm(isYes) {
+        confirmModal.style.display = 'none';
+        gameState = 'playing';
+
+        if (!isYes || !activeQuest) return;
+
+        const landmark = currentInteraction.data;
+        if (landmark.secretName === activeQuest.target) {
+            playAnimation('success');
+            openLesson(activeQuest, landmark);
+        } else {
+            playAnimation('error');
+            timeLeft -= 30;
+            showDialogue(`修復失敗！<br>${activeQuest.name}: 「不！這感覺太單調了...這裡不是我要的地方！ (時空穩定值 -30s)」`);
+        }
+    }
+
+    function playAnimation(type) {
+        if (type === 'success') {
+            fxLayer.style.display = 'block';
+            fxLayer.className = 'flash-success';
+            setTimeout(() => { fxLayer.style.display = 'none'; }, 1000);
+        } else {
+            // 失敗動畫：畫面抖動 + 紅光
+            fxLayer.style.display = 'block';
+            fxLayer.className = 'flash-error';
+            container.classList.add('shake-anim');
+            setTimeout(() => { 
+                fxLayer.style.display = 'none'; 
+                container.classList.remove('shake-anim');
+            }, 500);
+        }
+    }
+
+    function showDialogue(txt) {
+        dialogueBox.innerHTML = txt;
+        dialogueBox.style.display = 'block';
+    }
+    dialogueBox.onclick = () => dialogueBox.style.display = 'none';
+
+    function openLesson(npc, landmark) {
+        gameState = 'paused';
+        npc.completed = true;
+        npc.following = false;
+        landmark.name = landmark.secretName;
+        questsCompleted++;
+        questVal.innerText = questsCompleted;
+        worldSaturation += 14;
+
+        document.getElementById('lesson-title').innerText = npc.lesson.title;
+        document.getElementById('lesson-content').innerHTML = `<b>修復成功：記憶寫入中...</b><br><br>${npc.lesson.content}`;
+        lessonModal.style.display = 'block';
+    }
+
+    function closeLesson() {
+        lessonModal.style.display = 'none';
+        gameState = 'playing';
+        activeQuest = null;
+        if (questsCompleted >= 6) {
+            worldSaturation = 100;
+            setTimeout(() => gameOver(true), 1000);
+        }
+    }
+
+    function gameOver(win) {
+        gameState = 'end';
+        endScreen.style.display = 'block';
+        if (win) {
+            endTitle.innerText = "🏆 成功修復色彩";
+            endTitle.style.color = "#27ae60";
+            endBody.innerHTML = "偵探，你成功在倒數歸零前找回了六大文化記憶！<br>現在的 2070 年，世界重新恢復了生命力。<br><br><b>評等：S 級文化守護者</b>";
+        } else {
+            endTitle.innerText = "💥 時空斷裂";
+            endTitle.style.color = "#c0392b";
+            endBody.innerHTML = "能量耗盡... 文化記憶在灰色虛無中徹底消失了。<br>人類的未來將永遠保持單一且無趣的色彩。<br><br><b>評等：任務失敗</b>";
+        }
+    }
+
+    function loop() {
+        update();
+        render();
+        requestAnimationFrame(loop);
+    }
+
+    function update() {
+        if (gameState !== 'playing') return;
+
+        let dx = 0, dy = 0;
+        if (keys['ArrowUp'] || keys['KeyW']) dy = -1;
+        if (keys['ArrowDown'] || keys['KeyS']) dy = 1;
+        if (keys['ArrowLeft'] || keys['KeyA']) dx = -1;
+        if (keys['ArrowRight'] || keys['KeyD']) dx = 1;
+
+        if (joystickActive) { dx = joystickDir.x; dy = joystickDir.y; }
+
+        if (dx !== 0 || dy !== 0) {
+            player.x += dx * playerSpeed;
+            player.y += dy * playerSpeed;
+            player.history.push({x: player.x, y: player.y});
+            if (player.history.length > 60) player.history.shift();
+        }
+
+        player.x = Math.max(player.r, Math.min(WORLD_WIDTH - player.r, player.x));
+        player.y = Math.max(player.r, Math.min(WORLD_HEIGHT - player.r, player.y));
+
+        // NPC 跟隨
+        npcs.forEach(npc => {
+            if (npc.following && player.history.length > 35) {
+                const trail = player.history[0];
+                npc.x = trail.x; npc.y = trail.y;
+            }
+        });
+
+        // 路人移動
+        wanderers.forEach(w => {
+            const angle = Math.atan2(w.targetY - w.y, w.targetX - w.x);
+            w.x += Math.cos(angle) * w.speed;
+            w.y += Math.sin(angle) * w.speed;
+            if (Math.hypot(w.x - w.targetX, w.y - w.targetY) < 10) {
+                w.targetX = Math.random() * WORLD_WIDTH;
+                w.targetY = Math.random() * WORLD_HEIGHT;
+            }
+        });
+
+        camera.x = player.x - VIEW_WIDTH / 2;
+        camera.y = player.y - VIEW_HEIGHT / 2;
+        camera.x = Math.max(0, Math.min(WORLD_WIDTH - VIEW_WIDTH, camera.x));
+        camera.y = Math.max(0, Math.min(WORLD_HEIGHT - VIEW_HEIGHT, camera.y));
+
+        currentInteraction = null;
+        npcs.forEach(npc => {
+            if (!npc.following && !npc.completed) {
+                const dist = Math.hypot(player.x - npc.x, player.y - npc.y);
+                if (dist < 75) currentInteraction = { type: 'npc', data: npc };
+            }
+        });
+        landmarks.forEach(l => {
+            if (player.x > l.x - 20 && player.x < l.x + l.w + 20 && player.y > l.y - 20 && player.y < l.y + l.h + 20) {
+                currentInteraction = { type: 'landmark', data: l };
+            }
+        });
+
+        if (currentInteraction) {
+            actionBtn.style.background = "#27ae60";
+            actionBtn.innerText = activeQuest && currentInteraction.type === 'landmark' ? "確認" : "互動";
+        } else {
+            actionBtn.style.background = "#e74c3c"; actionBtn.innerText = "...";
+        }
+    }
+
+    function render() {
+        ctx.save();
+        ctx.filter = `saturate(${worldSaturation}%)`;
+        ctx.translate(-camera.x, -camera.y);
+
+        ctx.fillStyle = "#87ae5e"; ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        ctx.strokeStyle = "rgba(0,0,0,0.06)";
+        for(let i=0; i<WORLD_WIDTH; i+=120) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, WORLD_HEIGHT); ctx.stroke(); }
+
+        // 畫建築
+        landmarks.forEach(l => {
+            ctx.fillStyle = l.color; ctx.fillRect(l.x, l.y, l.w, l.h);
+            ctx.strokeStyle = "#2c3e50"; ctx.lineWidth = 5; ctx.strokeRect(l.x, l.y, l.w, l.h);
+            ctx.fillStyle = "white"; ctx.font = "45px Arial";
+            ctx.fillText(l.icon, l.x + l.w/2 - 22, l.y + l.h/2 + 18);
+            ctx.fillStyle = "#2c3e50"; ctx.font = "bold 18px Arial"; ctx.textAlign = "center";
+            ctx.fillText(l.name, l.x + l.w/2, l.y + l.h + 28);
+        });
+
+        // 畫路人
+        ctx.font = "30px Arial";
+        wanderers.forEach(w => ctx.fillText(w.icon, w.x - 15, w.y + 10));
+
+        // 畫 NPC
+        npcs.forEach(npc => {
+            if (!npc.completed || npc.following) {
+                ctx.font = "40px Arial";
+                ctx.fillText(npc.icon, npc.x - 20, npc.y + 18);
+                if (!npc.following) {
+                    ctx.fillStyle = "red"; ctx.font = "bold 28px Arial";
+                    const bounce = Math.sin(Date.now()/200) * 6;
+                    ctx.fillText("?", npc.x - 5, npc.y - 38 + bounce);
+                }
+            }
+        });
+
+        // 畫偵探主角
+        const p = player;
+        ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.stroke();
+        ctx.fillStyle = "#111"; ctx.fillRect(p.x - 22, p.y - 38, 44, 15); ctx.fillRect(p.x - 30, p.y - 23, 60, 5);
+        ctx.fillStyle = "white"; ctx.fillRect(p.x - 12, p.y - 10, 10, 5); ctx.fillRect(p.x + 2, p.y - 10, 10, 5);
+        ctx.fillStyle = "#111"; ctx.fillRect(p.x - 8, p.y - 10, 3, 5); ctx.fillRect(p.x + 6, p.y - 10, 3, 5);
+        ctx.fillStyle = "#c0392b"; ctx.beginPath(); ctx.moveTo(p.x-10, p.y+18); ctx.lineTo(p.x+10, p.y+18); ctx.lineTo(p.x, p.y+35); ctx.fill();
+
+        ctx.restore();
+    }
+
+    let joystickActive = false; let joystickDir = { x: 0, y: 0 };
+    const jBase = document.getElementById('joystick-base');
+    const jStick = document.getElementById('joystick-stick');
+    jBase.addEventListener('touchstart', e => { joystickActive = true; e.preventDefault(); });
+    window.addEventListener('touchmove', e => {
+        if (!joystickActive) return;
+        const touch = e.touches[0]; const rect = jBase.getBoundingClientRect();
+        const dx = touch.clientX - (rect.left + 60), dy = touch.clientY - (rect.top + 60);
+        const dist = Math.min(Math.hypot(dx, dy), 40); const angle = Math.atan2(dy, dx);
+        joystickDir.x = Math.cos(angle) * (dist/40); joystickDir.y = Math.sin(angle) * (dist/40);
+        jStick.style.transform = `translate(${joystickDir.x * 35}px, ${joystickDir.y * 35}px)`;
+    });
+    window.addEventListener('touchend', () => { joystickActive = false; joystickDir = {x:0, y:0}; jStick.style.transform = `translate(0px, 0px)`; });
+
+    actionBtn.addEventListener('click', interact);
+    window.addEventListener('resize', () => { VIEW_WIDTH = window.innerWidth; VIEW_HEIGHT = window.innerHeight; canvas.width = VIEW_WIDTH; canvas.height = VIEW_HEIGHT; });
+
+    loop();
+</script>
+</body>
+</html>
