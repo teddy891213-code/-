@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>第四冊地理重點提示</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --dark: #0f172a;
+      --green: #dcfce7;
+      --orange: #ffedd5;
+      --yellow: #fef9c3;
+      --lime: #ecfccb;
+      --blue: #e0f2fe;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header {
+      background: var(--card);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      border: 1px solid var(--line);
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--dark);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 54px);
+      line-height: 1.1;
+      letter-spacing: -1px;
+    }
+
+    .subtitle {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    button, .navbtn {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 15px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 15px;
+      transition: .15s ease;
+      text-decoration: none;
+    }
+
+    button:hover, .navbtn:hover { transform: translateY(-1px); }
+    button.active {
+      background: var(--dark);
+      color: white;
+      border-color: var(--dark);
+    }
+
+    main { margin-top: 22px; }
+    section { display: none; animation: fade .2s ease; }
+    section.active { display: block; }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid { display: grid; gap: 16px; }
+    .grid4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      padding: 22px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    .hero {
+      border-radius: 28px;
+      padding: 28px;
+      border: 1px solid transparent;
+    }
+
+    .sea { background: linear-gradient(135deg, #d1fae5, #ecfeff); }
+    .southasia { background: linear-gradient(135deg, #ffedd5, #fef9c3); }
+    .wana { background: linear-gradient(135deg, #fef9c3, #f5f5f4); }
+    .ssa { background: linear-gradient(135deg, #ecfccb, #dcfce7); }
+
+    .region-head {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .emoji {
+      font-size: 60px;
+      line-height: 1;
+    }
+
+    h2 {
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.15;
+      margin: 0;
+      letter-spacing: -0.6px;
+    }
+
+    h3 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+
+    .slogan {
+      font-size: 18px;
+      font-weight: 800;
+      color: #334155;
+      margin-top: 6px;
+    }
+
+    .visuals {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .visual {
+      background: rgba(255,255,255,.78);
+      border-radius: 20px;
+      padding: 16px;
+      text-align: center;
+      font-weight: 900;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+    }
+
+    ul { margin: 0; padding-left: 20px; }
+    li { margin-bottom: 8px; }
+
+    .home-card {
+      min-height: 210px;
+      border: none;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+    .home-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+    }
+
+    .darkbox {
+      background: var(--dark);
+      color: white;
+      border-radius: 28px;
+      padding: 24px;
+    }
+
+    .darkbox .mini {
+      background: rgba(255,255,255,.1);
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .hint {
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: white;
+      padding: 20px;
+    }
+
+    .hint-title {
+      font-size: 24px;
+      font-weight: 950;
+      margin: 8px 0 12px;
+    }
+
+    .hint-body {
+      display: none;
+      margin-top: 12px;
+      padding: 16px;
+      border-radius: 18px;
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 650;
+    }
+
+    .hint.open .hint-body { display: block; }
+
+    .smalltag {
+      display: inline-block;
+      border-radius: 999px;
+      background: #e2e8f0;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #334155;
+    }
+
+    footer {
+      margin-top: 28px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    @media (max-width: 860px) {
+      .wrap { padding: 14px; }
+      header { position: static; padding: 22px; }
+      .grid4, .grid3, .grid2, .visuals { grid-template-columns: 1fr; }
+      .region-head { align-items: flex-start; }
+      .emoji { font-size: 48px; }
+    }
+
+    @media print {
+      header { position: static; box-shadow: none; }
+      nav, button, footer { display: none; }
+      section { display: block !important; page-break-after: always; }
+      .card, .hero, .darkbox { box-shadow: none; }
+      body { background: white; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="tag">學生版｜重點提示</div>
+      <h1>第四冊地理重點提示</h1>
+      <p class="subtitle">東南亞、南亞、西亞北非、漠南非洲：地形、氣候、文化、產業一次整理。</p>
+      <nav>
+        <button class="active" data-page="home">總覽</button>
+        <button data-page="sea">東南亞</button>
+        <button data-page="southasia">南亞</button>
+        <button data-page="wana">西亞北非</button>
+        <button data-page="ssa">漠南非洲</button>
+        <button data-page="quick">重點提示卡</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="home" class="active">
+        <div class="card">
+          <h2>第四冊地理總複習</h2>
+          <p class="subtitle">這份複習頁把四個地區的重點整理成提示卡。請注意地形、氣候、文化與產業之間的連結。</p>
+        </div>
+
+        <div class="grid grid4" style="margin-top:16px;">
+          <div class="card home-card sea" onclick="showPage('sea')">
+            <div class="emoji">🌴</div>
+            <h3>東南亞</h3>
+            <p><b>熱帶、季風、群島、海上交通、多元文化</b></p>
+          </div>
+          <div class="card home-card southasia" onclick="showPage('southasia')">
+            <div class="emoji">🛕</div>
+            <h3>南亞</h3>
+            <p><b>喜馬拉雅山、印度河恆河、季風三季、人口眾多</b></p>
+          </div>
+          <div class="card home-card wana" onclick="showPage('wana')">
+            <div class="emoji">🏜️</div>
+            <h3>西亞北非</h3>
+            <p><b>乾燥缺水、沙漠、伊斯蘭、石油、衝突</b></p>
+          </div>
+          <div class="card home-card ssa" onclick="showPage('ssa')">
+            <div class="emoji">🦒</div>
+            <h3>漠南非洲</h3>
+            <p><b>高原、古老陸塊、熱帶景觀、族群多元、發展挑戰</b></p>
+          </div>
+        </div>
+
+        <div class="darkbox" style="margin-top:16px;">
+          <h3>最容易混在一起的地方</h3>
+          <div class="grid grid3">
+            <div class="mini"><b>東南亞 vs 南亞</b><br>東南亞重海上交通與群島；南亞重喜馬拉雅山、印度河恆河與季風三季。</div>
+            <div class="mini"><b>西亞北非 vs 漠南非洲</b><br>西亞北非重乾燥缺水與石油；漠南非洲重高原、礦產、殖民影響與發展挑戰。</div>
+            <div class="mini"><b>資源多 ≠ 一定富裕</b><br>還要看交通、政治穩定、產業是否單一、收益是否能分配。</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="sea">
+        <div class="hero sea">
+          <div class="region-head">
+            <div class="emoji">🌴</div>
+            <div>
+              <h2>東南亞</h2>
+              <div class="slogan">熱帶、季風、群島、海上交通、多元文化</div>
+            </div>
+          </div>
+          <div class="visuals">
+            <div class="visual">🌋 板塊交界</div>
+            <div class="visual">🌧️ 夏雨集中</div>
+            <div class="visual">🚢 麻六甲海峽</div>
+            <div class="visual">🏭 加工出口</div>
+          </div>
+        </div>
+        <div class="grid grid3" style="margin-top:16px;">
+          <div class="card">
+            <h3>自然環境</h3>
+            <ul>
+              <li>中南半島：山脈、河川多南北走向，河川下游形成平原，是人口與農業集中區。</li>
+              <li>南洋群島：位在板塊交界，地震、火山活動頻繁，島嶼眾多。</li>
+              <li>氣候以熱帶季風、熱帶雨林為主，全年高溫，降水多。</li>
+              <li>中南半島乾溼季明顯：夏季受西南季風影響多雨，冬季受東北季風影響較乾。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>產業重點</h3>
+            <ul>
+              <li>稻米：河川平原、三角洲常見，是重要糧食作物。</li>
+              <li>熱帶栽培業：橡膠、咖啡、棕櫚油等，常需要高溫多雨、沿海交通與大量勞力。</li>
+              <li>加工出口：利用勞力、港口與國際市場，發展製造業。</li>
+              <li>觀光業：海島、熱帶景觀、文化古蹟都是吸引力。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>文化重點</h3>
+            <ul>
+              <li>東南亞位在亞洲與大洋洲、印度洋與太平洋之間，是文化交會地帶。</li>
+              <li>受到印度、中國、伊斯蘭與歐洲殖民文化影響。</li>
+              <li>各國宗教、語言、族群差異大，呈現多元文化。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="southasia">
+        <div class="hero southasia">
+          <div class="region-head">
+            <div class="emoji">🛕</div>
+            <div>
+              <h2>南亞</h2>
+              <div class="slogan">喜馬拉雅山、印度河恆河、季風三季、人口眾多</div>
+            </div>
+          </div>
+          <div class="visuals">
+            <div class="visual">⛰️ 喜馬拉雅山</div>
+            <div class="visual">🏞️ 印度河恆河</div>
+            <div class="visual">🌧️ 雨季</div>
+            <div class="visual">👥 人口大國</div>
+          </div>
+        </div>
+        <div class="grid grid3" style="margin-top:16px;">
+          <div class="card">
+            <h3>位置與地形</h3>
+            <ul>
+              <li>南亞北倚喜馬拉雅山，東、西、南三面臨印度洋，是相對獨立的次大陸。</li>
+              <li>北部：喜馬拉雅山，板塊擠壓形成，地勢高、地震頻繁。</li>
+              <li>中部：印度大平原，由印度河與恆河沖積而成，農業與人口集中。</li>
+              <li>南部：德干高原，古老陸塊，礦產豐富；部分地區熔岩風化形成沃土，有利棉花種植。</li>
+              <li>沿海島嶼：斯里蘭卡是重要茶葉產地；馬爾地夫由珊瑚礁島組成，是旅遊勝地。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>南亞三個季節</h3>
+            <ul>
+              <li><b>涼季：</b>11～2月，東北季風由陸地吹向海洋，天氣較乾、較涼。</li>
+              <li><b>熱季：</b>3～5月，太陽直射北移，氣溫升高，天氣炎熱乾燥。</li>
+              <li><b>雨季：</b>6～10月，西南季風從印度洋帶來水氣，降雨明顯增加。</li>
+              <li>南亞降水差異主要受季風與地形影響：迎風坡多雨，背風坡少雨。</li>
+              <li>例子：孟加拉與恆河下游三角洲易受洪患影響；塔爾沙漠氣候乾燥。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>文化與產業</h3>
+            <ul>
+              <li>印度文化影響深，宗教以印度教、伊斯蘭教等為重要特色。</li>
+              <li>南亞人口眾多，勞力充沛，也形成龐大市場。</li>
+              <li>印度近年服務業、軟體產業發展受到重視。</li>
+              <li>農業仍受季風影響明顯，雨季來得是否穩定，會影響農作收成。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="wana">
+        <div class="hero wana">
+          <div class="region-head">
+            <div class="emoji">🏜️</div>
+            <div>
+              <h2>西亞與北非</h2>
+              <div class="slogan">乾燥缺水、沙漠、伊斯蘭、石油、衝突</div>
+            </div>
+          </div>
+          <div class="visuals">
+            <div class="visual">🏜️ 沙漠廣布</div>
+            <div class="visual">💧 水源珍貴</div>
+            <div class="visual">🕌 伊斯蘭文化</div>
+            <div class="visual">🛢️ 石油資源</div>
+          </div>
+        </div>
+        <div class="grid grid3" style="margin-top:16px;">
+          <div class="card">
+            <h3>自然環境</h3>
+            <ul>
+              <li>西亞與北非多屬乾燥氣候，沙漠廣布，水資源不足。</li>
+              <li>聚落與農業常集中在河谷、綠洲、地下水或可灌溉地區。</li>
+              <li>尼羅河、兩河流域等河川孕育古文明，也提供重要水源。</li>
+              <li>西亞地形以高原、山地、盆地較多，平原面積相對有限。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>文化重點</h3>
+            <ul>
+              <li>伊斯蘭文化影響深，阿拉伯語、清真寺、宗教生活常是重要特色。</li>
+              <li>部分地區因教派、民族、領土與資源問題，容易出現衝突。</li>
+              <li>北非與西亞連接歐、亞、非三洲，歷史上也是交通與文明交流地帶。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>產業重點</h3>
+            <ul>
+              <li>波斯灣沿岸石油豐富，石油出口帶來龐大財富。</li>
+              <li>石油經濟也可能使產業過度集中，容易受國際油價影響。</li>
+              <li>缺水地區會發展灌溉、海水淡化或節水型農業。</li>
+              <li>古文明遺產、宗教聖地與特殊自然景觀也帶動觀光。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="ssa">
+        <div class="hero ssa">
+          <div class="region-head">
+            <div class="emoji">🦒</div>
+            <div>
+              <h2>漠南非洲</h2>
+              <div class="slogan">高原、古老陸塊、熱帶景觀、族群多元、發展挑戰</div>
+            </div>
+          </div>
+          <div class="visuals">
+            <div class="visual">⛰️ 高原為主</div>
+            <div class="visual">🌳 雨林莽原</div>
+            <div class="visual">⛏️ 礦產豐富</div>
+            <div class="visual">📏 殖民國界</div>
+          </div>
+        </div>
+        <div class="grid grid3" style="margin-top:16px;">
+          <div class="card">
+            <h3>自然環境</h3>
+            <ul>
+              <li>漠南非洲以高原地形為主，古老陸塊蘊藏豐富金屬礦產。</li>
+              <li>高原東部有東非大裂谷，屬於張裂作用，地震、火山與湖泊分布明顯。</li>
+              <li>赤道附近多熱帶雨林，往外逐漸轉為莽原、沙漠等景觀。</li>
+              <li>海岸較平直、良港較少，加上撒哈拉沙漠阻隔，早期對外交通較不便利。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>族群與文化</h3>
+            <ul>
+              <li>族群、語言、宗教多元，南部以黑人為主，北部與西部部分地區受阿拉伯文化影響。</li>
+              <li>馬賽人主要分布於肯亞、坦尚尼亞一帶，以游牧生活與跳高舞蹈聞名。</li>
+              <li>馬拉加西人主要分布於馬達加斯加，與南島語族文化有關。</li>
+              <li>殖民時期劃界常未充分考慮族群分布，留下族群與政治問題。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>經濟與挑戰</h3>
+            <ul>
+              <li>礦產、石油、咖啡、可可等資源豐富。</li>
+              <li>許多國家延續殖民時期的經濟型態，以礦產和熱帶栽培作物出口為主。</li>
+              <li>熱帶栽培業常是單一作物、出口導向，容易受國際市場價格影響。</li>
+              <li>基礎建設不足、政治不穩、產業單一、教育醫療不足，都是發展挑戰。</li>
+              <li>自然資源與壯麗景觀也帶動觀光業，成為部分地區的新契機。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="quick">
+        <h2>重點提示卡</h2>
+        <p class="subtitle">先自己想一下，再點開看提示。</p>
+        <div class="grid grid2" style="margin-top:16px;">
+          <div class="hint"><span class="smalltag">提示 1</span><div class="hint-title">南亞三季</div><button onclick="toggleHint(this)">看重點</button><div class="hint-body">涼季11～2月、熱季3～5月、雨季6～10月。雨季受西南季風影響，涼季受東北季風影響。</div></div>
+          <div class="hint"><span class="smalltag">提示 2</span><div class="hint-title">印度半島降水差異</div><button onclick="toggleHint(this)">看重點</button><div class="hint-body">主要受季風與地形影響。迎風坡多雨，背風坡少雨。</div></div>
+          <div class="hint"><span class="smalltag">提示 3</span><div class="hint-title">孟加拉容易洪患</div><button onclick="toggleHint(this)">看重點</button><div class="hint-body">位於恆河下游河口三角洲，地勢低平，雨季降水多，且受海平面上升威脅。</div></div>
+          <div class="hint"><span class="smalltag">提示 4</span><div class="hint-title">德干高原</div><button onclick="toggleHint(this)">看重點</button><div class="hint-body">位於印度半島南部，古老陸塊，部分地區熔岩風化形成沃土，有利棉花種植。</div></div>
+          <div class="hint"><span class="smalltag">提示 5</span><div class="hint-title">熱帶栽培業</div><button onclick="toggleHint(this)">看重點</button><div class="hint-body">常見作物有橡膠、咖啡、棕櫚油、可可等；單一作物、出口導向，市場風險較大。</div></div>
+          <div class="hint"><span class="smalltag">提示 6</span><div class="hint-title">漠南非洲資源多但發展受限</div><button onclick="toggleHint(this)">看重點</button><div class="hint-body">資源豐富，但產業單一、交通建設不足、殖民遺緒與政治不穩會限制發展。</div></div>
+          <div class="hint"><span class="smalltag">提示 7</span><div class="hint-title">東非大裂谷</div><button onclick="toggleHint(this)">看重點</button><div class="hint-body">斷層陷落形成，與張裂作用有關，地震、火山、湖泊多。</div></div>
+          <div class="hint"><span class="smalltag">提示 8</span><div class="hint-title">西亞北非關鍵字</div><button onclick="toggleHint(this)">看重點</button><div class="hint-body">乾燥缺水、沙漠、伊斯蘭文化、石油、河谷與綠洲、區域衝突。</div></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>可用手機、平板或電腦瀏覽。建議使用 Chrome、Edge 或 Safari。</footer>
+  </div>
+
+  <script>
+    function showPage(id) {
+      document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('nav button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.page === id);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.querySelectorAll('nav button').forEach(btn => {
+      btn.addEventListener('click', () => showPage(btn.dataset.page));
+    });
+
+    function toggleHint(button) {
+      const box = button.closest('.hint');
+      box.classList.toggle('open');
+      button.textContent = box.classList.contains('open') ? '收起' : '看重點';
+    }
+  </script>
+</body>
+</html>
