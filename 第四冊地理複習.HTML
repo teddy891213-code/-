@@ -1,0 +1,296 @@
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+const sections = [
+  {
+    id: "sea",
+    title: "東南亞",
+    emoji: "🌴",
+    color: "from-emerald-100 to-cyan-50",
+    slogan: "熱帶、季風、群島、海上交通、多元文化",
+    picture: ["🌋 板塊交界", "🌧️ 夏雨集中", "🚢 麻六甲海峽", "🏭 加工出口"],
+    blocks: [
+      {
+        name: "自然環境",
+        points: [
+          "中南半島：山脈、河川多南北走向，河川下游形成平原，是人口與農業集中區。",
+          "南洋群島：位在板塊交界，地震、火山活動頻繁，島嶼眾多。",
+          "氣候以熱帶季風、熱帶雨林為主，全年高溫，降水多。",
+          "中南半島乾溼季明顯：夏季受西南季風影響多雨，冬季受東北季風影響較乾。"
+        ]
+      },
+      {
+        name: "產業重點",
+        points: [
+          "稻米：河川平原、三角洲常見，是重要糧食作物。",
+          "熱帶栽培業：橡膠、咖啡、棕櫚油等，常需要高溫多雨、沿海交通與大量勞力。",
+          "加工出口：利用勞力、港口與國際市場，發展製造業。",
+          "觀光業：海島、熱帶景觀、文化古蹟都是吸引力。"
+        ]
+      },
+      {
+        name: "文化重點",
+        points: [
+          "東南亞位在亞洲與大洋洲、印度洋與太平洋之間，是文化交會地帶。",
+          "受到印度、中國、伊斯蘭與歐洲殖民文化影響。",
+          "各國宗教、語言、族群差異大，呈現多元文化。"
+        ]
+      }
+    ]
+  },
+  {
+    id: "southasia",
+    title: "南亞",
+    emoji: "🛕",
+    color: "from-orange-100 to-yellow-50",
+    slogan: "喜馬拉雅山、印度河恆河、季風三季、人口眾多",
+    picture: ["⛰️ 喜馬拉雅山", "🏞️ 印度河恆河", "🌧️ 雨季", "👥 人口大國"],
+    blocks: [
+      {
+        name: "位置與地形",
+        points: [
+          "南亞北倚喜馬拉雅山，東、西、南三面臨印度洋，是相對獨立的次大陸。",
+          "北部：喜馬拉雅山，板塊擠壓形成，地勢高、地震頻繁。",
+          "中部：印度大平原，由印度河與恆河沖積而成，農業與人口集中。",
+          "南部：德干高原，古老陸塊，礦產豐富；部分地區熔岩風化形成沃土，有利棉花種植。",
+          "沿海島嶼：斯里蘭卡是重要茶葉產地；馬爾地夫由珊瑚礁島組成，是旅遊勝地。"
+        ]
+      },
+      {
+        name: "南亞三個季節",
+        points: [
+          "涼季：11～2月，東北季風由陸地吹向海洋，天氣較乾、較涼，是較適合旅遊的季節。",
+          "熱季：3～5月，太陽直射北移，氣溫升高，天氣炎熱乾燥。",
+          "雨季：6～10月，西南季風從印度洋帶來水氣，降雨明顯增加。",
+          "南亞降水差異主要受季風與地形影響：迎風坡多雨，背風坡少雨。",
+          "例子：孟加拉與恆河下游三角洲易受洪患影響；塔爾沙漠受副熱帶高壓與地形影響，氣候乾燥。"
+        ]
+      },
+      {
+        name: "文化與產業",
+        points: [
+          "印度文化影響深，宗教以印度教、伊斯蘭教等為重要特色。",
+          "南亞人口眾多，勞力充沛，也形成龐大市場。",
+          "印度近年服務業、軟體產業發展受到重視。",
+          "農業仍受季風影響明顯，雨季來得是否穩定，會影響農作收成。"
+        ]
+      }
+    ]
+  },
+  {
+    id: "wana",
+    title: "西亞與北非",
+    emoji: "🏜️",
+    color: "from-yellow-100 to-stone-50",
+    slogan: "乾燥缺水、沙漠、伊斯蘭、石油、衝突",
+    picture: ["🏜️ 沙漠廣布", "💧 水源珍貴", "🕌 伊斯蘭文化", "🛢️ 石油資源"],
+    blocks: [
+      {
+        name: "自然環境",
+        points: [
+          "西亞與北非多屬乾燥氣候，沙漠廣布，水資源不足。",
+          "聚落與農業常集中在河谷、綠洲、地下水或可灌溉地區。",
+          "尼羅河、兩河流域等河川孕育古文明，也提供重要水源。",
+          "西亞地形以高原、山地、盆地較多，平原面積相對有限。"
+        ]
+      },
+      {
+        name: "文化重點",
+        points: [
+          "伊斯蘭文化影響深，阿拉伯語、清真寺、宗教生活常是重要特色。",
+          "部分地區因教派、民族、領土與資源問題，容易出現衝突。",
+          "北非與西亞連接歐、亞、非三洲，歷史上也是交通與文明交流地帶。"
+        ]
+      },
+      {
+        name: "產業重點",
+        points: [
+          "波斯灣沿岸石油豐富，石油出口帶來龐大財富。",
+          "石油經濟也可能使產業過度集中，容易受國際油價影響。",
+          "缺水地區會發展灌溉、海水淡化或節水型農業。",
+          "古文明遺產、宗教聖地與特殊自然景觀也帶動觀光。"
+        ]
+      }
+    ]
+  },
+  {
+    id: "ssa",
+    title: "漠南非洲",
+    emoji: "🦒",
+    color: "from-lime-100 to-green-50",
+    slogan: "高原、古老陸塊、熱帶景觀、族群多元、發展挑戰",
+    picture: ["⛰️ 高原為主", "🌳 雨林莽原", "⛏️ 礦產豐富", "📏 殖民國界"],
+    blocks: [
+      {
+        name: "自然環境",
+        points: [
+          "漠南非洲以高原地形為主，古老陸塊蘊藏豐富金屬礦產。",
+          "高原東部有東非大裂谷，屬於張裂作用，地震、火山與湖泊分布明顯。",
+          "赤道附近多熱帶雨林，往外逐漸轉為莽原、沙漠等景觀。",
+          "海岸較平直、良港較少，加上撒哈拉沙漠阻隔，早期對外交通較不便利。"
+        ]
+      },
+      {
+        name: "族群與文化",
+        points: [
+          "族群、語言、宗教多元，南部以黑人為主，北部與西部部分地區受阿拉伯文化影響。",
+          "馬賽人主要分布於肯亞、坦尚尼亞一帶，以游牧生活與跳高舞蹈聞名。",
+          "馬拉加西人主要分布於馬達加斯加，與南島語族文化有關。",
+          "殖民時期劃界常未充分考慮族群分布，留下族群與政治問題。"
+        ]
+      },
+      {
+        name: "經濟與挑戰",
+        points: [
+          "礦產、石油、咖啡、可可等資源豐富。",
+          "許多國家延續殖民時期的經濟型態，以礦產和熱帶栽培作物出口為主。",
+          "熱帶栽培業常是單一作物、出口導向，容易受國際市場價格影響。",
+          "基礎建設不足、政治不穩、產業單一、教育醫療不足，都是發展挑戰。",
+          "自然資源與壯麗景觀也帶動觀光業，成為部分地區的新契機。"
+        ]
+      }
+    ]
+  }
+];
+
+const quickCards = [
+  { front: "南亞三季", back: "涼季11～2月、熱季3～5月、雨季6～10月。雨季受西南季風影響，涼季受東北季風影響。" },
+  { front: "印度半島降水差異", back: "主要受季風與地形影響。迎風坡多雨，背風坡少雨。" },
+  { front: "孟加拉容易洪患", back: "位於恆河下游河口三角洲，地勢低平，雨季降水多，且受海平面上升威脅。" },
+  { front: "德干高原", back: "位於印度半島南部，古老陸塊，部分地區熔岩風化形成沃土，有利棉花種植。" },
+  { front: "熱帶栽培業", back: "常見作物有橡膠、咖啡、棕櫚油、可可等；單一作物、出口導向，市場風險較大。" },
+  { front: "漠南非洲資源多但發展受限", back: "資源豐富，但產業單一、交通建設不足、殖民遺緒與政治不穩會限制發展。" },
+  { front: "東非大裂谷", back: "斷層陷落形成，與張裂作用有關，地震、火山、湖泊多。" },
+  { front: "西亞北非關鍵字", back: "乾燥缺水、沙漠、伊斯蘭文化、石油、河谷與綠洲、區域衝突。" }
+];
+
+function SectionPage({ section }) {
+  return (
+    <div className="space-y-5">
+      <Card className={`rounded-3xl border-0 shadow-sm bg-gradient-to-br ${section.color}`}>
+        <CardContent className="p-6 space-y-5">
+          <div className="flex items-center gap-4">
+            <div className="text-6xl">{section.emoji}</div>
+            <div>
+              <h2 className="text-4xl font-black">{section.title}</h2>
+              <p className="text-lg font-semibold text-slate-700 mt-1">{section.slogan}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {section.picture.map((p) => <div key={p} className="rounded-2xl bg-white/80 p-4 text-center font-bold shadow-sm">{p}</div>)}
+          </div>
+        </CardContent>
+      </Card>
+      <div className="grid md:grid-cols-3 gap-4">
+        {section.blocks.map((b) => (
+          <Card key={b.name} className="rounded-3xl shadow-sm">
+            <CardContent className="p-5">
+              <h3 className="text-xl font-black mb-3">{b.name}</h3>
+              <ul className="space-y-2 text-slate-700 list-disc pl-5 leading-relaxed">
+                {b.points.map((p) => <li key={p}>{p}</li>)}
+              </ul>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuickReview() {
+  const [open, setOpen] = useState({});
+  return (
+    <div className="space-y-4">
+      <h2 className="text-3xl font-black">重點提示卡</h2>
+      <p className="text-slate-600">先自己想一下，再點開看提示。</p>
+      <div className="grid md:grid-cols-2 gap-4">
+        {quickCards.map((card, i) => (
+          <Card key={card.front} className="rounded-3xl shadow-sm overflow-hidden">
+            <CardContent className="p-5 space-y-3">
+              <Badge>提示 {i + 1}</Badge>
+              <div className="text-2xl font-black">{card.front}</div>
+              <Button variant="outline" onClick={() => setOpen({ ...open, [i]: !open[i] })}>{open[i] ? "收起" : "看重點"}</Button>
+              <AnimatePresence>
+                {open[i] && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="rounded-2xl bg-slate-50 border p-4 leading-relaxed text-slate-700">
+                    {card.back}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Home() {
+  return (
+    <div className="space-y-5">
+      <div className="rounded-3xl bg-white p-6 shadow-sm">
+        <h2 className="text-3xl font-black mb-3">第四冊地理總複習</h2>
+        <p className="text-lg text-slate-700 leading-relaxed">這份複習頁把四個地區的重點整理成提示卡。請注意地形、氣候、文化與產業之間的連結。</p>
+      </div>
+      <div className="grid md:grid-cols-4 gap-4">
+        {sections.map((s) => (
+          <Card key={s.id} className={`rounded-3xl shadow-sm bg-gradient-to-br ${s.color} border-0`}>
+            <CardContent className="p-5 space-y-3">
+              <div className="text-5xl">{s.emoji}</div>
+              <h3 className="text-2xl font-black">{s.title}</h3>
+              <p className="text-sm text-slate-700 font-semibold">{s.slogan}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="rounded-3xl bg-slate-900 text-white p-6 shadow-sm">
+        <h3 className="text-2xl font-black mb-3">最容易混在一起的地方</h3>
+        <div className="grid md:grid-cols-3 gap-3">
+          <div className="rounded-2xl bg-white/10 p-4"><b>東南亞 vs 南亞</b><p className="text-sm mt-1">東南亞重海上交通與群島；南亞重喜馬拉雅山、印度河恆河與季風三季。</p></div>
+          <div className="rounded-2xl bg-white/10 p-4"><b>西亞北非 vs 漠南非洲</b><p className="text-sm mt-1">西亞北非重乾燥缺水與石油；漠南非洲重高原、礦產、殖民影響與發展挑戰。</p></div>
+          <div className="rounded-2xl bg-white/10 p-4"><b>資源多 ≠ 一定富裕</b><p className="text-sm mt-1">還要看交通、政治穩定、產業是否單一、收益是否能分配。</p></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function GeographyKeyReview() {
+  const [page, setPage] = useState("home");
+  const tabs = [
+    ["home", "總覽"],
+    ["sea", "東南亞"],
+    ["southasia", "南亞"],
+    ["wana", "西亞北非"],
+    ["ssa", "漠南非洲"],
+    ["quick", "重點提示卡"]
+  ];
+  const current = sections.find((s) => s.id === page);
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-6">
+        <header className="rounded-3xl bg-white shadow-sm p-6 md:p-8 relative overflow-hidden">
+          <div className="absolute right-6 top-6 text-7xl opacity-10">🌏</div>
+          <Badge className="mb-3">學生版｜重點提示</Badge>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight">第四冊地理重點提示</h1>
+          <p className="mt-3 text-slate-600 text-lg">東南亞、南亞、西亞北非、漠南非洲：地形、氣候、文化、產業一次整理。</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {tabs.map(([id, label]) => <Button key={id} variant={page === id ? "default" : "outline"} onClick={() => setPage(id)}>{label}</Button>)}
+          </div>
+        </header>
+        <main>
+          <AnimatePresence mode="wait">
+            <motion.div key={page} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.18 }}>
+              {page === "home" && <Home />}
+              {current && <SectionPage section={current} />}
+              {page === "quick" && <QuickReview />}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+    </div>
+  );
+}
