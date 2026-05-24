@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>環島物流大富翁｜網頁版規則書</title>
+  <style>
+    :root{
+      --navy:#12365f;
+      --blue:#1687d9;
+      --sky:#e8f6ff;
+      --green:#2e8b57;
+      --orange:#f28c28;
+      --red:#d94b3d;
+      --purple:#7a4fb3;
+      --brown:#8a5a2b;
+      --ink:#1f2937;
+      --muted:#64748b;
+      --paper:#fffdf7;
+      --line:#d7e3ef;
+      --shadow:0 12px 28px rgba(18,54,95,.12);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 15% 0%, #bfe9ff 0 18%, transparent 40%),
+        linear-gradient(180deg,#f4fbff 0%,#f7fafc 58%,#eef7ff 100%);
+      line-height:1.7;
+    }
+    .hero{
+      padding:28px 18px 18px;
+      background:
+        linear-gradient(135deg,rgba(22,135,217,.18),rgba(46,139,87,.10)),
+        url("data:image/svg+xml,%3Csvg width='120' height='60' viewBox='0 0 120 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='2' opacity='.7'%3E%3Cpath d='M8 30c8-12 24-12 32 0M70 20c10-12 28-12 38 0'/%3E%3C/g%3E%3C/svg%3E");
+      border-bottom:1px solid rgba(18,54,95,.12);
+    }
+    .wrap{max-width:1120px;margin:0 auto}
+    .titlebar{
+      display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+    }
+    h1{
+      margin:0;
+      font-size:clamp(2rem,5vw,4.1rem);
+      letter-spacing:.04em;
+      font-weight:900;
+      color:var(--navy);
+      text-shadow:3px 3px 0 #fff, 0 4px 0 rgba(18,54,95,.12);
+      line-height:1.05;
+    }
+    h1 .orange{color:#e85d24}
+    .subtitle{
+      display:inline-block;
+      margin-top:10px;
+      padding:8px 18px;
+      border-radius:999px;
+      color:#fff;
+      background:var(--navy);
+      font-weight:800;
+      letter-spacing:.08em;
+    }
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    button,.pill{
+      border:0;border-radius:999px;padding:10px 16px;font-weight:800;
+      background:white;color:var(--navy);box-shadow:var(--shadow);
+      cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;
+    }
+    button.primary{background:var(--orange);color:white}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:18px;
+      padding:20px 18px 40px;
+    }
+    @media(max-width:860px){.grid{grid-template-columns:1fr}.toc{position:static!important}}
+    .card{
+      background:rgba(255,255,255,.92);
+      border:1px solid var(--line);
+      border-radius:26px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      margin-bottom:18px;
+    }
+    .card h2{
+      margin:0;
+      padding:16px 20px;
+      background:linear-gradient(90deg,var(--navy),#1d5f99);
+      color:white;
+      font-size:1.35rem;
+      letter-spacing:.04em;
+    }
+    .card h3{
+      margin:18px 20px 8px;
+      color:var(--navy);
+      font-size:1.1rem;
+    }
+    .card .body{padding:18px 20px}
+    .lead{
+      font-size:1.12rem;
+      font-weight:700;
+      color:var(--navy);
+      background:var(--sky);
+      border-left:8px solid var(--blue);
+      padding:14px 16px;
+      border-radius:18px;
+    }
+    .rule-steps{
+      counter-reset:step;
+      display:grid;
+      gap:12px;
+      margin:12px 0;
+    }
+    .step{
+      counter-increment:step;
+      display:grid;
+      grid-template-columns:52px 1fr;
+      gap:12px;
+      align-items:start;
+      padding:14px;
+      border-radius:18px;
+      background:#f8fbff;
+      border:1px solid var(--line);
+    }
+    .step::before{
+      content:counter(step);
+      width:44px;height:44px;border-radius:50%;
+      background:var(--orange);color:#fff;
+      display:grid;place-items:center;font-size:1.35rem;font-weight:900;
+      box-shadow:0 4px 0 rgba(0,0,0,.12);
+    }
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius:16px;
+      border:1px solid var(--line);
+      margin:12px 0 4px;
+      background:white;
+    }
+    th,td{padding:10px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+    th{background:#eaf4ff;color:var(--navy);font-weight:900;text-align:left}
+    tr:last-child td{border-bottom:0}
+    .tag{display:inline-block;border-radius:999px;padding:2px 8px;font-size:.86rem;font-weight:800;margin:2px;color:white}
+    .road{background:#344054}.rail{background:#1976d2}.port{background:#0077b6}.air{background:#7a4fb3}.mount{background:#e07a1f}
+    .money{font-weight:900;color:#b45309}
+    .warn{
+      background:#fff7ed;border:1px solid #fed7aa;border-left:8px solid var(--orange);
+      border-radius:18px;padding:14px 16px;margin:12px 0;
+    }
+    .ok{
+      background:#ecfdf5;border:1px solid #bbf7d0;border-left:8px solid var(--green);
+      border-radius:18px;padding:14px 16px;margin:12px 0;
+    }
+    .toc{
+      position:sticky;top:16px;
+      align-self:start;
+    }
+    .toc .body{padding:14px}
+    .toc a{
+      display:block;
+      padding:10px 12px;
+      margin:6px 0;
+      border-radius:14px;
+      background:#f8fbff;
+      color:var(--navy);
+      text-decoration:none;
+      font-weight:800;
+      border:1px solid var(--line);
+    }
+    .mini{
+      display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+    }
+    @media(max-width:560px){.mini{grid-template-columns:1fr}}
+    .mini .box{
+      border-radius:18px;padding:12px;border:1px solid var(--line);background:#fff;
+    }
+    .box strong{color:var(--navy)}
+    .print-only{display:none}
+    .footer{
+      text-align:center;color:var(--muted);padding:18px;font-size:.9rem;
+    }
+    @media print{
+      body{background:white}
+      .hero{padding:16px 0;background:white;border:0}
+      .actions,.toc,.footer{display:none!important}
+      .grid{display:block;padding:0}
+      .card{box-shadow:none;break-inside:avoid;border:1px solid #ccc;margin-bottom:10px}
+      .card h2{background:#12365f!important;color:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .print-only{display:block}
+      a{color:inherit;text-decoration:none}
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap titlebar">
+      <div>
+        <h1>環島<span class="orange">物流</span>大富翁</h1>
+        <div class="subtitle">20分鐘課堂版｜網頁規則書</div>
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="window.print()">列印規則書</button>
+        <a class="pill" href="#quick">快速開始</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <section>
+      <article class="card" id="goal">
+        <h2>一、遊戲目標</h2>
+        <div class="body">
+          <p class="lead">各組扮演物流公司，從「臺北／起點」出發，沿著地圖逆時針移動。貨品必須運回起點後才能換成現金，時間到時現金最多者獲勝。</p>
+          <div class="mini">
+            <div class="box"><strong>核心概念：</strong><br>貨越多越賺，但越重越難運。</div>
+            <div class="box"><strong>教學重點：</strong><br>比較公路、鐵路、海運、空運的成本、速度與限制。</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card" id="setup">
+        <h2>二、準備物品</h2>
+        <div class="body">
+          <table>
+            <thead><tr><th>物品</th><th>數量</th><th>用途</th></tr></thead>
+            <tbody>
+              <tr><td>環島地圖</td><td>1張</td><td>五組共用一張地圖，棋子依路線移動。</td></tr>
+              <tr><td>商品卡</td><td>36張</td><td>代表要運送的貨物，有重量、售價與效果。</td></tr>
+              <tr><td>交通卡</td><td>27張</td><td>代表本回合使用的交通工具。</td></tr>
+              <tr><td>棋子</td><td>5個</td><td>每組一個棋子。</td></tr>
+              <tr><td>骰子</td><td>1顆</td><td>使用公路或鐵路時擲骰前進。</td></tr>
+              <tr><td>記分表</td><td>每組1張</td><td>記錄現金、貨品、總重量、本圈回合數。</td></tr>
+            </tbody>
+          </table>
+          <div class="warn"><strong>建議：</strong>不要發紙鈔，直接用記分表記「現金」，比較省時間。</div>
+        </div>
+      </article>
+
+      <article class="card" id="start">
+        <h2>三、起始設定</h2>
+        <div class="body">
+          <div class="rule-steps">
+            <div class="step"><div><strong>每組起始現金：<span class="money">20萬</span></strong><br>由組長記在記分表上。</div></div>
+            <div class="step"><div><strong>每組起始抽牌</strong><br>商品卡2張、交通卡3張。</div></div>
+            <div class="step"><div><strong>棋子放在「臺北／起點」</strong><br>依照地圖箭頭方向逆時針移動。</div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card" id="turn">
+        <h2>四、每回合流程</h2>
+        <div class="body">
+          <div class="rule-steps">
+            <div class="step"><div><strong>抽1張商品卡</strong><br>可以選擇「接貨」或「不接」。接貨後放在自己組前面。</div></div>
+            <div class="step"><div><strong>出1張交通卡</strong><br>檢查現金是否足夠、載重是否足夠、貨品是否能用該交通工具。</div></div>
+            <div class="step"><div><strong>付交通費</strong><br>從組別現金扣除交通卡上的費用。</div></div>
+            <div class="step"><div><strong>移動棋子</strong><br>小貨車、大貨車、鐵路要擲骰；海運與空運依特殊規則移動。</div></div>
+            <div class="step"><div><strong>本圈回合數 +1</strong><br>用來判斷急件、電子零件、水果、生鮮魚貨是否得到限時獎金。</div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card" id="transport">
+        <h2>五、交通卡規則</h2>
+        <div class="body">
+          <table>
+            <thead><tr><th>交通工具</th><th>載重</th><th>費用</th><th>使用規則</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tag road">小貨車</span></td><td>3</td><td>2萬</td><td>可走所有公路格；骰幾點走幾格。</td></tr>
+              <tr><td><span class="tag road">大貨車</span></td><td>6</td><td>3萬</td><td>可走所有公路格；骰幾點走幾格。</td></tr>
+              <tr><td><span class="tag rail">鐵路</span></td><td>10</td><td>4萬</td><td>只能走藍色火車格；骰幾點走幾格。</td></tr>
+              <tr><td><span class="tag port">海運</span></td><td>15</td><td>5萬</td><td>只能在港口格使用；可移動到任一港口。</td></tr>
+              <tr><td><span class="tag air">空運</span></td><td>4</td><td>8萬</td><td>只能在機場格使用；可移動到任一機場。</td></tr>
+            </tbody>
+          </table>
+          <div class="ok"><strong>教學提醒：</strong>海運一次費用不一定最低，但因為載重最大，所以「單位成本」最低；空運最快，但單位成本最高。</div>
+        </div>
+      </article>
+
+      <article class="card" id="cargo">
+        <h2>六、商品卡規則</h2>
+        <div class="body">
+          <table>
+            <thead><tr><th>商品</th><th>重量</th><th>售價</th><th>效果</th></tr></thead>
+            <tbody>
+              <tr><td>包裹</td><td>1</td><td>3萬</td><td>無</td></tr>
+              <tr><td>急件包裹</td><td>1</td><td>4萬</td><td>3回合內回起點，+2萬</td></tr>
+              <tr><td>電子零件</td><td>1</td><td>6萬</td><td>4回合內回起點，+3萬</td></tr>
+              <tr><td>水果</td><td>2</td><td>5萬</td><td>5回合內回起點，+2萬</td></tr>
+              <tr><td>生鮮魚貨</td><td>2</td><td>5萬</td><td>4回合內回起點，+2萬</td></tr>
+              <tr><td>米</td><td>3</td><td>4萬</td><td>無</td></tr>
+              <tr><td>水泥</td><td>5</td><td>8萬</td><td>不可用小貨車、空運</td></tr>
+              <tr><td>機械設備</td><td>6</td><td>10萬</td><td>不可用空運</td></tr>
+              <tr><td>石化原料</td><td>8</td><td>12萬</td><td>只能用鐵路或海運</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card" id="weight">
+        <h2>七、載重與丟貨</h2>
+        <div class="body">
+          <p>每次出交通卡前，要先計算身上商品卡的總重量。</p>
+          <div class="warn">
+            <strong>如果交通工具載重不足：</strong><br>
+            必須丟棄商品卡，直到總重量不超過交通工具載重。被丟棄的商品不算錢。
+          </div>
+          <p><strong>例子：</strong>身上有水果2、米3、水泥5，總重量是10。如果使用大貨車載重6，就必須丟掉至少重量4的貨品。</p>
+        </div>
+      </article>
+
+      <article class="card" id="settle">
+        <h2>八、回到起點與結算</h2>
+        <div class="body">
+          <p class="lead">商品只有在回到「臺北／起點」時才能換成現金。</p>
+          <div class="rule-steps">
+            <div class="step"><div><strong>計算所有商品售價</strong><br>把身上所有商品的售價加總。</div></div>
+            <div class="step"><div><strong>檢查限時獎金</strong><br>若在指定回合內回起點，額外加錢。</div></div>
+            <div class="step"><div><strong>清空商品</strong><br>結算後，身上的商品卡全部棄掉，本圈回合數歸零。</div></div>
+          </div>
+          <div class="ok"><strong>時間到時：</strong>只計算現金。還沒運回起點的商品不算錢。</div>
+        </div>
+      </article>
+
+      <article class="card" id="quick">
+        <h2>九、老師快速口頭版</h2>
+        <div class="body">
+          <p class="lead">每回合：抽商品 → 決定接不接 → 出交通卡 → 付錢 → 檢查載重 → 移動。回到臺北才賣貨換錢，時間到現金最多獲勝。</p>
+          <table>
+            <thead><tr><th>時間</th><th>流程</th></tr></thead>
+            <tbody>
+              <tr><td>0～3分鐘</td><td>說明規則、發卡、放棋子。</td></tr>
+              <tr><td>3～15分鐘</td><td>五組輪流進行遊戲。</td></tr>
+              <tr><td>15～18分鐘</td><td>最後結算現金。</td></tr>
+              <tr><td>18～20分鐘</td><td>課堂討論與總結。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card" id="reflect">
+        <h2>十、課後討論題</h2>
+        <div class="body">
+          <ol>
+            <li>哪一種貨品最容易被丟掉？為什麼？</li>
+            <li>為什麼海運單位成本最低，卻不是每次都最好用？</li>
+            <li>空運適合什麼貨？不適合什麼貨？</li>
+            <li>公路為什麼最彈性？它的缺點是什麼？</li>
+          </ol>
+        </div>
+      </article>
+    </section>
+
+    <aside class="toc card">
+      <h2>目錄</h2>
+      <div class="body">
+        <a href="#goal">一、遊戲目標</a>
+        <a href="#setup">二、準備物品</a>
+        <a href="#start">三、起始設定</a>
+        <a href="#turn">四、每回合流程</a>
+        <a href="#transport">五、交通卡規則</a>
+        <a href="#cargo">六、商品卡規則</a>
+        <a href="#weight">七、載重與丟貨</a>
+        <a href="#settle">八、回到起點與結算</a>
+        <a href="#quick">九、老師快速口頭版</a>
+        <a href="#reflect">十、課後討論題</a>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="footer">環島物流大富翁｜課堂活動網頁規則書</footer>
+</body>
+</html>
